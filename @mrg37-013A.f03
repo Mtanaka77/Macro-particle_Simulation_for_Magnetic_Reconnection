@@ -1,16 +1,17 @@
 !***********************************************************************
 !*                                                                     *
 !*      ## 3-D Macroscale E.M. Particle Code ##                        *
-!*      << Full-implicit scheme with kinetic ions and electrons,       *
-!*         whike drift-kinetic electrons are tested. >>                *
-!*                                                                     *
-!*      Copyrights of this program except bcg-routines reserved        *
-!*      by Motohiko Tanaka  (1992,1995, 2021).                         *
+!*      << Full-implicit scheme with kinetic ions and electrons >>     *
 !*                                                                     *
 !*      Refs.:  M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).         *
 !*              M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).         *
 !*              M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).       *
 !*              M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).       *
+!*                                                                     *
+!*   Author and code maintenance by Motohiko Tanaka, Ph.D., Professor, *
+!*  Graduate School of Chubu University, Japan.  2022/09/01            *
+!*                                                                     *
+!*  https://github.com/Mtanaka77/EM_particle_code                      *
 !*                                                                     *
 !**** Version:  7/31/1996 ********************** Update: 09/12/2000 ****
 !**** Version:  8/30/2022 **************************** Fortran 2003 ****
@@ -51,15 +52,6 @@
 !
 !    9) They become true if iwrt(it,5).eq.0 and mod(it,5).eq.0
 ! 
-!     if(iwrt(it,nplot).eq.0) then
-!     if(mod(it,5).eq.0) then
-!          it           iwrt         mod
-!           1            1            1
-!           2            1            2
-!           3            1            3
-!           4            1            4
-!           5            0            0
-!
 !   10) This implicit particle code is free from the Courant condition 
 !       while it is different by explicit codes, Delta_x/Delta_t > 1.
 !
