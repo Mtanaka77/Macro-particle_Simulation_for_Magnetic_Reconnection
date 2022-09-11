@@ -19,9 +19,11 @@ But, one must note that electrons have enough time to execute
 cyclotron motions so that 2 pi \tau /wce > 13 in kinetic behaviors 
 of electrons and ions.
 
-Large time steps of 2 pi \tau/wce >> 1 is a good target of 
-the drift-kinetic simulation code. where a 3-D code is now 
-under constraction.
+A time step may be dt=1.5/wpe to dump out plasma oscillations 
+and 2 \pi/\wce > 1 for the kinetic ions/electrons. 
+Large time steps of 2 \pi \tau/\wce >> 1 is a good target of 
+the drift-kinetic simulation code. where typical time step is
+dt= 5/\wpe.
 
 References:
 1. M. Tanaka, A simulation of low-frequency electromagnetic phenomena 
