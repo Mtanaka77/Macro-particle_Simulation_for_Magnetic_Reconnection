@@ -17,8 +17,8 @@ By the implicit scheme it is free from the Courant condition,
 that is Dx(length)/Dt(time step) >< c, the speed of light. 
 But, one must note that for the backward differential scheme 
 \aimpl > 0.5, a time step may be dt=1.5/wpe to dump out plasma 
-oscillations while 2 \pi/\wce > 1 for the kinetic ions and electrons. 
-A large time step of 2 \pi \tau/\wce >> 1 is a good target of 
+oscillations while 2 \pi/dt \wce > 1 for the kinetic ions and electrons. 
+A large time step of 2 \pi/dt \wce >> 1 is a good target of 
 the drift-kinetic simulation code. where typical time step may be
 dt= 5/\wpe.
 
