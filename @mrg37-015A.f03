@@ -15,8 +15,8 @@
 !*    3. rec_3d15A      : parameter file 2                             *
 !*                                                                     *
 !*  * For kinetic ions and electrons, typically dt=1.5/wpe (igc=1).    *
-!*    One may use kinetic ions and drift-kinetic electrons, for which  *
-!*    one has dt=5.0/wpe (igc=2).                                      * 
+!*    One may use kinetic ions and drift-kinetic electrons,            *
+!*    for which one has dt=10./wpe (igc=2).                            * 
 !*                                                                     *
 !*  * Gauss's law must be corrected as errors in divergence term       *
 !*    accumulate in time. This is true if a finite difference scheme   *
