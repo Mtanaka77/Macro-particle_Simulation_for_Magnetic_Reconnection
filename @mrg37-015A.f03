@@ -22,21 +22,21 @@
 !*    accumulate in time. This is true if a finite difference scheme   *
 !*    of any kind is utilized.                                         *
 !*                                                                     *
-!*    Author and maintenance by Motohiko Tanaka, Ph.D., Professor      *
-!*    Graduate School of Chubu University, Kasugai 487-8501, Japan.    *
-!*                                                     2022/09/01      *
+!*     The author and maintainer of these simulation codes are         *
+!*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
+!*   Chubu University, Kasugai 487-8501, Japan.   2022/09/01           *
 !*                                                                     *
 !*    https://github.com/Mtanaka77/EM_particle_code                    *
 !*                                                                     *
-!**** Version:  7/31/1996 ********************** Update: 09/12/2000 ****
-!**** Version:  8/30/2022 **************************** Fortran 2003 ****
+!**** Version:  7/31/1996 ****************************** 09/12/2000 ****
+!**** Version:  9/01/2022 **************************** Fortran 2003 ****
 !
 !    @mrg3.f03: Non-periodic in y direction (two-points) and periodic  
 !    (three-points) in x and z directions.
 !
 !      A full-implicit plasma simulation code was created at /cfpsol/
 !    routines. It was successfully applied in 2-D by 1995. 
-!    The present code is Fortran 2003 rewritten in MPICH Ver.3. 
+!    The present code is Fortran 2003 rewritten in MPICH Ver.3, 
 !    whose parallel version is completed by using mpi_sendrecv with 
 !    pe's mx*myA*mz/npc overlaps.
 !
