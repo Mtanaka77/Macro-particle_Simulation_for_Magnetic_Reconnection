@@ -9,6 +9,8 @@ are quite suitable.
 One uses here the time decentered scheme \aimpl=0.6, while the
 time centered scheme in the explicit code is \aimpl=0.5 in the 
 directory of molecular dynamics. 
+It is noted that finite errors in divergence term accumulate 
+if any method of finite difference scheme is utilazed.
 Four physical units are, i) time: 1/wpe (c/wpe: electron 
 inertia length), ii) length: c/wpe, iii) mass: electron mass, 
 iv) charge: electron charge.
