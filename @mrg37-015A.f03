@@ -14,7 +14,7 @@
 !*    2. param_A15A.h   : parameter file 1                             *
 !*    3. rec_3d15A      : parameter file 2                             *
 !*                                                                     *
-!*  * For kinetic ions and electrons, typically dt=1.5/wpe (igc=1).    *
+!*  * For kinetic ions and electrons, typically dt=1.1/wpe (igc=1).    *
 !*    One may use kinetic ions and drift-kinetic electrons,            *
 !*    for which one has dt=10./wpe (igc=2).                            * 
 !*                                                                     *
