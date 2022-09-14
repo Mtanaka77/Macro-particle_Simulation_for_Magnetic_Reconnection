@@ -22,7 +22,7 @@ But, one must note that for the backward differential scheme
 oscillations while 2 \pi/dt \wce > 1 for the kinetic ions and electrons. 
 A large time step of 2 \pi/dt \wce >> 1 is a good target of 
 the drift-kinetic simulation code, where a typical time step may be
-dt= 10/\wpe. References to read this implicit particle code are recommended. .
+dt= 10/\wpe. References to read this implicit particle code are recommended.
 
 References:
 1. M. Tanaka, A simulation of low-frequency electromagnetic phenomena 
