@@ -2,9 +2,9 @@ EM_particle code
 
 An electromagnetic particle code is utilized for solar and magnetospheric 
 space physics. Both electric and magnetic fields at low frequencies 
-are solved by the backward decentering technique. 
+are solved by a slightly backward time decentering technique. 
 Magnetic reconnection and solar wind-earth magnetic field coupling 
-are quite suitable.
+are quite suitable for applying this code.
 
 One uses here the time decentered scheme \aimpl=0.6, while the
 time centered scheme in the explicit code is \aimpl=0.5 in the 
@@ -22,7 +22,7 @@ But, one must note that for the backward differential scheme
 oscillations while 2 \pi/dt \wce > 1 for the kinetic ions and electrons. 
 A large time step of 2 \pi/dt \wce >> 1 is a good target of 
 the drift-kinetic simulation code, where a typical time step may be
-dt= 10/\wpe.
+dt= 10/\wpe. References to read this implicit particle code are recommended. .
 
 References:
 1. M. Tanaka, A simulation of low-frequency electromagnetic phenomena 
