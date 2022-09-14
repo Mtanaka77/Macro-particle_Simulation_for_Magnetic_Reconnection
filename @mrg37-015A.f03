@@ -4,19 +4,21 @@
 !*      << Full-implicit scheme with kinetic ions and electrons,       *
 !*         or kinetic ions and the drift-kinetic electrons >>          *
 !*                                                                     *
-!*      Refs.:  M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).         *
-!*              M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).         *
-!*              M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).       *
-!*              M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).       *
+!*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
+!*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
+!*             3) M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).     *
+!*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
 !*                                                                     *
 !*    Simulation files                                                 *
 !*    1. @mrg37_015A.f03: this simulation code                         *
 !*    2. param_A15A.h   : parameter file 1                             *
 !*    3. rec_3d15A      : parameter file 2                             *
 !*                                                                     *
-!*  * For kinetic ions and electrons, typically dt=1.1/wpe (igc=1).    *
-!*    One may use kinetic ions and drift-kinetic electrons,            *
-!*    for which one has dt=10./wpe (igc=2).                            * 
+!*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
+!*    may be used (igc=1). A large time step for kinetic ions and      *
+!*    drift-kinetic electrons, one has dt=10./wpe (igc=2) without      *
+!*    gyrating electrons (igc=2). One should read the reference 2)     *
+!*    in JCP (1993).                                                   *
 !*                                                                     *
 !*  * Gauss's law must be corrected as errors in divergence term       *
 !*    accumulate in time. This is true if a finite difference scheme   *
