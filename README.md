@@ -7,9 +7,9 @@ decentering technique.
 Magnetic reconnection and solar wind-earth magnetic field coupling 
 are quite suitable for applying this code.
 
-One uses here the time decentered scheme \aimpl=0.6, while 
-the time centered scheme in the explicit code \aimpl=0.5 is used  
-in the other directory of molecular dynamics simulations. 
+One uses here the time decentered scheme \aimpl=0.6, while the time centered 
+scheme in the explicit code (\aimpl=0.5) is used in the other directory of 
+molecular dynamics simulations. 
 It is noted that finite errors in the divergence term accumulate 
 which must be corrected if the finite difference coordinates 
 are utilized. 
