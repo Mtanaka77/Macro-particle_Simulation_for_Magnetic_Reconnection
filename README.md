@@ -8,10 +8,11 @@ Magnetic reconnection and solar wind-earth magnetic field coupling
 are quite suitable for applying this code.
 
 One uses here the time decentered scheme \aimpl=0.6, while 
-the time centered scheme in the explicit code is used \aimpl=0.5 
-in the other directory of molecular dynamics. 
+the time centered scheme in the explicit code \aimpl=0.5 is used  
+in the other directory of molecular dynamics simulations. 
 It is noted that finite errors in the divergence term accumulate 
-if any method of the finite difference coordinate scheme is utilized. 
+which must be corrected if the finite difference coordinates 
+are utilized. 
 Four physical units are, i) time: 1/wpe (c/wpe: 
 electron inertia length), ii) length: c/wpe, iii) mass: electron mass, 
 and iv) charge: electron charge.
