@@ -28,7 +28,8 @@ One can enjoy simulations by changing system sizes and boundary conditions
 as one wishes. 
 For the present case, an equilibration of two flux bundles is simulated in 
 three dimensions. Kinetic ions and electrons are simulated which is 
-an igc=1 case specified in the rec_3d15 file. 
+an igc=1 case specified in the rec_3d15 file. Then, one can starts a merging of
+flux bundles. 
 On the other case, the drift-kenetic electrons and kinetic ions are simulated
 as a large time step can be used as the igc=2 case. 
 But, one should note that heavy ions move kinetic while light electrons 
