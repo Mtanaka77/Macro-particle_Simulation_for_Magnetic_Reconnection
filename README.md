@@ -16,7 +16,7 @@ are utilized.
 Four physical units are, i) time: 1/wpe (c/wpe: 
 electron inertia length), ii) length: c/wpe, iii) mass: electron mass, 
 and iv) charge: electron charge. 
-The program is written in Fortran 2003, and MPICH 3 for parallelization.
+The program is written in Fortran 2003 and MPI version 3 for parallelization.
 
 By the implicit scheme it is free from the Courant condition, that is, 
 Dx(length)/Dt(time step) >< c, the speed of light. 
