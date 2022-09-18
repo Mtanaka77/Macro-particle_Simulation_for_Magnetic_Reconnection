@@ -4,13 +4,13 @@ An electromagnetic particle code is utilized for solar and magnetospheric
 space physics. Both electric and magnetic fields at low frequencies 
 are solved by a slightly backward time decentering technique. 
 Magnetic reconnection and solar wind-earth magnetic field coupling 
-are quite suitable for applying this code.
+are quite suitable for applying this simulation code.
 
 One uses here the time decentered scheme in aimpl=0.6, while the 
 time centered scheme in the explicit code (aimpl=0.5) is used in the 
 other directory of molecular dynamics simulations. 
 It is noted, however, that finite errors in the divergence term accumulate 
-which must be corrected if the finite difference coordinates are utilized. 
+which must be corrected if the finite difference coordinate space are utilized. 
 Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), 
 ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. 
 The program is written in Fortran 2003 and MPI version 3 for parallelization.
