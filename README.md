@@ -32,7 +32,7 @@ flux bundles.
 On the other case, the drift-kenetic electrons and kinetic ions are simulated
 as a large time step can be used as the igc=2 case. 
 But, one should note that heavy ions move kinetic while light electrons 
-lose some of their flexibility though.
+lose some of their flexibility.
 
 
 References:
