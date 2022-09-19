@@ -27,7 +27,7 @@ Reading references of this implicit particle code is recommended.
 One can enjoy simulations by changing system sizes and boundary conditions. 
 For the present case, an equilibration of the pair of flux bundles is tested in 
 three dimensions. Kinetic ions and electrons are simulated which is 
-an igc=1 case specified in the rec_3d15 file. Then, one can start a merging of
+an igc=1 case specified in the rec_3d15A file. Then, one can start a merging of
 flux bundles. 
 On the other case, the drift-kenetic electrons and kinetic ions are simulated
 as a large time step can be used as the igc=2 case. 
