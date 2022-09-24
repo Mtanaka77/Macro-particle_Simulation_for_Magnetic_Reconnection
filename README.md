@@ -25,12 +25,11 @@ simulation, where a typical time step may be dt= 10/wpe.
 Reading references of this implicit particle code is recommended.
 
 One can enjoy simulations by changing system sizes and boundary conditions. 
-For the present case, an equilibration of the pair of flux bundles is tested in 
-three dimensions. Kinetic ions and electrons are simulated which is 
-an igc=1 case specified in the rec_3d15A file. Then, one can start a merging of
-flux bundles. 
+For the present case, an equilibration of the pair of flux bundles is first tested 
+in three dimensions. Kinetic ions and electrons are simulated in the igc=1 case 
+specified in the rec_3d15A file. Then, one can start a merging of flux bundles. 
 On the other case, the drift-kenetic electrons and kinetic ions are simulated
-as a large time step can be used as the igc=2 case. 
+as a large time step is used in the igc=2 case. 
 But, one should note that heavy ions move kinetically while light electrons 
 lose some of their particle freedom in the coordinate space.
 
