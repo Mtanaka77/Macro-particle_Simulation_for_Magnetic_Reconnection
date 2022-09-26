@@ -22,7 +22,10 @@ dt~1.2/wpe to dump out plasma oscillations, while 2 \pi/dt wce > 1
 for the kinetic ions and electrons. 
 A large time step of 2 \pi/dt wce >> 1 is a good target of the drift-kinetic 
 simulation, where a typical time step may be dt= 10/wpe. 
-Reading references of this implicit particle code is recommended.
+
+The in-house plots are given in the sumulation code to check the run. 
+They are subroutines named fplot3 and cplot3. 
+Reading papers of this implicit particle code is highly recommended.
 
 One can enjoy simulations by changing system sizes and boundary conditions. 
 For the present case, an equilibration of the pair of flux bundles is first tested 
