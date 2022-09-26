@@ -23,10 +23,6 @@ for the kinetic ions and electrons.
 A large time step of 2 \pi/dt wce >> 1 is a good target of the drift-kinetic 
 simulation, where a typical time step may be dt= 10/wpe. 
 
-The in-house plots are given in the sumulation code to check the run. 
-They are subroutines named fplot3 and cplot3. 
-Reading papers of this implicit particle code is highly recommended.
-
 One can enjoy simulations by changing system sizes and boundary conditions. 
 For the present case, an equilibration of the pair of flux bundles is first tested 
 in three dimensions. Kinetic ions and electrons are simulated in the igc=1 case 
@@ -36,6 +32,9 @@ as a large time step is used in the igc=2 case.
 But, one should note that heavy ions move kinetically while light electrons 
 lose some of their particle freedom in the coordinate space.
 
+The in-house plots are given in the sumulation code to check the run. 
+They are subroutines named fplot3 and cplot3. 
+Reading papers of this implicit particle code is highly recommended.
 
 References:
 
