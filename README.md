@@ -34,7 +34,8 @@ lose some of their particle freedom in the coordinate space.
 
 The in-house plots are given in the sumulation code to check the run. 
 They are subroutines named fplot3 and cplot3. 
-Reading papers of this implicit particle code is highly recommended.
+Reading papers of this implicit particle simulation code and applications to 
+magnetoshperic space plasmas are highly recommended.
 
 References:
 
