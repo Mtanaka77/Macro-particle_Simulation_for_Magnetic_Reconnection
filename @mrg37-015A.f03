@@ -90,7 +90,7 @@
 !*                        /cfpsol/,/poissn/,/escorr/                   *
 !*                          full and drift-kinetic                     * 
 !*                        /diag1/                                      *
-!*                              ---> fplot3                            *
+!*                              ---> fplot3, cplot3                    *
 !*               /init/   ------  /loadpt/, /readpt/                   *
 !*                                                                     *
 !*      sequential:                                                    *
