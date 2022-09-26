@@ -1,15 +1,15 @@
 !***********************************************************************
 !*                                                                     *
-!*      ## 3-D Macroscale Electromagnetic Particle Code ##             *
-!*      << Full-implicit scheme with kinetic ions and electrons,       *
-!*         or kinetic ions and the drift-kinetic electrons >>          *
+!*    ## 3-D Macroscale Electromagnetic Particle Simulation Code ##    *
+!*     << Full-implicit scheme with kinetic ions and electrons,        *
+!*        and/or kinetic ions and the drift-kinetic electrons >>       *
 !*                                                                     *
 !*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
 !*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
 !*             3) M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).     *
 !*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
 !*                                                                     *
-!*    Simulation files                                                 *
+!*    Simulation files are:                                            *
 !*    1. @mrg37_015A.f03: this simulation code                         *
 !*    2. param_A15A.h   : parameter file 1                             *
 !*    3. rec_3d15A      : parameter file 2                             *
