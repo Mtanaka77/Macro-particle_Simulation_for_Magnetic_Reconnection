@@ -1,4 +1,4 @@
-EM_particle code
+Low-frequency Electromagnetic Particle Code
 
 An electromagnetic particle code is utilized for solar and magnetospheric 
 space physics. Both electric and magnetic fields at low frequencies 
