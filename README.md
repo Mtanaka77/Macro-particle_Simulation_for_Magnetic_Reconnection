@@ -1,4 +1,4 @@
-Low-frequency Electromagnetic Particle Simulation 
+Low-Frequency Electromagnetic Particle Simulation Code
 
 An electromagnetic particle code is utilized for solar and magnetospheric 
 space physics. Both electric and magnetic fields at low frequencies 
