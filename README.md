@@ -32,7 +32,7 @@ as a large time step is used in the igc=2 case.
 But, one should note that heavy ions move kinetically while light electrons 
 lose some of their particle freedom in the coordinate space.
 
-Easy in-house plots are incorporated to check the current run in the sumulation code. 
+Easy in-house plots are incorporated to check the current run in the simulation. 
 Reading papers of this implicit particle simulation code (Ref. 1) and applications to 
 magnetospheric space plasmas (Ref. 3) are highly recommended.
 
