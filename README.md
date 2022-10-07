@@ -1,6 +1,6 @@
 Low-Frequency Electromagnetic Particle Simulation for High-Temperature Plasmas
 
-Why is a current sheet of the distant magnetic tail of the earth become thinned and is a large energy released which is typically observed as magnetic reconnection ? There were many theories for the reconnection, in which Dr. Speicer had paid attention to the role of inertia resistivity of thinning the neutral sheet. Some time later, a particle simulation was executed to have shown the mechanism of earth's magnetic plasma sheet which results in energy release, in J. Geophysical Research (1995).
+Why is a current sheet of the distant magnetic tail of the earth become thinned and is a large energy released which is typically observed as magnetic reconnection ? There were many theories for the reconnection, in which Dr. Speicer had paid attention to the role of inertia resistivity of thinning the neutral sheet. Some time later, a particle simulation was executed to have shown the mechanism of earth's magnetotail reconnection which results in large energy release, in J. Geophysical Research (1995).
 
 An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics. Both electric and magnetic fields at low frequencies are solved by a slightly backward time decentering technique. Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
 
