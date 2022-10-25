@@ -12,7 +12,7 @@ One can enjoy simulations by changing system sizes and boundary conditions. For 
 On the other case, the drift-kenetic electrons and kinetic ions are simulated as a large time step in the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
 
 Easy in-house graphic plots are incorporated in "@mrg37-013A.f03" in order to check the current run in the simulation. 
-Figure 1 in the PDF plot "EMfield.pdf" shows the electric and magnetic fields in YZ and X at the early and final times. 
+Figure 1 in the PDF "EMfield.pdf" plot shows the electric and magnetic fields in the YZ and X components at the early and final times. Two flux bundles at t=5000/wpe are touched and sqeezed at the Y= Ly/2 plane.
 Reading papers of this implicit particle simulation code (Ref. 1-2) and applications to magnetospheric space plasmas (Ref. 3-5) are highly recommended.
 
 
