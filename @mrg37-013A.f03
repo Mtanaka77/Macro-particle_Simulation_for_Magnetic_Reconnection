@@ -1,67 +1,46 @@
 !***********************************************************************
 !*                                                                     *
-!*  ## Macroscale Electromagnetic Particle Code of Implicit Scheme ##  *
-!*   << Full-implicit scheme with kinetic ions and electrons, or       *
-!*      kinetic ions and drift-kinetic electrons >>                    *
+!*      ## 3-D Macroscale Electromagnetic Particle Code ##             *
+!*      << Full-implicit scheme with kinetic ions and electrons,       *
+!*         or kinetic ions and the drift-kinetic electrons >>          *
 !*                                                                     *
-!*      Refs.:  M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).         *
-!*              M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).         *
-!*              M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).       *
-!*              M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).       *
+!*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
+!*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
+!*             3) M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).     *
+!*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
 !*                                                                     *
-!*    Simulation files are:                                            *
-!*    1. @mrg37_013A.f03: This simulation code                         *
-!*    2. param_A13A.h   : Common parameters of this simulation         *
-!*    3. rec_3d13A      : Configuration parameters                     *
-!*    +  README.md                                                     *
-!*                                                                     * 
-!*   * An implicit code is free from the Courant condition,            * 
-!*    dx(length) / dt(time step) >< c, the speed of light..            *
-!*   * Gauss's law must be corrected as errors in divergence term      * 
+!*    Simulation files                                                 *
+!*    1. @mrg37_015A.f03: this simulation code                         *
+!*    2. param_A41A.h   : parameter file 1                             *
+!*    3. rec_3d15A      : parameter file 2                             *
+!*                                                                     *
+!*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
+!*    may be used (igc=1). A large time step for kinetic ions and      *
+!*    drift-kinetic electrons, one has dt=10./wpe (igc=2) without      *
+!*    gyrating electrons (igc=2). One should read the reference 2)     *
+!*    in JCP (1993).                                                   *
+!*                                                                     *
+!*  * Gauss's law must be corrected as errors in divergence term       *
 !*    accumulate in time. This is true if a finite difference scheme   *
 !*    of any kind is utilized.                                         *
-!*                                                                     * 
-!*    The author and maintainer of these simulation codes are          *
-!*  Dr. Motohiko Tanaka, Professor, Graduate School of Engineering,    *
-!*  Chubu University, Kasugai 487-8501, Japan.   2022/09/01            *
 !*                                                                     *
-!*  The sources in Fortran 2003 are:                                   *
+!*     The author and maintainer of these simulation codes are         *
+!*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
+!*   Chubu University, Kasugai 487-8501, Japan.   2022/09/01           *
+!*                                                                     *
 !*    https://github.com/Mtanaka77/EM_particle_code                    *
 !*                                                                     *
-!**** Version:  7/31/1996 ********************** Update: 09/12/2000 ****
-!**** Version:  8/30/2022 **************************** Fortran 2003 ****
-!*                                                                     *
-!*     /main/    ------   /trans/                                      *
-!*                           /fulmov/,/drmove/,/fulmv2/,/drmov2/       *
-!*                              ---> partbc, partdk                    *
-!*                              ---> srimp1-4                          *
-!*                        /cfpsol/,/poissn/,/escorr/                   *
-!*                          full and drift-kinetic                     * 
-!*                        /diag1/                                      *
-!*                              ---> fplot3                            *
-!*               /init/   ------  /loadpt/, /readpt/                   *
-!*                                                                     *
-!*      sequential:                                                    *
-!*        /restrt/  -------  arrays (write /read)                      *
-!*                                                                     *
-!*---------------------------------------------------------------------*
-!*  Fortran 2003 uses line continuity by the symbol & 
-!*  :s%/^C/!/
-!*  :s%/^c/!/
-!*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg3.f03
-!*
-!* $ mpif90 -fast @mrg3.f03 -I/opt/pgi/fftw3/include &
-!*    -L/opt/pgi/fftw3/lib -lfftw3
-!* $ mpiexec -n 6 a.out &
-!*---------------------------------------------------------------------*
+!**** Version:  7/31/1996 ****************************** 09/12/2000 ****
+!**** Version:  9/01/2022 **************************** Fortran 2003 ****
+!
+!    @mrg3.f03: Non-periodic in y direction (two-points) and periodic  
+!    (three-points) in x and z directions.
 !
 !      A full-implicit plasma simulation code was created at /cfpsol/
-!    subroutines, which was successfully applied in 2-D by 1995. 
-!    The present code is Fortran 2003 and MPI Ver.3 whose parallelization
-!    was completed by using mpi_sendrecv.
-!
-!      Boundry conditions are non-periodic in y direction (two-points) 
-!   and periodic (three-points) in x and z directions. 
+!    routines. It was successfully applied in 2-D by 1995. 
+!    The present code is Fortran 2003 rewritten in MPICH Ver.3, 
+!    whose parallel version is completed by using mpi_sendrecv with 
+!    pe's mx*myA*mz/npc overlaps.
 !
 !    Feb. and Aug. 2022
 !    1) The mpi routines isend and irecv are used for the bounded case,
@@ -99,9 +78,34 @@
 !           4            1            4
 !           5            0            0
 !
-!   10) This implicit particle code is free from the Courant condition, 
-!       while explicit codes are restricted by Delta_x/Delta_t > 1.
-!*---------------------------------------------------------------------*
+!   10) This implicit particle code is free from the Courant condition 
+!       while it is different by explicit codes, Delta_x/Delta_t > 1.
+!
+!-----------------------------------------------------------------------
+!*                                                                     *
+!*     /main/    ------   /trans/                                      *
+!*                           /fulmov/,/drmove/,/fulmv2/,/drmov2/       *
+!*                              ---> partbc, partdk                    *
+!*                              ---> srimp1-4                          *
+!*                        /cfpsol/,/poissn/,/escorr/                   *
+!*                          full and drift-kinetic                     * 
+!*                        /diag1/                                      *
+!*                              ---> fplot3                            *
+!*               /init/   ------  /loadpt/, /readpt/                   *
+!*                                                                     *
+!*      sequential:                                                    *
+!*        /restrt/  -------  arrays (write /read)                      *
+!*                                                                     *
+!-----------------------------------------------------------------------
+!* Fortran 2003 handles such technique as continuity and lower cases,
+!*  :s%/^C/!/
+!*  :s%/^c/!/
+!*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
+!*
+!* $ mpif90 -mcmodel=medium -fast @mrg37.f03 -I/opt/pgi/fftw3/include &
+!*    -L/opt/pgi/fftw3/lib -lfftw3
+!* $ mpiexec -n 6 a.out &
+!-----------------------------------------------------------------------
 !
       program macro_particles_code
       use, intrinsic :: iso_c_binding
@@ -119,7 +123,6 @@
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi
       real(C_DOUBLE),dimension(np0) :: xe,ye,ze,vxe,vye,vze,mue,vpe,vhe
-      real(C_DOUBLE),dimension(np0) :: vxs,vys,vzs
 !-----------------------------------------------------------------------
 !
       integer(C_INT) io_pe
@@ -154,9 +157,6 @@
       real(C_float)  plodx
       integer(C_INT) kploy,kploz
       common/plotiv/ plodx,kploy,kploz
-!
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
 !*
       character(len=8)  label(8)
       character(len=10) cdate
@@ -173,17 +173,21 @@
       integer(C_INT) iresrt,i,j,k,l,istop,iwrt,nframe
       common/irest/ iresrt
 !
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
+!
       integer(C_INT),dimension(mxyz) :: arrayx,arrayy,arrayz
       common/array1d/ arrayx,arrayy,arrayz
 !
       integer(C_INT) ifilxs,ifilys,ifilzs
       common/damper/ ifilxs,ifilys,ifilzs
 !
-!*  kstart..... used in /init/, /trans/, /fulmov/, in param_A13A.h.
+!*  kstart..... used in /init/, /trans/, /fulmov/, in param_A41A.h.
+!   Ez00   .... Ez00 x Ba
 !
       namelist/datum0/  kstart,tfinal,cptot,igc,istop
       namelist/datum1/  dt,xmax,ymax,zmax,wspec,qspec,   &
-                        nspec,vdr,vbeam,                 &
+                        nspec,vdr,vbeam,Ez00,            &
                         wcewpe,teti,veth,thb,            &
                         aimpl,rwd,epsln1,pi,             &
                         ifilx,ifily,ifilz,               &
@@ -193,13 +197,16 @@
       namelist/datum2/                                   &
                vlima,vlimb,bmin,emin,npwrt,nfwrt,nplot,nhist
 !
+      character(len=8) :: fortr51,fortr61
+      common/fortr50/ fortr51(8),fortr61(8)
+!
 !*----------------------------------------------------------------------
 !***********************************************************************
 !*    Read-in control parameters.                                      *
 !***********************************************************************
 !
-!     open (unit=05,file=praefixs,form='formatted') 
-!     open (unit=12,file=praefixc//'.12'//suffix1,form='unformatted') 
+!     open (unit=05,file=praefixs,form='formatted')  !<- L.357
+!     open (unit=12,file=praefixc//'.12'//suffix1,form='unformatted') ! L.12155
       open (unit=15,file=praefixc//'.15'//suffix2,form='unformatted')
       open (unit=18,file=praefixc//'.18'//suffix2,form='unformatted')
       close(15)
@@ -220,13 +227,37 @@
       io_pe = 0
       if(ipar.eq.1) io_pe = 1
 !
+! Check results
+      fortr51(1)='fortr.51'
+      fortr51(2)='fortr.52'
+      fortr51(3)='fortr.53'
+      fortr51(4)='fortr.54'
+      fortr51(5)='fortr.55'
+      fortr51(6)='fortr.56'
+      fortr51(7)='fortr.57'
+      fortr51(8)='fortr.58'
+!*
+      fortr61(1)='fortr.61'
+      fortr61(2)='fortr.62'
+      fortr61(3)='fortr.63'
+      fortr61(4)='fortr.64'
+      fortr61(5)='fortr.65'
+      fortr61(6)='fortr.66'
+      fortr61(7)='fortr.67'
+      fortr61(8)='fortr.68'
+!
+!     open (unit=50+ipar,file=fortr51(ipar),form='formatted')
+!     open (unit=60+ipar,file=fortr61(ipar),form='formatted')
+!     close(50+ipar)
+!     close(60+ipar)
+!
 !  ++++++++++++++++++++++++++++++++++++++++++++++++++++
 !   cfpsol: np1(1) = 1, np2(1)= 3*mx*(my+1)*kd
 !           nz1(1) = 1, nz2(1)= kd
 !   escorr: nps1(1)= 1, nps2(1)= mx*(my+1)*kd
 !   poissn:
 !  ++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     kd= mz/npc is defined in param_A13A.h
+!     kd= mz/npc is defined in param_A41A.h
 !
       do k= 1,npc         
       np1(k)= (k-1)*3*mx*(my+1)*kd +1    !<-- np1(1)=1
@@ -354,23 +385,15 @@
       if(kstart.ne.0) then
         iresrt= 1
 !
+        if(igc.eq.1) then
         call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                     xe,ye,ze,vxs,vys,vzs,qspec(2),wspec(2),  &
+                     xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                      npr,ipar,size,iresrt) 
 !
-        if(igc.eq.1) then
-        do l= 1,np0
-        vxe(l)= vxs(l)
-        vye(l)= vys(l)
-        vze(l)= vzs(l)
-        end do
-!
         else if(igc.eq.2) then
-        do l= 1,np0
-        mue(l)= vxs(l)
-        vpe(l)= vys(l)
-        vhe(l)= vzs(l)
-        end do
+        call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
+                     xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
+                     npr,ipar,size,iresrt) 
         end if
       end if
 !
@@ -475,23 +498,15 @@
 !     +++++++++
 !
       if(igc.eq.1) then
-        do l= 1,np0
-        vxs(l)= vxe(l)
-        vys(l)= vye(l)
-        vzs(l)= vze(l)
-        end do
+      call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
+                   xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
+                   npr,ipar,size,iresrt) 
 !
       else if(igc.eq.2) then
-        do l= 1,np0
-        vxs(l)= mue(l)
-        vys(l)= vpe(l)
-        vzs(l)= vhe(l)
-        end do
-      end if
-!
       call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                   xe,ye,ze,vxs,vys,vzs,qspec(2),wspec(2),  &
+                   xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
                    npr,ipar,size,iresrt) 
+      end if
 !***
 !
       cl_first= 2
@@ -547,15 +562,15 @@
       integer(C_INT) kploy,kploz,ir1,ir2
       common/plotiv/ plodx,kploy,kploz
 !
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
       common/ranfa/  ir1  !! integer for ir1
       common/ranfb/  ir2
 !
       integer        ir,iq
       common/ranfff/ ir,iq
 !***
-!  rec_3d: in param_A13A.h...    
+!  rec_3d: in param_A41A.h...    
 !     data   dt/5.0d0/,xmax/300.0d0/,ymax/300.d0/,zmax/600.0d0/,  &
 !            wspec/100.d0, 1.0d0, 2*0.d0/,qspec/1.0d0, -1.0d0, 2*0.d0/, &
 !            vdr/ 4*0.d0 /,vbeam/ 1.0d-2,0.d0, 2*0.d0 /,                &
@@ -622,7 +637,6 @@
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi,           &
                                        xe,ye,ze,vxe,vye,vze,mue,vpe,vhe
-      real(C_DOUBLE),dimension(np0) :: vxs,vys,vzs
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                          ex,ey,ez,bx,by,bz,        &
@@ -669,7 +683,7 @@
       integer(C_INT) iterm,iterf,iters
       common/emiter/ ase,asb,asl,we,wb,wl,iterm,iterf,iters
 !***
-      integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k,l
+      integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k
       common/irest/ iresrt
       real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4,walltime5
 !
@@ -870,23 +884,15 @@
         iresrt= 2
 !
         if(igc.eq.1) then
-        do l= 1,np0
-        vxs(l)= vxe(l)
-        vys(l)= vye(l)
-        vzs(l)= vze(l)
-        end do
+        call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
+                     xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
+                     npr,ipar,size,iresrt) 
 !
         else if(igc.eq.2) then
-        do l= 1,np0
-        vxs(l)= mue(l)
-        vys(l)= vpe(l)
-        vzs(l)= vhe(l)
-        end do
-        end if
-!
         call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                     xe,ye,ze,vxs,vys,vzs,qspec(2),wspec(2),  &
+                     xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
                      npr,ipar,size,iresrt) 
+        end if
       end if
 !***
 !
@@ -1159,10 +1165,13 @@
       real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
-      real(C_DOUBLE) hh,ht,ht2,                             &
-                     xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr, &
-                     exi,eyi,ezi,bxi,byi,bzi,               &
-                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
+!
+      real(C_DOUBLE) hh,ht,ht2,                               &
+                     xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr,   &
+                     exi,eyi,ezi,bxi,byi,bzi,                 &
+                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz,vy0,ranfp
       integer(C_INT) l,i,il,ir,ip,j,jl,jr,jp,k,kl,kr,kp,syme,symb
 !
       integer(C_INT) io_pe
@@ -1374,7 +1383,27 @@
       if(ipc.eq.0) then
 !
         call partbc (x,y,z,vx,vy,vz,npr,ipar,size)
-        return
+!
+!  Drive E x B
+!        1.d-2/wce= 5.d-2
+!
+        do l= ipar,npr,size 
+        if((abs(z(l)-zcent ).lt.0.15d0*zmax) .and.  &
+          ((abs(y(l)-ycent2).lt.0.025d0*ymax) .or.  &
+           (abs(y(l)-ycent1).lt.0.025d0*ymax)) ) then
+!
+          if(ranfp(0.d0).gt.0.99d0) then
+          vy0= Ez00/bxa(ip,jp,kp)
+!
+          if(abs(y(l)-ycent2).lt.0.05d0*ymax) then
+            vy(l)= vy(l) - vy0
+!
+          else if(abs(y(l)-ycent1).lt.0.05d0*ymax) then
+            vy(l)= vy(l) + vy0
+          end if
+          end if
+        end if
+        end do
       end if
 !
 !  For accumulating
@@ -2003,7 +2032,8 @@
                      rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin
+                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
+                     edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
                      rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
@@ -2012,10 +2042,10 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(10000,54)
 !
-      real(C_DOUBLE) hh,ht,ht2,                             &
-                     xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr, &
+      real(C_DOUBLE) xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr, &
                      exi,eyi,ezi,bxi,byi,bzi,               &
-                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz,edec
+                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz,      &
+                     hh,ht,ht2
       integer(C_INT) l,i,il,ir,ip,j,jl,jr,jp,k,kl,kr,kp,    &
                      syme,symb
 !
@@ -4916,12 +4946,12 @@
                                                  /(1.d0+dtice2)
 
       else if(igc.eq.2) then
-!     +++++++++++++++++
+!     ++++++++++++++++++++++
       cjx(i,j,k)= &
              qix(i,j,k) +qex(i,j,k) &
             +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)  &
                                                  /(1.d0+dtic2) &
-            +qe(i,j,k)*adt*qwe*ehh*rax/drag
+            +qe(i,j,k)*adt*qwe*ehh*rax/drag 
 !
       cjy(i,j,k)= &
              qiy(i,j,k) +qey(i,j,k) &
@@ -5051,7 +5081,7 @@
                                                  /(1.d0+dtice2) 
 !
       else if(igc.eq.2) then
-!     +++++++++++++++++
+!     ++++++++++++++++++++++
       cjx(i,j,k)= cjx(i,j,k) &
             +adt*qwi*(qiy(i,j,k)*bza(i,j,k) -qiz(i,j,k)*bya(i,j,k)) &
                                                  /(1.d0+dtic2) &
@@ -5081,6 +5111,7 @@
 !
             +qe(i,j,k)*(mue1*grz(i,j,k)/bsa1 +vhh2*crz(i,j,k)/bsq2)
       end if
+!
       end do
       end do
       end do
@@ -5154,7 +5185,6 @@
       syme= -1
       call outmesh3 (rhsx,rhsy,rhsz)
       call filt3e (rhsx,rhsy,rhsz,0.d0,0.d0,0.d0,ifilx,ifily,ifilz,syme)
-!
 !
 !***********************************************************************
 !* 4. Solve the field-particle equation for the "given" rhs.           *
@@ -6064,7 +6094,7 @@
       a32=  fmain*(dtic2*raz*ray -dtic*rax) +fmaine*(dtice2*raz*ray -dtice*rax)
 !
       else if(igc.eq.2) then
-!     +++++++++++++++++
+!     ++++++++++++++++++++++
       a11=  fmain*(1.d0 +dtic2*rax**2) +fpare*rax*rax
       a22=  fmain*(1.d0 +dtic2*ray**2) +fpare*ray*ray
       a33=  fmain*(1.d0 +dtic2*raz**2) +fpare*raz*raz
@@ -6274,6 +6304,8 @@
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
+      character(len=8) :: fortr51,fortr61
+      common/fortr50/ fortr51(8),fortr61(8)
 !
       real :: t1,t2,t3,t4,t5
       call cpu_time (t1)
@@ -6315,7 +6347,7 @@
 !       Parallel version in /wwstbs3/ and /wwstbm/
 !
         call wwstbs3 (aa,ja,na,iw,np1,np2,ipar,ierr)
-      end if                         ! iblk in param_A13A.h
+      end if                         ! iblk in param_A41A.h
       
       call cpu_time (t2)
 !                                      preconditioning
@@ -6759,7 +6791,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'  !<-- mx,myA,mz,iblk in param_A13A.h
+      include 'param_A13A.h'  !<-- mx,myA,mz,iblk in param_A41A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -6878,7 +6910,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'  !<-- mx,myA,mz,iblk in param_A13A.h
+      include 'param_A13A.h'  !<-- mx,myA,mz,iblk in param_A41A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -7161,6 +7193,9 @@
       common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
+!
+      character(len=8) :: fortr51,fortr61
+      common/fortr50/ fortr51(8),fortr61(8)
 !*---------------------------------------------------------------------
 !
       do i= 1,npc
@@ -7577,15 +7612,15 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'fftw3.f03'
-!     include 'aslfftw3.f03'  ! for NEC only
+!     include 'fftw3.f03'
+      include 'aslfftw3.f03'
       include 'param_A13A.h' 
 !
       integer(C_INT) igc
       common/if_igc/ igc
 !
       complex(C_DOUBLE_COMPLEX),dimension((mx/2+1),myA,mz) :: &
-                                                qi_c,qe_c
+                                                      qi_c,qe_c
       real(C_DOUBLE),dimension(mx,myA,mz) :: qi_cc,qe_cc
 !
       type(C_PTR),save :: planf,planb,planfs,planbs
@@ -7838,7 +7873,6 @@
 ! 
       if(io_pe.eq.1) then
         if(iwrt(it,nha).eq.0) then
-!       if(mod(it,10).eq.1) then
 !
         call lblbot (t)
 !
@@ -8185,7 +8219,6 @@
       hyhz4= hy2*hz2
 !
       do i= 0,mx-1 
-!
       bss2= bxa(i,j,k)**2 +bya(i,j,k)**2 +bza(i,j,k)**2
       bss1= sqrt(bss2)
 !
@@ -11250,8 +11283,8 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(10000,54)
 !***
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00,
       common/vring/  vrg1
 !
       real(C_DOUBLE) fv1(101),fv2(101),fdr(101)  !! real*8
@@ -11471,8 +11504,10 @@
       dzcent= 0.125d0*zmax !!
       dzsmt = 0.15d0 *zmax !! larger half the region
 !
-      ycent1= 0.25d0*ymax  !! two cycles
-      ycent2= 0.75d0*ymax  !!
+      ycent1= 0.30d0*ymax  !! two cycles
+      ycent2= 0.70d0*ymax  !!
+!     ycent1= 0.25d0*ymax  !! two cycles
+!     ycent2= 0.75d0*ymax  !!
       dycent= 0.05d0*ymax  !!
 !
 ! The current shape in (y,z)
@@ -11675,8 +11710,8 @@
 !
 !  prof= max(1.d0 -arb*(r/rwd)**2, 0.d0) 
       real(C_DOUBLE) funr,r,prof
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -13252,11 +13287,11 @@
       jk= 0
 !
       npy= 0
-      do j= 2,my,2
+      do j= 2,my,2  !<-- j+1= my+1
       npy= npy +1
 !
         npz= 0
-        do k= 2,mz-1,2 
+        do k= 2,mz-1,2  !<-- k+1= mz
         npz= npz +1
 !
         kr= k+1 
@@ -13377,8 +13412,8 @@
       do j= 1,ny
       do k= 1,nz
       jk= jk +1
-      am1= amax1(am1,abs(ax(jk))) 
-      am2= amin1(am2,abs(ax(jk)))
+      am1= amax1(am1,ax(jk)) !<- is ok
+      am2= amin1(am2,ax(jk))
       end do
       end do
 !
@@ -13456,7 +13491,7 @@
       jk= 0
 !
       npy= 0
-      do j= 2,my,2  !<-- j=my+1
+      do j= 2,my,2  !<-- j+1= my+1
       npy= npy +1
 !
         npz= 0
@@ -13479,14 +13514,14 @@
       ik= 0
 !
       npx= 0
-      do i= 2,mx-1,2 
+      do i= 2,mx-1,2  !<-- ir= mx
       npx= npx +1
 !
       ir= i+1 
       il= i-1 
 !
         npz= 0
-        do k= 2,mz-1,2  !<-- k= mz-1
+        do k= 2,mz-1,2  !<-- kr= mz
         npz= npz +1
 !
         kr= k+1 
