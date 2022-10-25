@@ -11,7 +11,7 @@ By the implicit scheme it is free from the Courant condition, that is, Dx(length
 One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are simulated in the igc=1 case specified, for example, in the rec_3d13A file. Then, start looking at a merging of flux bundles. 
 On the other case, the drift-kenetic electrons and kinetic ions are simulated as a large time step in the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
 
-Easy in-house graphic plots are incorporated in @mrg37-013A.f03 in order to check the current run in the simulation. 
+Easy in-house graphic plots are incorporated in "@mrg37-013A.f03" in order to check the current run in the simulation. 
 Figure 1 in the PDF plot "EMfield.pdf" shows the electric and magnetic fields at the early and final times. 
 Reading papers of this implicit particle simulation code (Ref. 1-2) and applications to magnetospheric space plasmas (Ref. 3-5) are highly recommended.
 
