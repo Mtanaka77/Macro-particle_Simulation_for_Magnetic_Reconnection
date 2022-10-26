@@ -4,9 +4,13 @@ Why is a current sheet of the distant magnetotail of the earth to be thinned and
 
 An electromagnetic particle simulation code is thus utilized for solar and magnetospheric space physics. Both electric and magnetic fields at low frequencies are solved by a slightly backward time decentering technique. Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
 
+## Implicit Particle Code ##
+
 One uses here the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. It is noted, however, that finite errors in the divergence term accumulate which must be corrected if the finite difference coordinate space are utilized. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization at MPI version 3.
 
 By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be used as dt~1.2/wpe to dump out plasma oscillations, while 2 \pi/dt wce > 1 for the kinetic ions and electrons. A large time step of 2 \pi/dt wce >> 1 is a good target of the drift-kinetic simulation, where a typical time step may be dt= 10/wpe.
+
+## Simulation ##
 
 One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are simulated in the igc=1 case specified, for example, in the rec_3d13A file. Then, start looking at a merging of flux bundles. 
 On the other case, the drift-kenetic electrons and kinetic ions are simulated as a large time step in the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
@@ -16,7 +20,7 @@ Figure 1 in the PDF "EMfield.pdf" plot of the igc=1 case shows the electric and 
 Reading papers of this implicit particle simulation code (Ref. 1-2) and applications to magnetospheric space plasmas (Ref. 3-5) are highly recommended.
 
 
-References:
+## References: ##
 
 1. M. Tanaka, A simulation of low-frequency electromagnetic phenomena in kinetic plasmas of three dimensions, J.Comput. Phys., 107, 124-145 (1993).
 
