@@ -1,4 +1,6 @@
-## Low-Frequency Electromagnetic Particle Simulation for High-Temperature Plasmas ##
+# Low-Frequency Electromagnetic Particle Simulation for High-Temperature Plasmas #
+
+## Magnetic Reconnection and Solar-Magnetospheric Coupling ##
 
 Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large energy to be released, which is typically observed as magnetic reconnection ? There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer in the mean time paid attention to inertia resistivity of thinning the neutral sheet. Some time later in 1995 (Ref.3), a particle simulation was executed to have shown the reconnection mechanism as different inertia of ions and electrons to result in large energy release of earth's magnetotail.
 
