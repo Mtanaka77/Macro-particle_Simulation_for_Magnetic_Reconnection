@@ -1,4 +1,4 @@
-# Low-Frequency Electromagnetic Particle Simulation for High-Temperature Plasmas #
+## Low-Frequency Electromagnetic Particle Simulation for High-Temperature Plasmas ##
 
 ## Magnetic Reconnection and Solar-Magnetospheric Coupling ##
 
