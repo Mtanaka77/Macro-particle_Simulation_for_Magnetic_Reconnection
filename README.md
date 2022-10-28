@@ -12,6 +12,16 @@ One uses here the time decentered scheme in aimpl=0.6, while the time centered s
 
 By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be used as dt~1.2/wpe to dump out plasma oscillations, while 2 \pi/dt wce > 1 for the kinetic ions and electrons. A large time step of 2 \pi/dt wce >> 1 is a good target of the drift-kinetic simulation, where a typical time step may be dt= 10/wpe.
 
+### Execution Scripts ###
+
+Linux: needs param_A13A.h and rec_3d13A  
+
+$ mpif90 -mcmodel=medium -fast @mrg37-013A.f03 -I/opt/pgi/fftw3/include -L/opt/pgi/fftw3/lib -lfftw3
+
+Execution:
+
+$ mpiexec -n 6 a.out &
+
 ### Simulation of Two Flux Bundles ###
 
 One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are simulated in the igc=1 case specified, for example, in the rec_3d13A file. Then, start looking at a merging of flux bundles. On the other case, the drift-kenetic electrons and kinetic ions are simulated as a large time step in the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
