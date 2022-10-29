@@ -16,13 +16,13 @@ By the implicit scheme it is free from the Courant condition, that is, Dx(length
 
 Linux (PGI): mpif90 needs param_A13A.h and rec_3d13A  
 
-mpich-4.0.2: ./configure --prefix=/opt/pgi/mpich-4.0.2 2>&1 | tee conf.txt
+>mpich-4.0.2: ./configure --prefix=/opt/pgi/mpich-4.0.2 2>&1 | tee conf.txt
 
-fftw3-3.3.10: ./configure --disable-shared --enable-maintainer-mode --enable-threads --prefix=/opt/pgi/fftw3
+>fftw3-3.3.10: ./configure --disable-shared --enable-maintainer-mode --enable-threads --prefix=/opt/pgi/fftw3
 
-$ mpif90 -mcmodel=medium -fast @mrg37-013A.f03 -I/opt/pgi/fftw3/include -L/opt/pgi/fftw3/lib -lfftw3
+>$ mpif90 -mcmodel=medium -fast @mrg37-013A.f03 -I/opt/pgi/fftw3/include -L/opt/pgi/fftw3/lib -lfftw3
 
-Execution: $ mpiexec -n 6 a.out &
+>Execution: $ mpiexec -n 6 a.out &
 
 ### Simulation of Two Flux Bundles ###
 
