@@ -14,13 +14,11 @@ By the implicit scheme it is free from the Courant condition, that is, Dx(length
 
 ### Execution Scripts ###
 
-Linux: mpif90 needs param_A13A.h and rec_3d13A  
+Linux (PGI): mpif90 needs param_A13A.h and rec_3d13A  
 
 $ mpif90 -mcmodel=medium -fast @mrg37-013A.f03 -I/opt/pgi/fftw3/include -L/opt/pgi/fftw3/lib -lfftw3
 
-Execution:
-
-$ mpiexec -n 6 a.out &
+Execution: $ mpiexec -n 6 a.out &
 
 ### Simulation of Two Flux Bundles ###
 
