@@ -28,9 +28,10 @@ mpif90 @mrg37-013A.f03 needs param_A13A.h and rec_3d13A
 
 ### Simulation of Two Flux Bundles ###
 
-One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are simulated in the igc=1 case specified, for example, in the rec_3d13A file. Then, start looking at a merging of flux bundles. On the other case, the drift-kenetic electrons and kinetic ions are simulated as a large time step in the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
+One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are used in the igc=1 case, for example, in the rec_3d13A file. Then, let's start looking at a merging of two flux bundles. 
+On the other case, the drift-kenetic electrons and kinetic ions are simulated as the large time step as the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
 
-Easy in-house graphic subroutines are incorporated in "@mrg37-013A.f03" in order to check the current run in the simulation. Figure 1 in the PDF "EMfield.pdf" plot of the igc=1 case shows the electric and magnetic fields in the YZ (left) and X (right) components at the early and final times. Two flux bundles at t=5000/wpe are seen touched and sqeezed at the Y= Ly/2 plane. Reading papers of this implicit particle simulation code (Ref. 1-2) and applications to magnetospheric space plasmas (Ref. 3-5) are highly recommended.
+In-house graphic subroutines are incorporated in "@mrg37-013A.f03" in order to check the current run in the simulation. Figure 1 in the "EMfield.pdf" PDF plot of the igc=1 case shows the electric and magnetic fields in the YZ (left) and X (right) components at the early and final times. Two flux bundles at t=5000/wpe are seen touched and sqeezed at the Y= Ly/2 plane. Reading papers of this implicit particle simulation code (Ref. 1-2) and applications to magnetospheric space plasmas (Ref. 3-5) are highly recommended.
 
 ### References: ###
 
