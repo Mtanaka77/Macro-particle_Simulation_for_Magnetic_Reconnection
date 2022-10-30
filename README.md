@@ -2,9 +2,9 @@
 
 ### Magnetic Reconnection and Solar-Magnetospheric Coupling ###
 
-Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large energy to be released, which is typically observed as magnetic reconnection ? There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer in the mean time paid attention to inertia resistivity of thinning the neutral sheet. Some time later in 1995 (Ref.3), a particle simulation was executed to have shown the reconnection mechanism as different inertia of ions and electrons to result in large energy release of earth's magnetotail.
+Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large energy to be released, which is typically observed as magnetic reconnection ? There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer in the mean time paid attention to inertia resistivity of thinning the neutral sheet. Some time later in 1995 (Ref.3), a particle simulation was executed to show the reconnection mechanism of different inertia of ions and electrons resulting in large energy release of earth's magnetotail.
 
-An electromagnetic particle simulation code is thus utilized for solar and magnetospheric space physics. Both electric and magnetic fields at low frequencies are solved by a slightly backward time decentering technique. Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
+An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics. Both electric and magnetic fields at low frequencies are solved by a slightly backward time decentering technique. Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
 
 ### Implicit Particle Code and a Large Time Step ###
 
