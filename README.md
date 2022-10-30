@@ -8,9 +8,9 @@ An electromagnetic particle simulation code is utilized for solar and magnetosph
 
 ### Implicit Particle Code and a Large Time Step ###
 
-One uses here the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. It is noted, however, that finite errors in the divergence term accumulate which must be corrected if the finite difference coordinate space are utilized. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization at MPI version 3.
+One utilizes the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. It is noted, however, that finite errors in the divergence term accumulate which must be corrected if the finite difference coordinate space are utilized. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver. 3.
 
-By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be used as dt~1.2/wpe to dump out plasma oscillations, while 2 \pi/dt wce > 1 for the kinetic ions and electrons. A large time step of 2 \pi/dt wce >> 1 is a good target of the drift-kinetic simulation, where a typical time step may be dt= 10/wpe.
+By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe to dump out plasma oscillations; 2 \pi/ (dt wce) > 1 for the kinetic ions and electrons. A large time step of 2 \pi /(dt wce) >> 1 is a good target of the drift-kinetic simulation, where the typical time step may be dt= 10/wpe.
 
 ### Execution Scripts ###
 
