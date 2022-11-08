@@ -4,31 +4,41 @@
 !*      << Full-implicit scheme with kinetic ions and electrons,       *
 !*         or kinetic ions and the drift-kinetic electrons >>          *
 !*                                                                     *
-!*      Refs.:  M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).         *
-!*              M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).         *
-!*              M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).       *
-!*              M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).       *
+!*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
+!*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
+!*             3) M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).     *
+!*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_024A.f03: this simulation code                         *
-!*    2. param_A24A.h   : parameter file 1                             *
-!*    3. rec_3d24A      : parameter file 2                             *
+!*    1. @mrg37_015A.f03: this simulation code                         *
+!*    2. param_A13A.h   : parameter file 1                             *
+!*    3. rec_3d15A      : parameter file 2                             *
 !*                                                                     *
-!*    Author and maintenance by Motohiko Tanaka, Ph.D., Professor      *
-!*    Graduate School of Chubu University, Kasugai 487-8501, Japan.    *
-!*                                                     2022/09/01      *
+!*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
+!*    may be used (igc=1). A large time step for kinetic ions and      *
+!*    drift-kinetic electrons, one has dt=10./wpe (igc=2) without      *
+!*    gyrating electrons (igc=2). One should read the reference 2)     *
+!*    in JCP (1993).                                                   *
+!*                                                                     *
+!*  * Gauss's law must be corrected as errors in divergence term       *
+!*    accumulate in time. This is true if a finite difference scheme   *
+!*    of any kind is utilized.                                         *
+!*                                                                     *
+!*     The author and maintainer of these simulation codes are         *
+!*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
+!*   Chubu University, Kasugai 487-8501, Japan.   2022/09/01           *
 !*                                                                     *
 !*    https://github.com/Mtanaka77/EM_particle_code                    *
 !*                                                                     *
-!**** Version:  7/31/1996 ********************** Update: 09/12/2000 ****
-!**** Version:  8/30/2022 **************************** Fortran 2003 ****
+!**** Version:  7/31/1996 ****************************** 09/12/2000 ****
+!**** Version:  9/01/2022 **************************** Fortran 2003 ****
 !
 !    @mrg3.f03: Non-periodic in y direction (two-points) and periodic  
 !    (three-points) in x and z directions.
 !
 !      A full-implicit plasma simulation code was created at /cfpsol/
 !    routines. It was successfully applied in 2-D by 1995. 
-!    The present code is Fortran 2003 rewritten in MPICH Ver.3. 
+!    The present code is Fortran 2003 rewritten in MPICH Ver.3, 
 !    whose parallel version is completed by using mpi_sendrecv with 
 !    pe's mx*myA*mz/npc overlaps.
 !
@@ -113,7 +123,6 @@
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi
       real(C_DOUBLE),dimension(np0) :: xe,ye,ze,vxe,vye,vze,mue,vpe,vhe
-      real(C_DOUBLE),dimension(np0) :: vxs,vys,vzs
 !-----------------------------------------------------------------------
 !
       integer(C_INT) io_pe
@@ -148,9 +157,6 @@
       real(C_float)  plodx
       integer(C_INT) kploy,kploz
       common/plotiv/ plodx,kploy,kploz
-!
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
 !*
       character(len=8)  label(8)
       character(len=10) cdate
@@ -167,6 +173,9 @@
       integer(C_INT) iresrt,i,j,k,l,istop,iwrt,nframe
       common/irest/ iresrt
 !
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
+!
       integer(C_INT),dimension(mxyz) :: arrayx,arrayy,arrayz
       common/array1d/ arrayx,arrayy,arrayz
 !
@@ -174,10 +183,11 @@
       common/damper/ ifilxs,ifilys,ifilzs
 !
 !*  kstart..... used in /init/, /trans/, /fulmov/, in param_A13A.h.
+!   Ez00   .... Ez00 x Ba
 !
       namelist/datum0/  kstart,tfinal,cptot,igc,istop
       namelist/datum1/  dt,xmax,ymax,zmax,wspec,qspec,   &
-                        nspec,vdr,vbeam,                 &
+                        nspec,vdr,vbeam,Ez00,            &
                         wcewpe,teti,veth,thb,            &
                         aimpl,rwd,epsln1,pi,             &
                         ifilx,ifily,ifilz,               &
@@ -375,23 +385,15 @@
       if(kstart.ne.0) then
         iresrt= 1
 !
+        if(igc.eq.1) then
         call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                     xe,ye,ze,vxs,vys,vzs,qspec(2),wspec(2),  &
+                     xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                      npr,ipar,size,iresrt) 
 !
-        if(igc.eq.1) then
-        do l= 1,np0
-        vxe(l)= vxs(l)
-        vye(l)= vys(l)
-        vze(l)= vzs(l)
-        end do
-!
         else if(igc.eq.2) then
-        do l= 1,np0
-        mue(l)= vxs(l)
-        vpe(l)= vys(l)
-        vhe(l)= vzs(l)
-        end do
+        call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
+                     xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
+                     npr,ipar,size,iresrt) 
         end if
       end if
 !
@@ -496,23 +498,15 @@
 !     +++++++++
 !
       if(igc.eq.1) then
-        do l= 1,np0
-        vxs(l)= vxe(l)
-        vys(l)= vye(l)
-        vzs(l)= vze(l)
-        end do
+      call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
+                   xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
+                   npr,ipar,size,iresrt) 
 !
       else if(igc.eq.2) then
-        do l= 1,np0
-        vxs(l)= mue(l)
-        vys(l)= vpe(l)
-        vzs(l)= vhe(l)
-        end do
-      end if
-!
       call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                   xe,ye,ze,vxs,vys,vzs,qspec(2),wspec(2),  &
+                   xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
                    npr,ipar,size,iresrt) 
+      end if
 !***
 !
       cl_first= 2
@@ -568,8 +562,8 @@
       integer(C_INT) kploy,kploz,ir1,ir2
       common/plotiv/ plodx,kploy,kploz
 !
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
       common/ranfa/  ir1  !! integer for ir1
       common/ranfb/  ir2
 !
@@ -643,7 +637,6 @@
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi,           &
                                        xe,ye,ze,vxe,vye,vze,mue,vpe,vhe
-      real(C_DOUBLE),dimension(np0) :: vxs,vys,vzs
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                          ex,ey,ez,bx,by,bz,        &
@@ -690,7 +683,7 @@
       integer(C_INT) iterm,iterf,iters
       common/emiter/ ase,asb,asl,we,wb,wl,iterm,iterf,iters
 !***
-      integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k,l
+      integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k
       common/irest/ iresrt
       real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4,walltime5
 !
@@ -891,23 +884,15 @@
         iresrt= 2
 !
         if(igc.eq.1) then
-        do l= 1,np0
-        vxs(l)= vxe(l)
-        vys(l)= vye(l)
-        vzs(l)= vze(l)
-        end do
+        call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
+                     xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
+                     npr,ipar,size,iresrt) 
 !
         else if(igc.eq.2) then
-        do l= 1,np0
-        vxs(l)= mue(l)
-        vys(l)= vpe(l)
-        vzs(l)= vhe(l)
-        end do
-        end if
-!
         call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                     xe,ye,ze,vxs,vys,vzs,qspec(2),wspec(2),  &
+                     xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
                      npr,ipar,size,iresrt) 
+        end if
       end if
 !***
 !
@@ -1180,10 +1165,13 @@
       real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
-      real(C_DOUBLE) hh,ht,ht2,                             &
-                     xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr, &
-                     exi,eyi,ezi,bxi,byi,bzi,               &
-                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
+!
+      real(C_DOUBLE) hh,ht,ht2,                               &
+                     xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr,   &
+                     exi,eyi,ezi,bxi,byi,bzi,                 &
+                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz,vy0,ranfp
       integer(C_INT) l,i,il,ir,ip,j,jl,jr,jp,k,kl,kr,kp,syme,symb
 !
       integer(C_INT) io_pe
@@ -1264,7 +1252,7 @@
         jl= my    !
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -1395,7 +1383,27 @@
       if(ipc.eq.0) then
 !
         call partbc (x,y,z,vx,vy,vz,npr,ipar,size)
-        return
+!
+!  Drive E x B
+!        1.d-2/wce= 5.d-2
+!
+        do l= ipar,npr,size 
+        if((abs(z(l)-zcent ).lt.0.15d0*zmax) .and.  &
+          ((abs(y(l)-ycent2).lt.0.025d0*ymax) .or.  &
+           (abs(y(l)-ycent1).lt.0.025d0*ymax)) ) then
+!
+          if(ranfp(0.d0).gt.0.99d0) then
+          vy0= Ez00/bxa(ip,jp,kp)
+!
+          if(abs(y(l)-ycent2).lt.0.05d0*ymax) then
+            vy(l)= vy(l) - vy0
+!
+          else if(abs(y(l)-ycent1).lt.0.05d0*ymax) then
+            vy(l)= vy(l) + vy0
+          end if
+          end if
+        end if
+        end do
       end if
 !
 !  For accumulating
@@ -1544,7 +1552,6 @@
 !
       qw = qmult/wmult
 !
-!
 !-----------------------------------------------------------------------
 !*    for electrons - all the diamagnetic terms.
 !-----------------------------------------------------------------------
@@ -1584,8 +1591,7 @@
       ray= sby(i,j,k)
       raz= sbz(i,j,k)
 !
-!     if(j.eq.0 .or. j.eq.my) then
-      if(j.lt.0 .or. j.gt.my-1) then
+      if(j.lt.0 .or. j.ge.my) then  ! 11/08
         grbx= 0
         grby= 0
         grbz= 0
@@ -1681,20 +1687,20 @@
 !   these are entended regions
 !
         if(j.ge.my) then
-          j= my      ! to be safe within labels
-        else if(jp.lt.0) then
+          j= my 
+        else if(j.lt.0) then  ! on 11/08
           j=  0
         end if
 !
         bsq2= bx1(i,j,k)**2 +by1(i,j,k)**2 +bz1(i,j,k)**2
         bsa = sqrt(bsq2)
-!
-        vxe(l)= vhe(l)*bx1(i,j,k)/bsa +( ey0(i,j,k)*bz1(i,j,k) &
-                                        -ez0(i,j,k)*by1(i,j,k))/bsq2
-        vye(l)= vhe(l)*by1(i,j,k)/bsa +( ez0(i,j,k)*bx1(i,j,k) &
-                                        -ex0(i,j,k)*bz1(i,j,k))/bsq2
-        vze(l)= vhe(l)*bz1(i,j,k)/bsa +( ex0(i,j,k)*by1(i,j,k) &
-                                        -ey0(i,j,k)*bx1(i,j,k))/bsq2
+!                                       11/02
+        vxe(l)= vhe(l)*bx1(i,j,k)/bsa !+( ey0(i,j,k)*bz1(i,j,k) &
+                                      !  -ez0(i,j,k)*by1(i,j,k))/bsq2
+        vye(l)= vhe(l)*by1(i,j,k)/bsa !+( ez0(i,j,k)*bx1(i,j,k) &
+                                      !  -ex0(i,j,k)*bz1(i,j,k))/bsq2
+        vze(l)= vhe(l)*bz1(i,j,k)/bsa !+( ex0(i,j,k)*by1(i,j,k) &
+                                      !  -ey0(i,j,k)*bx1(i,j,k))/bsq2
 !
         rxl(l) = x(l) +hdt*vxe(l)
         ryl(l) = y(l) +hdt*vye(l)
@@ -1734,10 +1740,10 @@
 !
       if(jp.ge.my) then
         jr= my+1  ! to be safe within labels
-        jl= my    !
+        jl= my    ! on 11/06
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -1757,7 +1763,6 @@
       fzl= 0.5d0*(0.5d0-zz)*(0.5d0-zz)
       fzc= 0.75d0-zz*zz
       fzr= 0.5d0*(0.5d0+zz)*(0.5d0+zz)
-!
 !
       aex = fyr*                                                       &
            ((exa(ir,jr,kr)*fxr+exa(i,jr,kr)*fxc+exa(il,jr,kr)*fxl)*fzr &
@@ -1902,15 +1907,19 @@
       mue1= mue(l)/qspec(2)
       vhh2= vhh**2*wspec(2)/qspec(2)
 !
-      bss1= bss(i,j,k)  ! ExB      bxgrad.B/B      bxgrad.b/B, Eq.(9)
-      vxa= (aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-      vya= (aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-      vza= (aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!
+      bss1= bss(i,j,k)
+!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
+      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
+      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
+      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
+!     vxa= 0 !(aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
+!     vya= 0 !(aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
+!     vza= 0 !(aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
+!            11/02                  
 !     +++++++++++++++++++++++++++++++++
 !  For move: ipc= 0
       if(ipc.eq.0) then
-!     ************
+!     ************            
       x(l)= x(l) +dt*( vhh*abx/bsa + vxa )
       y(l)= y(l) +dt*( vhh*aby/bsa + vya )
       z(l)= z(l) +dt*( vhh*abz/bsa + vza )
@@ -2024,7 +2033,8 @@
                      rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin
+                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
+                     edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
                      rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
@@ -2033,10 +2043,10 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(10000,54)
 !
-      real(C_DOUBLE) hh,ht,ht2,                             &
-                     xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr, &
+      real(C_DOUBLE) xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr, &
                      exi,eyi,ezi,bxi,byi,bzi,               &
-                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz,edec
+                     bsqi,acx,acy,acz,ach,dvx,dvy,dvz,      &
+                     hh,ht,ht2
       integer(C_INT) l,i,il,ir,ip,j,jl,jr,jp,k,kl,kr,kp,    &
                      syme,symb
 !
@@ -2353,8 +2363,7 @@
       ray= sby(i,j,k)
       raz= sbz(i,j,k)
 !
-!     if(j.eq.0 .or. j.eq.my) then
-      if(j.lt.0 .or. j.gt.my-1) then
+      if(j.lt.0 .or. j.ge.my) then  ! 11/08
         grbx= 0
         grby= 0
         grbz= 0
@@ -2424,10 +2433,10 @@
 !
       if(jp.ge.my) then
         jr= my+1  ! to be safe within labels
-        jl= my    !
+        jl= my    ! 11/06
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -2588,11 +2597,15 @@
       mue1= mue(l)/qspec(2)
       vhh2= vhh**2*wspec(2)/qspec(2)
 !
-      bss1= bss(i,j,k)  ! ExB      bxgrad.B/B      bxgrad.b/B, Eq.(9)
-      vxa= (aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-      vya= (aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-      vza= (aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!
+      bss1= bss(i,j,k)
+!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
+      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
+      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
+      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
+!     vxa= 0 !(aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
+!     vya= 0 !(aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
+!     vza= 0 !(aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
+!             11/02
       rxl(l)=  x(l) +dt*(vhh*abx/bsa +vxa) ! /bsa
       ryl(l)=  y(l) +dt*(vhh*aby/bsa +vya)
       rzl(l)=  z(l) +dt*(vhh*abz/bsa +vza)
@@ -2713,10 +2726,10 @@
 !
       if(jp.ge.my) then
         jr= my+1  ! to be safe within labels
-        jl= my    !
+        jl= my    ! 11/06
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -2955,6 +2968,11 @@
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr,ipar,size
 !------------------------------------------------------
+!     real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
+!                                             ex,ey,ez,bx,by,bz,       &
+!                                             ex0,ey0,ez0,bx0,by0,bz0, &
+!                                             bxa,bya,bza
+!     common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -2977,7 +2995,10 @@
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(10000,54)
-      integer(C_INT) l
+!
+      integer(C_INT) ip,jp,kp,il,i,ir,jl,j,jr,kl,k,kr,l
+      real(C_DOUBLE) fyl,fyr,xx,fxl,fxc,fxr,zz,fzl,fzc,fzr, &
+                     abx,aby,abz
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -2988,26 +3009,41 @@
       dx= hx/2  
       dz= hz/2
 !
+!     do k= 0,mz-1
+!     do j= 0,my  
+!     do i= 0,mx-1
+!     bxa(i,j,k)= aimpl*bx(i,j,k) +(1.d0-aimpl)*bx0(i,j,k) +bxc
+!     bya(i,j,k)= aimpl*by(i,j,k) +(1.d0-aimpl)*by0(i,j,k) +byc
+!     bza(i,j,k)= aimpl*bz(i,j,k) +(1.d0-aimpl)*bz0(i,j,k) +bzc
+!     end do                                   ! for particles only
+!     end do
+!     end do
+!
 !* ksp= 2
       do l= ipar,npr,size
       if(x(l).ge.xmax-dx) then
         x(l)= x(l) -xmaxe
+!
       else if(x(l).le.-dx) then
         x(l)= x(l) +xmaxe
       end if
 !*
-!       x(l) = 2.*xmaxsp -x(l) <- y
-!      vz(l)= -vz(l)          <- vhe
+!     epara= (aex*abx +aey*aby +aez*abz)/bsa
+!     ach=  qw*epara -mue(l)*grha
+!     fric= gnu(i,j,k)*hdt
+!     vhh= ((1.d0-0.5d0*fric)*vhe(l) +hdt*ach)/(1.d0+0.5d0*fric)
+!     vxe(l)= vhe(l)*bx1(i,j,k)/bsa !+( ey0(i,j,k)*bz1(i,j,k) &
+                                      !  -ez0(i,j,k)*by1(i,j,k))/bsq2
       if(y(l).ge.ymax) then
         y(l)= 2.d0*ymax -y(l)   
-        vhe(l)= -vhe(l)
+!
       else if(y(l).le.0.d0) then
         y(l)= -y(l) 
-        vhe(l)= -vhe(l)
       end if
 !*
       if(z(l).ge.zmax-dz) then
         z(l)= z(l) -zmaxe
+!
       else if(z(l).le.-dz) then
         z(l)= z(l) +zmaxe
       end if
@@ -3105,6 +3141,11 @@
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr
 !------------------------------------------------------
+!     real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
+!                                             ex,ey,ez,bx,by,bz,       &
+!                                             ex0,ey0,ez0,bx0,by0,bz0, &
+!                                             bxa,bya,bza
+!     common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -3127,7 +3168,10 @@
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(10000,54)
-      integer(C_INT) l
+!
+      integer(C_INT) ip,jp,kp,il,i,ir,jl,j,jr,kl,k,kr,l
+      real(C_DOUBLE) fyl,fyr,xx,fxl,fxc,fxr,zz,fzl,fzc,fzr, &
+                     abx,aby,abz
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -3138,6 +3182,16 @@
       dx= hx/2
       dz= hz/2
 !
+!     do k= 0,mz-1
+!     do j= 0,my  
+!     do i= 0,mx-1
+!     bxa(i,j,k)= aimpl*bx(i,j,k) +(1.d0-aimpl)*bx0(i,j,k) +bxc
+!     bya(i,j,k)= aimpl*by(i,j,k) +(1.d0-aimpl)*by0(i,j,k) +byc
+!     bza(i,j,k)= aimpl*bz(i,j,k) +(1.d0-aimpl)*bz0(i,j,k) +bzc
+!     end do                                   ! for particles only
+!     end do
+!     end do
+!+
       do l= 1,npr
       if(x(l).ge.xmax-dx) then
         x(l)= x(l) -xmaxe
@@ -3147,12 +3201,10 @@
       end if
 !*
       if(y(l).ge.ymax) then
-        y(l)= 2.d0*ymax -y(l)
-        vhe(l)= -vhe(l)
+        y(l)= 2.d0*ymax -y(l)   
 !
       else if(y(l).le.0.d0) then
-        y(l)= -y(l)
-        vhe(l)= -vhe(l)
+        y(l)= -y(l) 
       end if
 !*
       if(z(l).ge.zmax-dz) then
@@ -3161,8 +3213,9 @@
       else if(z(l).le.-dz) then
         z(l)= z(l) +zmaxe
       end if
+!*
       end do
-!
+! 
       return
       end subroutine partdkT
 !
@@ -3249,7 +3302,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.lt.0) then  !<- x le
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
       end if
@@ -3434,7 +3487,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.le.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
       end if
@@ -3565,7 +3618,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.le.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
       end if
@@ -3696,7 +3749,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.le.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
       end if
@@ -3843,7 +3896,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.le.0) then
+      else if(jp.lt.0) then  ! on 11/08
         jr=  0
         jl= -1
       end if
@@ -4937,12 +4990,12 @@
                                                  /(1.d0+dtice2)
 
       else if(igc.eq.2) then
-!     +++++++++++++++++
+!     ++++++++++++++++++++++
       cjx(i,j,k)= &
              qix(i,j,k) +qex(i,j,k) &
             +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)  &
                                                  /(1.d0+dtic2) &
-            +qe(i,j,k)*adt*qwe*ehh*rax/drag
+            +qe(i,j,k)*adt*qwe*ehh*rax/drag 
 !
       cjy(i,j,k)= &
              qiy(i,j,k) +qey(i,j,k) &
@@ -4984,7 +5037,7 @@
       dtice = hdt*qwe*bsa1
       dtice2= dtice**2
 !
-      if(j.lt.0 .or. j.gt.my-1) then
+      if(j.lt.0 .or. j.ge.my) then  ! 11/08
         grbx= 0
         grby= 0
         grbz= 0
@@ -5072,24 +5125,24 @@
                                                  /(1.d0+dtice2) 
 !
       else if(igc.eq.2) then
-!     +++++++++++++++++
+!     ++++++++++++++++++++++
       cjx(i,j,k)= cjx(i,j,k) &
             +adt*qwi*(qiy(i,j,k)*bza(i,j,k) -qiz(i,j,k)*bya(i,j,k)) &
                                                  /(1.d0+dtic2) &
             +adt*qwi*dtic*( &
                   bxa(i,j,k)*(qiy(i,j,k)*ray +qiz(i,j,k)*raz)  &
                  -bya(i,j,k)* qix(i,j,k)*ray -bza(i,j,k)*qix(i,j,k)*raz) &
-                                                 /(1.d0+dtic2) &
-!
+                                                 /(1.d0+dtic2) & 
             +qe(i,j,k)*(mue1*grx(i,j,k)/bsa1 +vhh2*crx(i,j,k)/bsq2)
+!              back on 11/08
 !
       cjy(i,j,k)= cjy(i,j,k) &
             +adt*qwi*(qiz(i,j,k)*bxa(i,j,k) -qix(i,j,k)*bza(i,j,k)) &
                                                  /(1.d0+dtic2) &
             +adt*qwi*dtic*( &
-                  -bxa(i,j,k)*qiy(i,j,k)*rax -bza(i,j,k)*qiy(i,j,k)*raz &
-                  +bya(i,j,k)*(qix(i,j,k)*rax +qiz(i,j,k)*raz)) &
-                                                 /(1.d0+dtic2)  &
+                 -bxa(i,j,k)*qiy(i,j,k)*rax -bza(i,j,k)*qiy(i,j,k)*raz &
+                 +bya(i,j,k)*(qix(i,j,k)*rax +qiz(i,j,k)*raz)) &
+                                                 /(1.d0+dtic2) &
             +qe(i,j,k)*(mue1*gry(i,j,k)/bsa1 +vhh2*cry(i,j,k)/bsq2)
 !
       cjz(i,j,k)= cjz(i,j,k) &
@@ -5099,9 +5152,9 @@
                  -bxa(i,j,k)*qiz(i,j,k)*rax -bya(i,j,k)*qiz(i,j,k)*ray &
                  +bza(i,j,k)*(qiy(i,j,k)*ray +qix(i,j,k)*rax)) &
                                                  /(1.d0+dtic2) &
-!
             +qe(i,j,k)*(mue1*grz(i,j,k)/bsa1 +vhh2*crz(i,j,k)/bsq2)
       end if
+!
       end do
       end do
       end do
@@ -5176,7 +5229,6 @@
       call outmesh3 (rhsx,rhsy,rhsz)
       call filt3e (rhsx,rhsy,rhsz,0.d0,0.d0,0.d0,ifilx,ifily,ifilz,syme)
 !
-!
 !***********************************************************************
 !* 4. Solve the field-particle equation for the "given" rhs.           *
 !***********************************************************************
@@ -5244,9 +5296,12 @@
       do i= 0,mx-1
       bx(i,0,k)= bx0(i,0,k)  &
                         +dt*(eya(i,0,kr)  -eya(i,0,kl))/hz2
+!                          -(eza(i,1,k) -eza(i,-1,k)) <- =0 
       by(i,0,k)= 0
       bz(i,0,k)= bz0(i,0,k)  & 
                         -dt*(eya(ir,0,k) -eya(il,0,k))/hx2
+!                       +dt*( (exa(i,j+1,k) -exa(i,j-1,k))/hy2 <- =0 
+!                            -(eya(ir,j,k)  -eya(il,j,k))/hx2)
 !
       bx(i,my,k)= bx0(i,my,k)  &
                         +dt*(eya(i,my,kr)  -eya(i,my,kl))/hz2
@@ -5296,7 +5351,8 @@
 !***
 !
       if(io_pe.eq.1) then
-        if(iwrt(it,nha).eq.0) then
+        if(iwrt(it,nplot).eq.0) then
+!                  +++++
 !       if(mod(it,10).eq.1) then
 !
         call lblbot (t)
@@ -6085,7 +6141,7 @@
       a32=  fmain*(dtic2*raz*ray -dtic*rax) +fmaine*(dtice2*raz*ray -dtice*rax)
 !
       else if(igc.eq.2) then
-!     +++++++++++++++++
+!     ++++++++++++++++++++++
       a11=  fmain*(1.d0 +dtic2*rax**2) +fpare*rax*rax
       a22=  fmain*(1.d0 +dtic2*ray**2) +fpare*ray*ray
       a33=  fmain*(1.d0 +dtic2*raz**2) +fpare*raz*raz
@@ -7611,7 +7667,7 @@
       common/if_igc/ igc
 !
       complex(C_DOUBLE_COMPLEX),dimension((mx/2+1),myA,mz) :: &
-                                                qi_c,qe_c
+                                                      qi_c,qe_c
       real(C_DOUBLE),dimension(mx,myA,mz) :: qi_cc,qe_cc
 !
       type(C_PTR),save :: planf,planb,planfs,planbs
@@ -7701,8 +7757,10 @@
       do k= 0,mz-1 
       do j= 0,my
       do i= 0,mx-1
-      qi(i,j,k)= dmax1(qi(i,j,k), 1.2d0*q0) !<<- max and min cutoff
-      qe(i,j,k)= dmin1(qe(i,j,k),-1.2d0*q0) 
+      qi(i,j,k)= dmin1(qi(i,j,k), 1.2d0*q0) !<<- cutoff
+      qe(i,j,k)= dmax1(qe(i,j,k),-1.2d0*q0) 
+!     qi(i,j,k)= dmax1(qi(i,j,k), 1.2d0*q0) !<<- max and min cutoff
+!     qe(i,j,k)= dmin1(qe(i,j,k),-1.2d0*q0) 
       end do
       end do
       end do
@@ -7731,7 +7789,8 @@
       do m= 1,myA
       do l= 1,mx/2+1
 !
-      if(l.eq.1 .and. n.eq.1) then
+      if((l.eq.1 .or. l.eq.mx/2+1) .or. n.eq.1) then
+!     if(l.eq.1 .and. n.eq.1) then
         qi_c(l,m,n)= 0
         qe_c(l,m,n)= 0
       else
@@ -7784,7 +7843,6 @@
 !     call fftw_destroy_plan(planf)
 !     deallocate(rin, zout)
 !
-!
 !***********************************************************************
 !* 2. Solve the full implicit equation for delta.phi.                  *
 !***********************************************************************
@@ -7795,7 +7853,7 @@
       do k= 0,mz-1
       do j= 0,my
       do i= 0,mx-1
-      if(j.eq.0 .or. j.eq.my) then  ! bound at my
+      if(j.eq.0 .or. j.eq.my) then  ! bound at j=0 or j=my
         rho(i,j,k)= 0
       else
       rho(i,j,k)=  -(qi(i,j,k) +qe(i,j,k))/q0            &
@@ -7863,9 +7921,8 @@
 !
 ! 
       if(io_pe.eq.1) then
-        if(iwrt(it,nha).eq.0) then
-!       if(mod(it,10).eq.1) then
-!
+        if(iwrt(it,nplot).eq.0) then
+!                  +++++
         call lblbot (t)
 !
         do k= 0,mz-1
@@ -7968,7 +8025,6 @@
       implicit none
 !
       include 'param_A13A.h' 
-!
 !     parameter  (nob2=19,iblk2=1)
 !*----------------------------------------------------------------------
       real(C_DOUBLE),dimension(mxyz) :: ss,xx
@@ -8186,7 +8242,7 @@
         do i= 0,mx-1 
 !* side 1:               for phi(i,0,k): to the left
 !
-        ca(1) =  1.d0   !           nob2 
+        ca(1) =  1.d0   !  nob2 
         ca(2) =  1.d0
 !*
         lxyz= i +mx*(0 +myA*k)
@@ -8211,7 +8267,6 @@
       hyhz4= hy2*hz2
 !
       do i= 0,mx-1 
-!
       bss2= bxa(i,j,k)**2 +bya(i,j,k)**2 +bza(i,j,k)**2
       bss1= sqrt(bss2)
 !
@@ -8232,19 +8287,20 @@
 !                                                /(1.d0+dtic2)  &
 !           +qe(i,j,k)*adt*qwe*(aex +dtice2*ehh*rax +dtice*ebx) &
 !                                                /(1.d0+dtice2) &
-!     cjx(i,j,k)=  qix(i,j,k) +qex(i,j,k) &
+!     cjx(i,j,k)= qix(i,j,k) +qex(i,j,k) &
 !           +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)  &
 !                                                /(1.d0+dtic2) &
 !           +qe(i,j,k)*(adt*qwe*ehh*rax/drag + ebx/bsa1)
 !
       akap1 = qqwi*ahdt2        /((1 +dtic2)*q0)
-!
       if(igc.eq.1) then
         akae1 = qqwe*ahdt2      /((1 +dtice2)*q0)
       else if(igc.eq.2) then
         akae1 = 0
       end if
 !
+!   igc=1: akae1, akga2, electrons are similar to ions
+!   igc=2: akae1= 0, agam2= qqwe*ahdt2/q0 -> ehh*rax,...
       akap2 = qqwi*ahdt2*dtic2/((1 +dtic2)*q0)
       if(igc.eq.1) then
         agam2 = qqwe*ahdt2*dtice2/((1 +dtice2)*q0)
@@ -8257,7 +8313,7 @@
       if(igc.eq.1) then
         aele3 = qqwe*ahdt2*dtice/((1 +dtice2)*q0)
       else if(igc.eq.2) then
-        aele3 = qspec(2)*adt/q0
+        aele3 = 0 !! qspec(2)*adt/q0  !! 11/06
       end if          ! 1/B term
 !
 !* (i-1,j-1,k) 
@@ -8287,6 +8343,7 @@
        ca(3)= 1/hxsq                    &
                  +akap1*ni(i,j,k)/hxsq  &
                  -akap1*(ni(i+1,j,k)-ni(i-1,j,k))/hx2**2  &
+!   igc=2: akae1= 0, akga2
                  +akae1*ne(i,j,k)/hxsq  &
                  -akae1*(ne(i+1,j,k)-ne(i-1,j,k))/hx2**2  &
 !                                   ! akga2= ni()*dtic2/() +ne()
@@ -10433,7 +10490,7 @@
       do k= 0,mz-1
       do j= 0,my
       do i= 0,mz-1
-      if(j.lt.0 .or. j.gt.my-1) then
+      if(j.eq.0 .or. j.eq.my) then  ! on 11/08
         syi(i,j,k)= 0
       else
       syi(i,j,k)=  (bz(pxr(i),j,k) -bz(pxl(i),j,k))/hx2   &
@@ -11276,8 +11333,8 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(10000,54)
 !***
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00,
       common/vring/  vrg1
 !
       real(C_DOUBLE) fv1(101),fv2(101),fdr(101)  !! real*8
@@ -11497,8 +11554,10 @@
       dzcent= 0.125d0*zmax !!
       dzsmt = 0.15d0 *zmax !! larger half the region
 !
-      ycent1= 0.25d0*ymax  !! two cycles
-      ycent2= 0.75d0*ymax  !!
+      ycent1= 0.30d0*ymax  !! two cycles
+      ycent2= 0.70d0*ymax  !!
+!     ycent1= 0.25d0*ymax  !! two cycles
+!     ycent2= 0.75d0*ymax  !!
       dycent= 0.05d0*ymax  !!
 !
 ! The current shape in (y,z)
@@ -11701,8 +11760,8 @@
 !
 !  prof= max(1.d0 -arb*(r/rwd)**2, 0.d0) 
       real(C_DOUBLE) funr,r,prof
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2
+      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
+      common/profl/  arb,zcent,ycent1,ycent2,Ez00
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -13278,11 +13337,11 @@
       jk= 0
 !
       npy= 0
-      do j= 2,my,2
+      do j= 2,my,2  !<-- j+1= my+1
       npy= npy +1
 !
         npz= 0
-        do k= 2,mz-1,2 
+        do k= 2,mz-1,2  !<-- k+1= mz
         npz= npz +1
 !
         kr= k+1 
@@ -13403,7 +13462,7 @@
       do j= 1,ny
       do k= 1,nz
       jk= jk +1
-      am1= amax1(am1,ax(jk))  !<-- ok 
+      am1= amax1(am1,ax(jk)) !<- ok
       am2= amin1(am2,ax(jk))
       end do
       end do
@@ -13451,7 +13510,7 @@
       real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
 !
       integer(C_INT)  n1,ik,jk,i1,j1,k1,ii,i,j,k,npx,npy,npz, &
-                      il,ir,jl,jr,kl,kr,nyz,nxz,ncontr
+                      il,ir,jl,jr,kl,kr,nyz,nxz,npz2,ncontr
       real(C_float)   time,xl2,xr2,yl,yr,zl,zr,hh,qc,qc2,       &
                       am21,am41,am22,am42,ams1,ams2,ams,          &
                       gdx,gdy,gdz,wamin,wamax,xmin,ymin,zmin,zleng
@@ -13482,11 +13541,11 @@
       jk= 0
 !
       npy= 0
-      do j= 2,my,2  !<-- j=my+1
+      do j= 2,my,2  !<-- j+1= my+1
       npy= npy +1
 !
         npz= 0
-        do k= 2,mz-1,2
+        do k= 2,mz-1,2  !<-- k+1= mz
         npz= npz +1
 !
         kr= k+1 
@@ -13505,15 +13564,15 @@
       ik= 0
 !
       npx= 0
-      do i= 2,mx-1,2 
+      do i= 2,mx-1,2  !<-- ir= mx
       npx= npx +1
 !
       ir= i+1 
       il= i-1 
 !
-        npz= 0
-        do k= 2,mz-1,2  !<-- k= mz-1
-        npz= npz +1
+        npz2= 0
+        do k= 2,mz-1,2  !<-- kr= mz
+        npz2= npz2 +1
 !
         kr= k+1 
         kl= k-1 
@@ -13552,10 +13611,11 @@
       am22= amin1(am22,a(jk))
       end do
 !
+!
       am41= -1.e+10
       am42=  1.e+10
 !
-      do ik= 1,npx*npz
+      do ik= 1,npx*npz2
       am41= amax1(am41,b(ik))
       am42= amin1(am42,b(ik))
       end do
@@ -13609,11 +13669,11 @@
       call number (zl-1.3, xr2-0.3,hh,zmax,0.,5)
       call number (zl-1.3, xl2-0.5,hh,xmax,0.,5)
 !
-      nxz= npx*npz
+      nxz= npx*npz2
       call daisho (b,nxz,wamin,wamax)
 !
       ncontr= 7  ! 11
-      call eqcntr (b,ww,npz,npx,zl,xl2,zr,xr2,wamin,0.0,wamax, &
+      call eqcntr (b,ww,npz2,npx,zl,xl2,zr,xr2,wamin,0.0,wamax, &
                    7000,ncontr,1) 
 !
 !---------------------
