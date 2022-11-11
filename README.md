@@ -10,13 +10,14 @@ An electromagnetic particle simulation code is utilized for solar and magnetosph
 
 One utilizes the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. It is noted, however, that finite errors in the divergence term accumulate which must be corrected if the finite difference coordinate space are utilized. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver. 3.
 
-By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe to dump out plasma oscillations - small noises, but 2 \pi/ (dt wce) >> 1 is necessary for electron tracking. 
+By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe to dump out plasma oscillations - small noises, but 2 \pi/ (dt wce) >> 1 is necessary for electron tracking.
 
 A large time step for ions, 2 \pi /(dt wci) >> 1, is a good target of the drift-kinetic simulation of electrons. The time step is still bound by electron hopping, and typical time step may be dt= 10/wpe.
 
+
 ### Execution Scripts ###
 
-Linux (PGI):   
+Linux (PGI):
 
 >mpich-4.0.2: ./configure --prefix=/opt/pgi/mpich-4.0.2 2>&1 | tee conf.txt
 
@@ -28,12 +29,13 @@ mpif90 @mrg37-013A.f03 needs param_A13A.h and rec_3d13A
 
 >Execution: $ mpiexec -n 6 a.out &
 
+
 ### Simulation of Two Flux Bundles ###
 
-One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are used in the igc=1 case, for example, in the rec_3d13A file. Then, let's start looking at a merging of two flux bundles. 
-On the other case, the drift-kenetic electrons and kinetic ions are simulated at a large time step in the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
+One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are used in the igc=1 case, for example, in the rec_3d13A file. Then, let's start looking at a merging of two flux bundles. On the other case, the drift-kenetic electrons and kinetic ions are simulated at a large time step in the igc=2 case. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
 
 In-house graphic subroutines are incorporated in "@mrg37-013A.f03" in order to check the current run in the simulation. Figure 1 in the "EMfield.pdf" PDF plot of the igc=1 case shows the electric and magnetic fields in the YZ (left) and X (right) components at the early and final times. Two flux bundles at t=5000/wpe are seen touched and sqeezed at the Y= Ly/2 plane. Reading papers of this implicit particle simulation code (Ref. 1-2) and applications to magnetospheric space plasmas (Ref. 3-5) are highly recommended.
+
 
 ### References: ###
 
