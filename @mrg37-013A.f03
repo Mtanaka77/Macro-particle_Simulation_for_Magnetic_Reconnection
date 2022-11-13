@@ -1738,7 +1738,6 @@
         call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
       end if
 !
-!
 !***********************************************************************
 !* 2. Move particles:                                                  *
 !***********************************************************************
@@ -1871,7 +1870,7 @@
       if(ipc.eq.0) then
         vhe(l)= ( (1.d0-fric)*vhe(l) +dt*ach )/(1.d0 +fric)
       end if
-!        <-- vhe(l) must update !!!
+!             <-- vhe(l) must update !
 !
 !-----------------------------------------------------------------------
 !*    get x(n+1)= x(n) +dt*(vhe(n+aimpl) +fgp(n,x(n))).
@@ -1936,17 +1935,12 @@
       vhh2= vhh**2*wspec(2)/qspec(2)
 !
       bss1= bss(i,j,k)
-!            bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
-      if(igc.eq.1) then
-        vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 +(aey*abz-aez*aby)/bsq2 
-        vya= mue1*grya/bss1 +vhh2*crya/bsq2 +(aez*abx-aex*abz)/bsq2
-        vza= mue1*grza/bss1 +vhh2*crza/bsq2 +(aex*aby-aey*abx)/bsq2
-      else if(igc.eq.2) then
-        vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 
-        vya= mue1*grya/bss1 +vhh2*crya/bsq2 
-        vza= mue1*grza/bss1 +vhh2*crza/bsq2 
-      end if
-!     +++++++++++++++++++++++++++++++++++++
+!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
+      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
+      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
+      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
+!     +++++++++++++++++++++++++++++++++++
+!
 !  For move: ipc= 0
       if(ipc.eq.0) then
 !     ************            
@@ -2628,18 +2622,8 @@
       vhh2= vhh**2*wspec(2)/qspec(2)
 !
       bss1= bss(i,j,k)
-!            bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
-      if(igc.eq.1) then
-        vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 +(aey*abz-aez*aby)/bsq2 
-        vya= mue1*grya/bss1 +vhh2*crya/bsq2 +(aez*abx-aex*abz)/bsq2
-        vza= mue1*grza/bss1 +vhh2*crza/bsq2 +(aex*aby-aey*abx)/bsq2
-      else if(igc.eq.2) then
-        vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 
-        vya= mue1*grya/bss1 +vhh2*crya/bsq2 
-        vza= mue1*grza/bss1 +vhh2*crza/bsq2 
-      end if
-!     +++++++++++++++++++++++++++++++++++++
-!  For move: ipc= 0
+!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
+      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
       vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
       vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
 !
@@ -5082,12 +5066,6 @@
 !
 !   mue1= mue(l)/qspec(2)          <- drmove
 !   vhh2= vhh**2*wspec(2)/qspec(2)
-!   vxa= (aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-!   vya= (aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-!   vza= (aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!   vxj(l)= vhh*abx/bsa + vxa
-!   vyj(l)= vhh*aby/bsa + vya
-!   vzj(l)= vhh*abz/bsa + vza
 !
       mue1= amu(i,j,k)/qspec(2)
       vhh2= avhh(i,j,k)**2*wspec(2)/qspec(2)
