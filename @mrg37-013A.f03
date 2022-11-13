@@ -5126,7 +5126,6 @@
                  -bya(i,j,k)* qix(i,j,k)*ray -bza(i,j,k)*qix(i,j,k)*raz) &
                                                  /(1.d0+dtic2) & 
             +qe(i,j,k)*(mue1*grx(i,j,k)/bsa1 +vhh2*crx(i,j,k)/bsq2)
-!              back on 11/08
 !
       cjy(i,j,k)= cjy(i,j,k) &
             +adt*qwi*(qiz(i,j,k)*bxa(i,j,k) -qix(i,j,k)*bza(i,j,k)) &
