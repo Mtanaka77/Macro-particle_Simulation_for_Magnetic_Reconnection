@@ -11,7 +11,7 @@
 !*                                                                     *
 !*    Simulation files                                                 *
 !*    1. @mrg37_015A.f03: this simulation code                         *
-!*    2. param_A13A.h   : parameter file 1                             *
+!*    2. param_A29A.h   : parameter file 1                             *
 !*    3. rec_3d15A      : parameter file 2                             *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
@@ -112,7 +112,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) igc
       common/if_igc/ igc
@@ -182,7 +182,7 @@
       integer(C_INT) ifilxs,ifilys,ifilzs
       common/damper/ ifilxs,ifilys,ifilzs
 !
-!*  kstart..... used in /init/, /trans/, /fulmov/, in param_A13A.h.
+!*  kstart..... used in /init/, /trans/, /fulmov/, in param_A29A.h.
 !   Ez00   .... Ez00 x Ba
 !
       namelist/datum0/  kstart,tfinal,cptot,igc,istop
@@ -257,7 +257,7 @@
 !   escorr: nps1(1)= 1, nps2(1)= mx*(my+1)*kd
 !   poissn:
 !  ++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     kd= mz/npc is defined in param_A13A.h
+!     kd= mz/npc is defined in param_A29A.h
 !
       do k= 1,npc         
       np1(k)= (k-1)*3*mx*(my+1)*kd +1    !<-- np1(1)=1
@@ -549,7 +549,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -585,7 +585,7 @@
       integer        ir,iq
       common/ranfff/ ir,iq
 !***
-!  rec_3d: in param_A13A.h...    
+!  rec_3d: in param_A29A.h...    
 !     data   dt/5.0d0/,xmax/300.0d0/,ymax/300.d0/,zmax/600.0d0/,  &
 !            wspec/100.d0, 1.0d0, 2*0.d0/,qspec/1.0d0, -1.0d0, 2*0.d0/, &
 !            vdr/ 4*0.d0 /,vbeam/ 1.0d-2,0.d0, 2*0.d0 /,                &
@@ -608,7 +608,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
       integer(C_INT) it,interv
 !
 !  Hit is true if mod(it,..)= 0 
@@ -641,7 +641,7 @@
       implicit none
 ! 
       include 'mpif.h'
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) igc
       common/if_igc/ igc
@@ -942,18 +942,16 @@
 !
 !* after faverg ! 
 !
-        if(.false.) then
-      call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
+!     call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
 !
-      if(igc.eq.1) then
-      call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
+!     if(igc.eq.1) then
+!     call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
 !
-      else if(igc.eq.2) then
-      call diag1 (xe,ye,ze,mue,vpe,vhe,qspec(2),npr,2)
-      end if
+!     else if(igc.eq.2) then
+!     call diag1 (xe,ye,ze,mue,vpe,vhe,qspec(2),npr,2)
+!     end if
 !
-      call fvplot
-        end if
+!     call fvplot
 !
 !     gnu0= 1./200.
       gnu0= 0.d0
@@ -971,7 +969,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) iaver,nav
       real(C_DOUBLE),dimension(mxyzA) :: ex,ey,ez,bx,by,bz,        &
@@ -1045,7 +1043,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !          +++++++            +++++ 
       real(C_float),dimension(mxyzA) :: cix,ciy,ciz,cex,cey,cez,       &
                                         avex,avey,avez,avbx,avby,avbz, &
@@ -1083,7 +1081,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: gnu
       common/dragcf/ gnu
@@ -1138,7 +1136,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
@@ -1472,7 +1470,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe,vxe,vye,vze
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
@@ -1936,9 +1934,9 @@
 !
       bss1= bss(i,j,k)
 !          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
-      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
-      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
-      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
+      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 +(aey*abz-aez*aby)/bsq2 
+      vya= mue1*grya/bss1 +vhh2*crya/bsq2 +(aez*abx-aex*abz)/bsq2
+      vza= mue1*grza/bss1 +vhh2*crza/bsq2 +(aex*aby-aey*abx)/bsq2
 !     +++++++++++++++++++++++++++++++++++
 !
 !  For move: ipc= 0
@@ -2017,7 +2015,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl
@@ -2251,7 +2249,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxe,vye,vze
@@ -2623,9 +2621,9 @@
 !
       bss1= bss(i,j,k)
 !          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
-      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
-      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
-      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
+      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 +(aey*abz-aez*aby)/bsq2 
+      vya= mue1*grya/bss1 +vhh2*crya/bsq2 +(aez*abx-aex*abz)/bsq2
+      vza= mue1*grza/bss1 +vhh2*crza/bsq2 +(aex*aby-aey*abx)/bsq2
 !
       rxl(l)=  x(l) +dt*(vhh*abx/bsa +vxa) ! /bsa
       ryl(l)=  y(l) +dt*(vhh*aby/bsa +vya)
@@ -2661,7 +2659,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe,vxe,vye,vze
       real(C_DOUBLE) wmult 
@@ -2839,7 +2837,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr,ipar,size
@@ -2914,7 +2912,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z
       integer(C_INT) npr,ipar,size
@@ -2984,7 +2982,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr,ipar,size
@@ -3071,7 +3069,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr
@@ -3146,7 +3144,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr
@@ -3226,7 +3224,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vxj,vyj,vzj
       real(C_DOUBLE) qmult
@@ -3419,7 +3417,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !---------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm
@@ -3552,7 +3550,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
@@ -3683,7 +3681,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vhe
@@ -3818,7 +3816,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
 !                              ++++++++++++++++++++
@@ -4037,7 +4035,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -4121,7 +4119,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -4191,7 +4189,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -4275,7 +4273,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -4351,7 +4349,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !*
       integer(C_INT) nobx
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -4684,7 +4682,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) igc,ipar
@@ -4999,7 +4997,7 @@
              qiy(i,j,k) +qey(i,j,k) &
             +qi(i,j,k)*adt*qwi*(aey +dtic2*ehh*ray +dtic*eby)  &
                                                  /(1.d0+dtic2) &
-            +qe(i,j,k)*adt*qwe*ehh*ray/drag 
+            +qe(i,j,k)*adt*qwe*ehh*ray/drag
 !
       cjz(i,j,k)= &
              qiz(i,j,k) +qez(i,j,k) &
@@ -5420,7 +5418,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
       include 'mpif.h'
 !
 !     parameter  (nob=15,iblk=3)
@@ -5599,7 +5597,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       integer(C_INT) igc
       common/if_igc/ igc
@@ -6333,7 +6331,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -6398,7 +6396,7 @@
 !       Parallel version in /wwstbs3/ and /wwstbm/
 !
         call wwstbs3 (aa,ja,na,iw,np1,np2,ipar,ierr)
-      end if                         ! iblk in param_A13A.h
+      end if                         ! iblk in param_A29A.h
       
       call cpu_time (t2)
 !                                      preconditioning
@@ -6483,7 +6481,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob=15)
@@ -6734,7 +6732,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) ipr(10),ierr,n
       real(C_DOUBLE) rpr(10)
@@ -6778,7 +6776,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar
@@ -6842,7 +6840,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'  !<-- mx,myA,mz,iblk in param_A13A.h
+      include 'param_A29A.h'  !<-- mx,myA,mz,iblk in param_A29A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -6961,7 +6959,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'  !<-- mx,myA,mz,iblk in param_A13A.h
+      include 'param_A29A.h'  !<-- mx,myA,mz,iblk in param_A29A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -7081,7 +7079,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !                                     
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa
       integer(C_INT),dimension(1:mxyz3,nob) :: ja
@@ -7179,7 +7177,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3) :: v,w
 !
@@ -7220,7 +7218,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !     parameter  (nob=15)
 !----------------------------------------------------------------------
@@ -7475,7 +7473,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_A13A.h'
+      include   'param_A29A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -7522,7 +7520,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_A13A.h'
+      include   'param_A29A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -7565,7 +7563,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar,i0,ierr
@@ -7620,7 +7618,7 @@
       use, intrinsic :: iso_c_binding
       implicit real(C_DOUBLE) (a-h,o-z)
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
       dimension w0(iblk,iblk),w1(iblk,iblk),w2(iblk,iblk)
 !*                         <-- papam_A13X.h
 !*vdir novector
@@ -7665,7 +7663,7 @@
 !
 !     include 'fftw3.f03'
       include 'aslfftw3.f03'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       integer(C_INT) igc
       common/if_igc/ igc
@@ -8028,7 +8026,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !     parameter  (nob2=19,iblk2=1)
 !*----------------------------------------------------------------------
       real(C_DOUBLE),dimension(mxyz) :: ss,xx
@@ -8117,7 +8115,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) igc
       common/if_igc/ igc
@@ -8658,7 +8656,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------------
@@ -8759,7 +8757,7 @@
 !-----------------------------------*******-----------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------
@@ -8994,7 +8992,7 @@
 !----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !     parameter  (nob2=19) or (nob3=7)
 ! -----------------------------------------------------------------
@@ -9100,7 +9098,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -9168,7 +9166,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -9325,7 +9323,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
 !     parameter  (nob2=19)(nob3=7)
 !***                           one array mxyz
@@ -9368,7 +9366,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                                      ex,ey,ez,ax,ay,az
@@ -9569,7 +9567,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: q,a
       integer(C_INT) ifilx,ifily,ifilz,sym
@@ -9706,7 +9704,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
@@ -10040,7 +10038,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
       common/diagp2/ fvx,fvy,fvz
@@ -10139,7 +10137,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -10311,7 +10309,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
                                        xe,ye,ze,vxe,vye,vze
@@ -10803,7 +10801,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE) qmult,wmult
@@ -11152,7 +11150,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
@@ -11215,7 +11213,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !----------------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,xe,ye,ze
@@ -11237,7 +11235,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE) fun1,v
 !
@@ -11252,7 +11250,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       real(C_DOUBLE) fun2,v,vrg1
       common /vring/ vrg1
@@ -11268,7 +11266,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
 !  prof= max(1.d0 -arb*(r/rwd)**2, 0.d0) 
       real(C_DOUBLE) funr,r,prof
@@ -11311,7 +11309,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) ir,iq
       common/ranfa/ ir
@@ -11329,7 +11327,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) ir  ! iand is a generic function
       real(C_DOUBLE) ranf,x
@@ -11352,7 +11350,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h'
+      include 'param_A29A.h'
 !
       integer(C_INT) ir
       real(C_DOUBLE) ranfp,x
@@ -11375,7 +11373,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
 !     parameter   (nhistm=54)
       integer(C_INT) io_pe
@@ -11517,7 +11515,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -11564,7 +11562,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
       include 'mpif.h'
 !
 !--------------------------------------------
@@ -11898,7 +11896,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       character(len=8)  :: label(8),label1(8)
       character(len=10) :: date,date1
@@ -11923,7 +11921,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE) time1,ts
       common/headr2/ time1
@@ -11939,7 +11937,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       character(len=8) h
 !
@@ -11972,7 +11970,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -12008,7 +12006,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -12062,7 +12060,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
@@ -12302,7 +12300,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_float),dimension(100000) :: x,y,z
 !          +++++++    
@@ -12339,7 +12337,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
 !          +++++++
@@ -12544,7 +12542,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !*
       integer  n1
       real(C_DOUBLE)   time1
@@ -12738,7 +12736,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_float)  ex(mx,myA,mz),ey(mx,myA,mz),ez(mx,myA,mz),  &
                      exc,eyc,ezc,xmax,ymax,zmax
@@ -12939,7 +12937,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A13A.h' 
+      include 'param_A29A.h' 
 !
       real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
       real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
