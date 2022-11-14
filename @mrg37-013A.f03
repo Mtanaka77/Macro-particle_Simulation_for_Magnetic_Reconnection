@@ -1190,7 +1190,7 @@
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(3000,12)
-      real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
+      real(C_DOUBLE) wkix,wkih,wkex,wkeh,wkix1,wkih1,wxsq,whsq
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
       real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00
@@ -1255,8 +1255,8 @@
       call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
 !
 !
-      wkix= 0
-      wkih= 0
+      wkix1= 0
+      wkih1= 0
 !
       do l= ipar,npr,size 
       ip= int(hxi*rxl(l) +0.500000001d0)
@@ -1366,8 +1366,9 @@
       dvy= ( acy +ht2*ach*byi +ht*(acz*bxi -acx*bzi) )/(1.d0+ht2*bsqi)
       dvz= ( acz +ht2*ach*bzi +ht*(acx*byi -acy*bxi) )/(1.d0+ht2*bsqi)
 !
-      wkix= wkix +0.5d0*(acx**2 +acy**2 +acz**2)
-      wkih= wkih +0.5d0* ach**2
+! Kinetic: ksp=1 ion; ksp=2 ele
+      wkix1= wkix1 +0.5d0*(acx**2 +acy**2 +acz**2)
+      wkih1= wkih1 +0.5d0* ach**2
 !
 !  For update
 !   ++++++++++++++++++++++++++++++++++++++++++++
@@ -1396,12 +1397,23 @@
       end do
 !
 ! Synchronize
-      call mpi_allreduce (wkix,wxsq,1,mpi_real8,mpi_sum,  &
+      call mpi_allreduce (wkix1,wxsq,1,mpi_real8,mpi_sum,  &
                           mpi_comm_world,MPIerror)
-      call mpi_allreduce (wkih,whsq,1,mpi_real8,mpi_sum,  &
+      call mpi_allreduce (wkih1,whsq,1,mpi_real8,mpi_sum,  &
                           mpi_comm_world,MPIerror)
-      wkix= wxsq
-      wkih= whsq
+      wkix1= wxsq
+      wkih1= whsq
+!
+!   common/wkinel/ wkix,wkih,wkex,wkeh
+!   wkix1= wkix1 +0.5d0*(acx**2 +acy**2 +acz**2)
+!   wkih1= wkih1 +0.5d0* ach**2
+      if(ksp.eq.1) then
+        wkix= wkix1
+        wkih= wkih1
+      else if(ksp.eq.2) then
+        wkex= wkix1
+        wkeh= wkih1
+      end if
 !
 !***********************************************************************
 !* 2. Accumulate moments for the e.m. field solver  (srimp1 - 2).      *
@@ -1529,7 +1541,7 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(3000,12)
 !
-      real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
+      real(C_DOUBLE) wkix,wkih,wkex,wkeh,wkix1,wkih1,wxsq,whsq
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
       integer(C_INT) i,j,k,ir,il,jr,jl,kr,kl,syme,symb
@@ -1745,8 +1757,8 @@
 !* For common procedures below
 !  ipc= 0, ipc= 1
 !
-      wkex= 0
-      wkeh= 0
+      wkix1= 0
+      wkih1= 0
 !
       do l= ipar,npr,size
       ip= int(hxi*rxl(l) +0.500000001d0)
@@ -1966,21 +1978,33 @@
       ryl(l)= y(l) +adt*vyj(l)
       rzl(l)= z(l) +adt*vzj(l)
 !
-      wkex= wkex +wmult*(0.5d0*(vxa**2 +vya**2 +vza**2) +mue(l)*bsa)
-      wkeh= wkeh +wmult* 0.5d0* vhh**2
+      wkix1= wkix1 +wmult*(0.5d0*(vxa**2 +vya**2 +vza**2) +mue(l)*bsa)
+      wkih1= wkih1 +wmult* 0.5d0* vhh**2
       end if
 !     +++++++++++++++++++++++++++++++++
       end do      
 !
 !
 !***********************************************************************
+!   common/wkinel/ wkix,wkih,wkex,wkeh
+!   wkix1= wkix1 +0.5d0*(acx**2 +acy**2 +acz**2)
+!   wkih1= wkih1 +0.5d0* ach**2
+!
 ! Synchronize
-      call mpi_allreduce (wkex,wxsq,1,mpi_real8,mpi_sum,  &
+      call mpi_allreduce (wkix1,wxsq,1,mpi_real8,mpi_sum,  &
                           mpi_comm_world,MPIerror)
-      call mpi_allreduce (wkeh,whsq,1,mpi_real8,mpi_sum,  &
+      call mpi_allreduce (wkih1,whsq,1,mpi_real8,mpi_sum,  &
                           mpi_comm_world,MPIerror)
-      wkex= wxsq
-      wkeh= whsq
+      wkix1= wxsq
+      wkih1= whsq
+!
+      if(ksp.eq.1) then
+        wkix= wkix1
+        wkih= wkih1
+      else if(ksp.eq.2) then
+        wkex= wkix1
+        wkeh= wkih1
+      end if
 !
 !***********************************************************************
 !* 3. Accumulate the moments.                                          *
