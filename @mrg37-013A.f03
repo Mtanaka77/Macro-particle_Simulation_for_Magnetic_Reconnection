@@ -5383,8 +5383,8 @@
 !
       edec(ldec,1)=  sb2
       edec(ldec,2)=  se2
-      edec(ldec,3)=  wkix +wkih
-      edec(ldec,4)=  wkex +wkeh
+      edec(ldec,3)=  wkix
+      edec(ldec,4)=  wkex 
 !
 !***
       end do
