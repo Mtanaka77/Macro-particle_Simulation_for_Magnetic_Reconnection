@@ -17,7 +17,7 @@ A large time step for ions, 2 \pi /(dt wci) >> 1, is a good target of the drift-
 
 ### Execution Scripts ###
 
-Linux (PGI):
+Linux (PGI): Compilation by mpif90
 
 >mpich-4.0.2: ./configure --prefix=/opt/pgi/mpich-4.0.2 2>&1 | tee conf.txt
 
@@ -26,6 +26,8 @@ Linux (PGI):
 mpif90 @mrg37-013A.f03 needs param_A13A.h and rec_3d13A
 
 >$ mpif90 -mcmodel=medium -fast @mrg37-013A.f03 -I/opt/pgi/fftw3/include -L/opt/pgi/fftw3/lib -lfftw3
+
+Execution by mpiexec
 
 >Execution: $ mpiexec -n 6 a.out &
 
