@@ -461,25 +461,6 @@
                   tfinal,cptot,ipar,size)
 !   +++++++++++++++++++++++++++++++++++++++++++++++++++++
 !
-!************************
-!*   Diagnostic plots   *
-!************************
-!
-      if(io_pe.eq.1) then
-        open (unit=11,file=praefixc//'.11'//suffix2,             & 
-              status='unknown',position='append',form='formatted')
-!
-        write(11,*) '* Plot hist (final)  it=',it
-        close(11)
-!
-        open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
-              status='unknown',position='append',form='formatted')
-!   ---------------------------          ++++++
-        call histry
-!   ---------------------------
-        close(77)
-      end if
-!
       cl_first= 2
       call clocks (walltime2,size,cl_first)
 !
