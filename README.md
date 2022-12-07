@@ -1,5 +1,4 @@
-## Largescale Electromagnetic Particle-in-Cell Simulation 
-for High-Temperature Plasmas ## 
+## Largescale Electromagnetic Particle-in-Cell Simulation for High-Temperature Plasmas ## 
 
 ### Magnetic Reconnection and Solar-Magnetospheric Coupling ###
 
