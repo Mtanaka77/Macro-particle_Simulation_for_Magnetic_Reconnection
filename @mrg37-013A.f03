@@ -97,10 +97,13 @@
 !*        /restrt/  -------  arrays (write /read)                      *
 !*                                                                     *
 !-----------------------------------------------------------------------
-!* Fortran 2003 handles such technique as continuity and lower cases,
-!*  :s%/^C/!/
-!*  :s%/^c/!/
-!*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
+!* In Fortran 2003, a line continuity is most rightward with & sign
+!* (and favorably lower cases),
+!*   in the code file,do: :s%/^C/!/ and :s%/^c/!/
+!*   outside the file, $ tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
+!*
+!* In Fortran 2008, write format is written on the same line.
+!*    write(11,'("One-dimensional array is... ",i10)') l
 !*
 !* $ mpif90 -mcmodel=medium -fast @mrg37.f03 -I/opt/pgi/fftw3/include &
 !*    -L/opt/pgi/fftw3/lib -lfftw3
@@ -222,8 +225,6 @@
 !
       ipar = 1 + rank     !! pe #= 1,2,3...
 !
-!  for 2 process/ve, io is rank= size-1
-!  for 1 process/ve, io is rank= size
       io_pe = 0
       if(ipar.eq.1) io_pe = 1
 !
@@ -303,10 +304,9 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*) 'One-dimensional array is... ',l
+        write(11,'("One-dimensional array is... ",i10)') l
         write(11,'("arrayx,arrayy(i),arrayz=",3i6)') &
                       (arrayx(i),arrayy(i),arrayz(i),i=1,30)
-!   5   format(' arrayx,arrayy(i),arrayz=',3i6)
         close(11)
       end if
 !
@@ -340,7 +340,7 @@
 !
         write(11,'(8a8,/)') (label(i),i=1,8)
 !
-        write(11,'("*date: ",a10,2x,"*time: ",a8,/') &
+        write(11,'("*date: ",a10,2x,"*time: ",a8,/)') &
                                                 date_now,time_now 
       end if
 !
@@ -360,7 +360,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*) '*Initial parameters... &datum0, &datum1 are:'
+        write(11,'("*Initial parameters... &datum0, &datum1 are:")')
         write(11,datum0)
         write(11,datum1)
         write(11,datum2)
@@ -468,7 +468,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*) '* Plot hist (final)  it=',it
+        write(11,'("* Plot hist (final)  it=",i6)') it
         close(11)
 !
 !   The history plot is made.
@@ -503,8 +503,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("** time used (run)",f9.2," secs.,  it=",i5,  &
-                   " ****",)') cpu1,it
+        write(11,'("** time used (run)",f9.2," sec.,  it=",i5,  &
+                   " ****")') cpu1,it
         close(11) 
       end if
 !
@@ -555,10 +555,10 @@
       common/iope66/ io_pe
 !
 !     parameter   (nhistm=54)
+!     character(len=54) :: elab(nhistm)
       real(C_DOUBLE) tdec(10000)  !<-- DOUBLE
       common/ehist/  tdec
 !
-      character(len=54) :: elab(nhistm)
 !*
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -1063,11 +1063,11 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,830) it,t,walltime5,walltime5-walltime1,        &
+        write(11,'("# timing: it,t=",i6,f10.3," total, this step (sec)=", &
+                 2f10.3,/,"  ful(1),em,es,ful(0)=",4f10.3,/)') &
+                      it,t,walltime5,walltime5-walltime1,        &
                       walltime2-walltime1,walltime3-walltime2,   &
                       walltime4-walltime3,walltime5-walltime4
-  830   format('# timing: it,t=',i6,f10.3,' total, this step (sec)=',2f10.3,/, &
-               '  ful(1),em,es,ful(0)=',4f10.3,/)
         close(11)
         end if
 !
@@ -2182,7 +2182,7 @@
         call partbc (rxl,ryl,rzl,vxj,vyj,vzj,npr,ipar,size) !<-- estimated
 !
         if(ksp.eq.1) then
-          write(06) 'not ready...'
+          write(06) 'Not ready...'
           stop 
 !    
         else if(ksp.eq.2) then
@@ -2824,7 +2824,7 @@
       call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
 !
       if(ksp.eq.1) then
-        write(06) 'not ready...'
+        write(06) 'Not ready...'
         stop 
 !    
       else if(ksp.eq.2) then
@@ -4700,22 +4700,21 @@
 !
         i= mx/2
         k= mz/2
-        write(11,*) 'Magnetic field at k=',k
+        write(11,'("Magnetic field at k=",i5)') k
 !
         do j= 0,my
         if(mod(j,5).eq.1) then
-        write(11,700) j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
-  700   format('j,k=',2i4,1p3d12.3)
+        write(11,'("j,k=",2i4,1p3d12.3)') j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
         end if
         end do
 !
         i= mx/2
         k= 10 +mz/2
-        write(11,*) 'Magnetic field at k=',k
+        write(11,'("Magnetic field at k=",i5)') k
 !
         do j= 0,my
         if(mod(j,5).eq.1) then
-        write(11,700) j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
+        write(11,'("j,k=",2i4,1p3d12.3)') j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
         end if
         end do
 !
@@ -5760,9 +5759,9 @@
 !                     iterf  cond  sec   rsdl
         iterf= ipr(2)
         rsdl = rpr(2)
-        write(11,600) it,iterf,ierr,rpr(3),rsdl,wsq
-  600   format('#(bcgstb-em) it=',i5,' iterf,ierr=',i3,i5,     &
-               ' (',f6.3,' sec); rsdl=',1pd13.5,'; <e>=',d13.5)
+        write(11,'("#(bcgstb-em) it=",i5," iterf,ierr=",i3,i5,    &
+               " (",f6.3," sec); rsdl=",1pd13.5,"; <e>=",d13.5)') &
+                                it,iterf,ierr,rpr(3),rsdl,wsq
         close(11)
       end if
 !
@@ -6600,7 +6599,7 @@
          if(io_pe.eq.1) then
          open (unit=11,file=praefixc//'.11'//suffix2,             & 
                status='unknown',position='append',form='formatted')
-         write(11,*) '+ After wwstbi in ierr(1000 or 1010)=',ierr
+         write(11,'("+ After wwstbi in ierr(1000 or 1010)=",i6)') ierr
          close(11)
          end if
 !
@@ -6640,8 +6639,8 @@
 ! 700   format('bcgstb: bb=',1pd12.3)
 !
 !
-        write(11,730) t2-t1,t3-t2,t4-t3,t5-t4
-  730   format('bcgstb: cpu time, bs,bi,bj,bk=',1p4d12.3)
+        write(11,'("bcgstb: cpu time, bs,bi,bj,bk=",1p4d12.3)') &
+                                         t2-t1,t3-t2,t4-t3,t5-t4
         close(11)
       end if
 !
@@ -6896,8 +6895,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,700) itr,uu,rsdl
-  700 format(' ++wwstbk: itr=',i4,'  uu,rsdl=',1p2d13.4)
+        write(11,'(" ++wwstbk: itr=",i4,"  uu,rsdl=",1p2d13.4)') &
+                                                      itr,uu,rsdl
         close(11)
       end if
 !     end if
@@ -7112,8 +7111,8 @@
         do j= 1,nob
         jc= na(i,j)
         jj= ja(i,j)
-        write(11,900) i,j,jc,ax(i,j),jj,aa(i,j)
-  900   format('# i,j,jc,ax,jj,aa=',2i6,2x,i10,d12.3,2x,i10,d12.3)
+        write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -7122,7 +7121,8 @@
         do j= 1,nob
         jc= na(i,j)
         jj= ja(i,j)
-        write(11,900) i,j,jc,ax(i,j),jj,aa(i,j)
+        write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -7232,8 +7232,8 @@
         do j= 1,nob
         jc= na(i,j)
         jj= ja(i,j)
-        write(11,900) i,j,jc,ax(i,j),jj,aa(i,j)
-  900   format('# i,j,jc,ax,jj,aa=',2i6,2x,i10,d12.3,2x,i10,d12.3)
+        write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -7242,7 +7242,8 @@
         do j= 1,nob
         jc= na(i,j)
         jj= ja(i,j)
-        write(11,900) i,j,jc,ax(i,j),jj,aa(i,j)
+        write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -8183,12 +8184,12 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,777)  it
-        write(11,778)  iterm,itrf0,iters,asl,asb,we,wb,wl
-  777   format('----- it=',i5,' ---------------------------------')
-  778   format('*iterm, iterf, iters=',i4,i5,i4,  &
-                /,'      <e2>,<b2>=',1p2d12.3,         &
-                  '  >>> we,wb,wl=',3d12.3,' <<<',/)
+        write(11,'("----- it=",i5," ---------------------------------")')&
+                                     it
+        write(11,'("*iterm, iterf, iters=",i4,i5,i4,   &
+                /,"      <e2>,<b2>=",1p2d12.3,         &
+                  "  >>> we,wb,wl=",3d12.3," <<<",/)') &
+                                     iterm,itrf0,iters,asl,asb,we,wb,wl
         close(11)
         end if
       end if
@@ -8276,9 +8277,9 @@
 !
 !     ipr(1) = itrm
 !     rpr(1) = eps = 1.0d-3
-          write(11,600) it,iters,ierr,rpr(3),rsdl,wsq
-  600     format('#(cresmd-esc)  it=',i5,';  iters,ierr=',i3,      &
-                 i5,' (in ',f6.3,' sec); rsdl=',1pd13.5,'; <p>=',d13.5)
+          write(11,'("#(cresmd-esc)  it=",i5,";  iters,ierr=",i3,      &
+                 i5," (in ",f6.3," sec); rsdl=",1pd13.5,"; <p>=",d13.5)') &
+                                   it,iters,ierr,rpr(3),rsdl,wsq
           close(11)
         end if
       end if
@@ -8922,7 +8923,7 @@
       rsdl  = rpr(2)
 !
 !     if(ierr.ne.0) then
-!        write (6 ,*) '#(bcg-ps)  iter, rsdl= ',ipr(2),rpr(2)
+!        write (06,*) '#(bcg-ps)  iter, rsdl= ',ipr(2),rpr(2)
 !     end if
 !
       return
@@ -9257,8 +9258,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,600) bb,ss,itrm,eps,ierr
-  600   format('#(cresmd) <bb>,<ss>=',2d12.3,'  itrm,eps,ierr=',i5,d12.3,i5)
+        write(11,'("#(cresmd) <bb>,<ss>=",2d12.3," itrm,eps,ierr=", &
+                  i5,d12.3,i5)') bb,ss,itrm,eps,ierr
         close(11)
       end if
 !
@@ -9419,9 +9420,8 @@
 !     conv0= 1.d0 ! conv ??
       conv= sres/(srhs +1.d-15)  ! residue /rhs(b)
 !
-!     write(11,900) itr,sres,conv,avex
-! 900 format(1h ,'#(crm)  itr=',i3,'  res=',1pe12.5,', res/rhs=',
-!    *       e12.5,', <x>=',e12.5)
+!     write(11,'("#(crm)  itr=",i3,"  res=",1pd12.5,", res/rhs=",
+!            d12.5,", <x>=",d12.5)') itr,sres,conv,avex
 !
 !                                 ** successfully converged **
       if(conv.lt.eps) then
@@ -10086,8 +10086,8 @@
 !*
 !
       if(io_pe.eq.1) then
-        write(11,300) t,wkix,wkih,wkex,wkeh
-  300   format('t=',f7.1,' wkix,wkih=',1p2d12.3,' wkex,wkeh=',2d12.3)
+        write(11,'("t=",f7.1," wkix,wkih=",1p2d12.3," wkex,wkeh=", &
+                  2d12.3)') t,wkix,wkih,wkex,wkeh
       end if
 !
 !  Reset ggg()=0 and reduce the size intervals to all components
@@ -10428,7 +10428,6 @@
       include 'mpif.h'
 !
       integer(C_INT) nobx
-! 
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                         ex,ey,ez,bx,by,bz, &
                                         qix,qiy,qiz,qex,qey,qez,qi,qe, &
@@ -10496,6 +10495,8 @@
                      sey,sqi,sqe,sjyi,sjye,                   &
                      fn,tih,tix,tep,tex,etot,detot,ws
 !      
+      if(iwrt(it,nha).ne.0 .and. iwrt(it,nplot).ne.0) return
+!     ++++++++++++++++++++++++++++++++++++++++++++++++++++++
       if(io_pe.ne.1) return
 !     +++++++++++++++++++++
 !
@@ -10522,6 +10523,7 @@
 !*----------------------------------------------------------------------
 !
       if(iwrt(it,nplot).eq.0) then
+!
       call lblbot (t)
 !
       do k= -2,mz+1  !<-- full index
@@ -10608,6 +10610,7 @@
 !*  correction part (no average).
 !
       if(io_pe.eq.1) then
+!
         open (unit=15,file=praefixc//'.15'//suffix2,               &
               status='unknown',position='append',form='unformatted')
 !
@@ -10640,15 +10643,8 @@
 !       write(11,*) 'hplot... end'
       end if
 !
-!
-      if(iwrt(it,nha).eq.0) then
-        ldec= ldec +1
-!
-        if(ldec.ge.10000) then
-        call rehist
-!       go to 36
-        end if
-      end if
+      if(.true.) return
+!     +++++++++++++++++
 !
 !-----------------------------------------------------------------------
 !*  find the peaks of ay.
@@ -10965,7 +10961,6 @@
       return
       end subroutine diag2
 !
-!
 !-----------------------------------------------------------------------
       subroutine init (xi,yi,zi,vxi,vyi,vzi,qmulti,wmulti,  &  
                        xe,ye,ze,vxe,vye,vze,qmulte,wmulte,  &
@@ -11158,13 +11153,13 @@
         write(11,*) '               j= -1,0,1,...,my-1,my,my+1'
         write(11,*) '               k= -1,0,1,...,mz-1,mz,mz+1 '
         write(11,*) ' i, pxc,  j, pyc,  k, pzc.....'
-        write(11,701) (i,pxc(i),i,pyc(i),i,pzc(i),i=-1,mx+1)
-!       write(11,703) (i,pyc(i),i,pzc(i),i=my+1,my+1)   ! my+1
-        write(11,705) (i,pzc(i),i=mx+2,mz+1)
-  701   format(' pxc(',i3,')=',i4,' pyc(',i3,')=',i4,  &
-               ' pzc(',i3,')=',i4)
-  703   format(14x,' pyc(',i3,')=',i4,' pzc(',i3,')=',i4)
-  705   format(28x,' pzc(',i3,')=',i4)
+        write(11,'(" pxc(",i3,")=",i4," pyc(",i3,")=",i4,  &
+               " pzc(",i3,")=",i4)') &
+                      (i,pxc(i),i,pyc(i),i,pzc(i),i=-1,mx+1)
+!       write(11,'(14x," pyc(",i3,")=",i4," pzc(",i3,")=",i4)') &
+!                     (i,pyc(i),i,pzc(i),i=my+1,my+1)   ! my+1
+        write(11,'(28x," pzc(",i3,")=",i4)') &
+                      (i,pzc(i),i=mx+2,mz+1)
         close(11)
       end if
 !
@@ -11225,20 +11220,16 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,290)
+        write(11,'(//)')
         write(11,*) 'inner cells: mx,my+1,mz=',mx,my+1,mz
-        write(11,291) hx,hy,hz
-        write(11,292)
-  290   format(//)
-  291   format('# hx=',1pd13.5,',  hy=',d13.5,',  hz=',d13.5,/)
-  292   format(' i,     gx,      hx;     gy,    hy;     gz,    hz',/)
+        write(11,'("# hx=",1pd13.5,",  hy=",d13.5,",  hz=",d13.5,/)') &
+                                               hx,hy,hz
+        write(11,'(" i,     gx,      hx;     gy,    hy;     gz,    hz", &
+                   /)')
 !
-        write(11,293) (i,gx(i),gy(i),gz(i),i=-1,0) 
-        write(11,293) (i,gx(i),gy(i),gz(i),i=1,mx+1) 
-        write(11,297) (i,gz(i),i=my+2,mz+2)
-  293   format(i5,1p3d12.3)
-  295   format(i5,12x,1p2d12.3)
-  297   format(i5,24x,1pd12.3)
+        write(11,'(i5,1p3d12.3)') (i,gx(i),gy(i),gz(i),i=-1,0) 
+        write(11,'(i5,1p3d12.3)') (i,gx(i),gy(i),gz(i),i=1,mx+1) 
+        write(11,'(i5,24x,1pd12.3)') (i,gz(i),i=my+2,mz+2)
 !
         close(11)
       end if
@@ -11281,8 +11272,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,670) hx,hy,hz
-  670   format(//,' hx=',1pd15.7,',  hy=',d15.7,',  hz=',d15.7,/)
+        write(11,'(//," hx=",1pd15.7,",  hy=",d15.7,",  hz=",d15.7,/)') &
+                                                             hx,hy,hz
       end if
 !
 !***********************************************************************
@@ -11397,22 +11388,19 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,998) q0
-  998   format('  >> density  q0= ',1pd12.3,' << ')
+        write(11,'("  >> density  q0= ",1pd12.3," << ")') q0
 !
         write(11,*) 'total number of ions  npr=',npr
         do l= 1,npr
         if(l.le.10) then
-          write(11,990) l,xi(l),yi(l),zi(l),vxi(l),vyi(l),vzi(l)
-  990     format(i8,6d12.3)
+          write(11,'(i8,6d12.3)') l,xi(l),yi(l),zi(l),vxi(l),vyi(l),vzi(l)
         end if 
         end do
  
         write(11,*) 'total number of elec.  npr=',npr
         do l= 1,npr
         if(l.le.10) then
-          write(11,992) l,xe(l),ye(l),ze(l),vxe(l),vye(l),vze(l)
-  992     format(i8,6d12.3)
+          write(11,'(i8,6d12.3)') l,xe(l),ye(l),ze(l),vxe(l),vye(l),vze(l)
         end if 
         end do
  
@@ -11642,12 +11630,10 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,661)
-  661   format(' ** Distribution fdr, fv1, fv2 (accumulated) ** ',/)
+        write(11,'(" ** Distribution fdr, fv1, fv2 (accumulated) ** "/)')
 !
 !       do j= 1,101
-!       write(11,662) j,fdr(j),fv1(j),fv2(j)
-! 662   format(i6,3d12.3)
+!       write(11,'(i6,3d12.3)') j,fdr(j),fv1(j),fv2(j)
 !       end do
         close(11)
       end if
@@ -11788,9 +11774,9 @@
         end do
 !
         write(11,*) 'loadpt ksp=',ksp
-        write(11,900) nn,vx1/nn,vy1/nn,vz1/nn
-  900   format('  the total npr=',i10,/,        &
-               '  <vx1>, <vy1>, <vz1>=',1p3d12.3)
+        write(11,'("  the total npr=",i10,/,        &
+               "  <vx1>, <vy1>, <vz1>=",1p3d12.3)') &
+                             nn,vx1/nn,vy1/nn,vz1/nn
 !
         close(11)
       end if
@@ -11801,10 +11787,10 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,666) npr,qmult,wmult
-  666   format(/,' ## npr=',i10,'  qspec(ksp)=',f7.3,',  wspec(ksp)=',f7.3)
-        write(11,667) vthx(ksp),vthz(ksp),vdr(ksp),vbeam(ksp)
-  667   format('    vthx,vthz(ksp)=',2f8.4,'  vdr,vbeam(ksp)=',2f8.4)
+        write(11,'(" ## npr=",i10,"  qspec(ksp)=",f7.3, &
+                  "wspec(ksp)=",f7.3)') npr,qmult,wmult
+        write(11,'("    vthx,vthz(ksp)=",2f8.4,"  vdr,vbeam(ksp)=", &
+                  2f8.4)') vthx(ksp),vthz(ksp),vdr(ksp),vbeam(ksp)
         close(11)
       end if 
 !
@@ -12406,15 +12392,16 @@
         write(11,*) 'ions...by allreduce'
 !
         do i= 1,12
-        write(11,300) i,xxi(i),yyi(i),zzi(i),vvxi(i),vvyi(i),vvzi(i)
-  300   format('i=',i8,1p6d12.3)
+        write(11,'("i=",i8,1p6d12.3)') &
+                    i,xxi(i),yyi(i),zzi(i),vvxi(i),vvyi(i),vvzi(i)
         end do
 !
         write(11,*)
         write(11,*) 'elec...by allreduce'
 !
         do i= 1,12
-        write(11,300) i,xxe(i),yye(i),zze(i),vvxe(i),vvye(i),vvze(i)
+        write(11,'("i=",i8,1p6d12.3)') &
+                    i,xxe(i),yye(i),zze(i),vvxe(i),vvye(i),vvze(i)
         end do
       end if
 !
@@ -12455,8 +12442,7 @@
         if(io_pe.eq.1) then
           open (unit=11,file=praefixc//'.11'//suffix2,             & 
                 status='unknown',position='append',form='formatted')
-          write(11,13) 
-   13     format('** Restrt file is created FT12...',/)
+          write(11,'("** Restrt file is created FT12...",/)') 
           close(11)
         end if
       end if
@@ -12518,7 +12504,8 @@
         write(11,*) 'ions...at restart'
 !
         do i= 1,12
-        write(11,400) i,xi(i),yi(i),zi(i),vxi(i),vyi(i),vzi(i)
+        write(11,'("i=",i8,1p6d12.3)') &
+                     i,xi(i),yi(i),zi(i),vxi(i),vyi(i),vzi(i)
   400   format('i=',i8,1p6d12.3)
         end do
 !
@@ -12526,7 +12513,8 @@
         write(11,*) 'elec...at restart'
 !
         do i= 1,12
-        write(11,400) i,xe(i),ye(i),ze(i),vxe(i),vye(i),vze(i)
+        write(11,'("i=",i8,1p6d12.3)') &
+                     i,xe(i),ye(i),ze(i),vxe(i),vye(i),vze(i)
         end do
 !
 !
@@ -12534,9 +12522,9 @@
         do k= 0,3
         do j= 0,3
         do i= 0,3
-        write(11,411) i,j,k,ex(i,j,k),ey(i,j,k),ez(i,j,k),bx(i,j,k), &
-                      by(i,j,k),bz(i,j,k)
-  411   format(3i3,1p6d12.3)
+        write(11,'(3i3,1p6d12.3)') &
+                     i,j,k,ex(i,j,k),ey(i,j,k),ez(i,j,k),bx(i,j,k), &
+                     by(i,j,k),bz(i,j,k)
         end do
         end do
         end do
@@ -12571,8 +12559,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,25) 
-   25   format(' *** Start files are loaded ***',/)
+        write(11,'(" *** Start files are loaded ***")') 
         close(11)
       end if  
       return
@@ -12641,9 +12628,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,20) h
-        write(11,20) h
-   20   format(///,'## run terminated ----- ',a8)
+        write(11,'(///,"## run terminated ----- ",a8)') h
         close(11)
       end if
 !
