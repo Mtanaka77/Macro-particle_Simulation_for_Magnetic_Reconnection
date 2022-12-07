@@ -15,7 +15,7 @@ By the implicit scheme it is free from the Courant condition, that is, Dx(length
 
 A large time step for ions, 2 \pi /(dt*wci) >> 1, is a good target of the drift-kinetic simulation of electrons. The time step is still bound by electron hopping, and typical time step may be dt= 10/wpe.
 
-The title, major references and remarks of this simulation code are written in the top of the @mrg37_013A.f03 file.
+The title, major references, and remarks of this simulation code are written in the top of the @mrg37_013A.f03 file.
 Important blocks of the code are explained as comments.
 Two additional files are necessary, the paramer file param_A13A.h and the configure file rec_3d13A.
 
