@@ -29,7 +29,7 @@ mpif90 @mrg37-013A.f03 needs the files param_A13A.h and rec_3d13A
 
  > $ mpif90 -mcmodel=medium -fast @mrg37-013A.f03 -I/opt/pgi/fftw3/include -L/opt/pgi/fftw3/lib -lfftw3
 
-Execution by mpiexec
+Execution by mpiexec (may need some tens of processors)
 
  > Execution: $ mpiexec -n 6 a.out &
 
