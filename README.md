@@ -13,10 +13,11 @@ One utilizes the time decentered scheme in aimpl=0.6, while the time centered sc
 
 By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe in order to dump out plasma oscillations at plasma frequency omega_e= wpe - small noises. But, 2 \pi/(dt wce) >> 1 is necessary for electron tracking.
 
-A large time step for ions, 2 \pi /(dt*wci) >> 1, is a good target of the drift-kinetic simulation of electrons. The time step is still bound by electron hopping, and typical time step may be dt= 10/wpe.
+A large time step for ions, 2 \pi /(dt*wci) >> 1, is a good target of the drift-kinetic simulation of electrons. The time step is still bound by elec tron hopping, and typical time step may be dt= 10/wpe.
 
 The title, major references, and remarks of this simulation code are written in the top of the @mrg37_013A.f03 file.
-Important blocks of the code are explained as comments.
+Major subroutines are named /fulmov/, /fulmv2/, /drmove/, /drmov2/, /cfpsol/, /escorr/.
+Supporting subroutines are /partpc/, /partdk/ and /srimp1/-/srimp4/. Important blocks of these subroutines are explained as comments.
 Two additional files are necessary, the paramer file param_A13A.h and the configure file rec_3d13A.
 
 
