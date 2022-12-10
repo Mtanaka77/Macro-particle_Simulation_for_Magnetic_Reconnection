@@ -1123,17 +1123,19 @@
 !
 !* after faverg ! 
 !
-!     call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
+      if(.false.) then  
+      call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
 !
-!     if(igc.eq.1) then
-!     call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
+      if(igc.eq.1) then
+      call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
 !
-!     else if(igc.eq.2) then
-!     call diag1 (xe,ye,ze,mue,vpe,vhe,qspec(2),npr,2)
-!     end if
+      else if(igc.eq.2) then
+      call diag1 (xe,ye,ze,mue,vpe,vhe,qspec(2),npr,2)
+      end if
 !
-!     call diag2 (ex,ey,ez,bx,by,bz,pot,       &
-!                 qix,qiy,qiz,qex,qey,qez,qi,qe)
+      call diag2 (ex,ey,ez,bx,by,bz,pot,       &
+                  qix,qiy,qiz,qex,qey,qez,qi,qe)
+      end if
 !
 !     gnu0= 1./200.
       gnu0= 0.d0
@@ -9986,8 +9988,8 @@
 !
 !*  ####### diag1 #######
 !
-      if(iwrt(it,nha).ne.0 .and. iwrt(it,nplot).ne.0) return
-!     ++++++++++++++++++++++++++++++++++++++++++++++++
+      if(iwrt(it,nplot).ne.0) return
+!     ++++++++++++++++++++++++++++++
 !
       call lblbot (t)
 !
@@ -10024,11 +10026,7 @@
 !*  **plasma current**
 !-----------------------------------------------------------------------
 !
-      if(.false.) then
-!     if(iwrt(it,nplot).eq.0) then
-!
       if(ksp.eq.1) then
-!
         do k= 0,mz-1
         do j= 0,my
         do i= 0,mx-1
@@ -10055,7 +10053,6 @@
         close(77)
 ! 
       else if(ksp.eq.2) then
-!
         do k= 0,mz-1
         do j= 0,my
         do i= 0,mx-1
@@ -10080,7 +10077,6 @@
 !                    real(x1),real(x2),real(radi),npr,lskip,itag,       &
 !                    'elec    ',8)
         close(77)
-      end if
       end if
 !***
       end if
@@ -10111,7 +10107,7 @@
 !   Velocity distribution function.
 !-----------------------------------------------------------------------
 !* [2] *********************************************
-      if(iwrt(it,nha).eq.0) then
+      if(iwrt(it,nplot).eq.0) then
 !*
 !     if(io_pe.eq.1) then
 !       open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -10229,8 +10225,8 @@
       vzs1= 0
 !
 !*  for ions/elec: (vx,vy,vz).
+!
       if(igc.eq.1) then
-!***
         do l= 1,npr 
         ss = ss + qmult*(vx(l)**2 +vy(l)**2 +vz(l)**2)
         anp= anp +qmult
@@ -10505,10 +10501,6 @@
       real(C_DOUBLE) asl,we,wb,rsdl1,rsdl2,rsdl3
       common/emiter/ asl,we,wb,rsdl1,rsdl2,rsdl3,iterm,itrf0,iters
 !
-!     integer(C_INT) iterd,itrd0
-!     real(C_DOUBLE) wdf,asd
-!     common/dfiter/ iterd,itrd0,wdf,asd
-!
       real(C_DOUBLE),dimension(7) :: vxav,vyav,vzav,vxrmsd,vyrmsd, &
                                      vzrmsd,vsqr,anpt,ekin
       common/diagpr/ vxav,vyav,vzav,vxrmsd,vyrmsd, &
@@ -10530,9 +10522,9 @@
                      sey,sqi,sqe,sjyi,sjye,                   &
                      fn,tih,tix,tep,tex,etot,detot,ws
 !      
-      if(iwrt(it,nha).ne.0 .and. iwrt(it,nplot).ne.0) return
-!     ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-      if(io_pe.ne.1) return
+      if(iwrt(it,nplot).ne.0) return
+!     ++++++++++++++++++++++++++++++
+      if(io_pe.eq.0) return
 !     +++++++++++++++++++++
 !
 !----------------------------------------------------------------
@@ -10540,7 +10532,7 @@
 !   including it=0, with npl= min(nplot,nfwrt).
 !
       if(iwrt(it,nplot).eq.0) then
-!
+!**
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
         write(11,*) 'fortr.15...'
@@ -10644,7 +10636,6 @@
 !     call cplt2d (bbx,real(xmax),real(ymax),real(zmax),iperio,itag, &
 !                    'Vect.ax ',8)
       close(77)
-!**
       end if
 !
 !*----------------------------------------------------------------------
@@ -10652,15 +10643,15 @@
 !*----------------------------------------------------------------------
 !*  correction part (no average).
 !
-      if(io_pe.eq.1) then
+      if(iwrt(it,nplot).eq.0) then
+!**
+      open (unit=11,file=praefixc//'.11'//suffix2,             & 
+            status='unknown',position='append',form='formatted')
+      write(11,*) 'diag2: hplot...'
+      close(11)
 !
-        open (unit=11,file=praefixc//'.11'//suffix2,             & 
-              status='unknown',position='append',form='formatted')
-        write(11,*) 'diag2: hplot...'
-        close(11)
-!
-        open (unit=15,file=praefixc//'.15'//suffix2,               &
-              status='unknown',position='append',form='unformatted')
+      open (unit=15,file=praefixc//'.15'//suffix2,               &
+            status='unknown',position='append',form='unformatted')
 !
 !       itag= 3
 !       call cplot3 (ppot,real(xmax),real(ymax),real(zmax),'corr.pot',8)
@@ -10668,25 +10659,26 @@
 !
 !*  fv-plots for the zones y3 - y4  (total of 7 zones)
 !
-        do k= 1,101
-        vsa(k)= vlima*(-1.d0 +(k-1)/50.d0) 
-        vsb(k)= vlimb*(-1.d0 +(k-1)/50.d0) 
-        end do
+      do k= 1,101
+      vsa(k)= vlima*(-1.d0 +(k-1)/50.d0) 
+      vsb(k)= vlimb*(-1.d0 +(k-1)/50.d0) 
+      end do
 !
-        call hplot (2,4,101,vsa,fvx(1,3,1),1,'ion.5/8 ',8,'vx',2,' ',1)
-        call hplot (2,5,101,vsa,fvy(1,3,1),1,'ion 5/8 ',8,'vy',2,' ',1)
-        call hplot (2,6,101,vsa,fvz(1,3,1),1,'ion 5/8 ',8,'vz',2,' ',1)
+      call hplot (2,4,101,vsa,fvx(1,3,1),1,'ion.5/8 ',8,'vx',2,' ',1)
+      call hplot (2,5,101,vsa,fvy(1,3,1),1,'ion 5/8 ',8,'vy',2,' ',1)
+      call hplot (2,6,101,vsa,fvz(1,3,1),1,'ion 5/8 ',8,'vz',2,' ',1)
 !
-        call hplot (3,4,101,vsb,fvx(1,3,2),1,'ele 5/8 ',8,'mu',2,' ',1)
-        call hplot (3,5,101,vsb,fvz(1,3,2),1,'ele 5/8 ',8,'vh',2,' ',1)
+      call hplot (3,4,101,vsb,fvx(1,3,2),1,'ele 5/8 ',8,'mu',2,' ',1)
+      call hplot (3,5,101,vsb,fvz(1,3,2),1,'ele 5/8 ',8,'vh',2,' ',1)
 !
-        call hplot (2,4,101,vsa,fvx(1,4,1),1,'ion 6/8 ',8,'vx',2,' ',1)
-        call hplot (2,5,101,vsa,fvy(1,4,1),1,'ion 6/8 ',8,'vy',2,' ',1)
-        call hplot (2,6,101,vsa,fvz(1,4,1),1,'ion 6/8 ',8,'vz',2,' ',1)
+      call hplot (2,4,101,vsa,fvx(1,4,1),1,'ion 6/8 ',8,'vx',2,' ',1)
+      call hplot (2,5,101,vsa,fvy(1,4,1),1,'ion 6/8 ',8,'vy',2,' ',1)
+      call hplot (2,6,101,vsa,fvz(1,4,1),1,'ion 6/8 ',8,'vz',2,' ',1)
 
-        call hplot (3,4,101,vsb,fvx(1,4,2),1,'ele 6/8 ',8,'mu',2,' ',1)
-        call hplot (3,5,101,vsb,fvz(1,4,2),1,'ele 6/8 ',8,'vh',2,' ',1)
-        close(15)
+      call hplot (3,4,101,vsb,fvx(1,4,2),1,'ele 6/8 ',8,'mu',2,' ',1)
+      call hplot (3,5,101,vsb,fvz(1,4,2),1,'ele 6/8 ',8,'vh',2,' ',1)
+!
+      close(15)
       end if
 !
       if(.true.) return
