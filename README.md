@@ -18,7 +18,8 @@ A large time step for ions, 2 \pi /(dt*wci) >> 1, is a good target of the drift-
 The title, major references, and remarks of this simulation code are written in the top of the @mrg37_013A.f03 file.
 Major subroutines are named /fulmov/, /fulmv2/, /drmove/, /drmov2/, /cfpsol/, /escorr/.
 The correction to the longitudinal part of the electric field is made in /escorr/, although 
-the Poisson equation for the electric field is solved initially which is not true in the coding !
+the Poisson equation for the electric field is to be solved initially, which is actually 
+not true in the coding of the Maxwell equation (see Ref. 1 and Ref. 2).
 Supporting subroutines are /partpc/, /partdk/ and /srimp1/-/srimp4/. Important blocks of these subroutines are explained as comments.
 Two additional files are necessary, the paramer file param_A13A.h and the configure file rec_3d13A.
 
