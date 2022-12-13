@@ -11,10 +11,6 @@ An electromagnetic particle simulation code is utilized for solar and magnetosph
 
 One utilizes the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. It is noted, however, that finite errors in the divergence term accumulate which must be corrected if the finite difference coordinate space are utilized. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
 
-By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe in order to dump out plasma oscillations at plasma frequency omega_e= wpe - small noises. But, 2 \pi/(dt wce) >> 1 is necessary for electron tracking.
-
-A large time step for ions, 2 \pi /(dt*wci) >> 1, is a good target of the drift-kinetic simulation of electrons. The time step is still bound by elec tron hopping, and typical time step may be dt= 10/wpe.
-
 The title, major references, and remarks of this simulation code are written in the top of the @mrg37_013A.f03 file.
 Major subroutines are named /fulmov/, /fulmv2/, /drmove/, /drmov2/, /cfpsol/, /escorr/.
 The correction to the longitudinal part of the electric field is made in /escorr/, although 
@@ -22,6 +18,11 @@ the Poisson equation for the electric field is to be solved only initially, whic
 not true in the coding of the Maxwell equation (see Ref. 1 and Ref. 2).
 Supporting subroutines are /partpc/, /partdk/ and /srimp1/-/srimp4/. Important blocks of these subroutines are explained as comments.
 Two additional files are necessary, the paramer file param_A13A.h and the configure file rec_3d13A.
+
+
+By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe in order to dump out plasma oscillations at plasma frequency omega_e= wpe - small noises. But, 2 \pi/(dt wce) >> 1 is necessary for electron tracking.
+
+A large time step for ions, 2 \pi /(dt*wci) >> 1, is a good target of the drift-kinetic simulation of electrons. The time step is still bound by elec tron hopping, and typical time step may be dt= 10/wpe.
 
 
 ### Execution Scripts ###
