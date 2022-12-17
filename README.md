@@ -16,9 +16,9 @@ Major subroutines are named /fulmov/, /fulmv2/, /cfpsol/, and /escorr/.
 The correction to the longitudinal part of the electric field is made in /escorr/. Although 
 the Poisson equation for the electric field is to be solved only initially, it is actually 
 not true in the Maxwell equation since numerical errors accumulate in time (see Ref. 1 and Ref. 2).
-Supporting subroutines are /partpc/, /partdk/ and /srimp1/-/srimp4/. 
+Supporting subroutines are /partpc/ and /srimp1/-/srimp4/. 
 Important blocks of these subroutines are explained as comments.
-Two additional files are necessary, the paramer file param_A23A.h and the configure file rec_3d23A.
+Two additional files are necessary, the parameter file param_A23A.h and the configure file rec_3d23A.
 
 By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe in order to dump out plasma oscillations at plasma frequency omega_e= wpe - small noises. But, 2 \pi/(dt wce) >> 1 is necessary for electron tracking.
 
