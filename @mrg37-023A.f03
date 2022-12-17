@@ -1,8 +1,7 @@
 !***********************************************************************
 !*                                                                     *
 !*      ## 3-D Macroscale Electromagnetic Particle Code ##             *
-!*      << Full-implicit scheme with kinetic ions and electrons,       *
-!*         or kinetic ions and the drift-kinetic electrons >>          *
+!*      << Full-implicit scheme with kinetic ions and electrons >>     *
 !*                                                                     *
 !*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
 !*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
@@ -10,9 +9,9 @@
 !*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_015A.f03: this simulation code                         *
+!*    1. @mrg37_023A.f03: this simulation code                         *
 !*    2. param_A23A.h   : parameter file 1                             *
-!*    3. rec_3d15A      : parameter file 2                             *
+!*    3. rec_3d23A      : parameter file 2                             *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
 !*    may be used. One should read the reference 2) in JCP (1993).     *
@@ -24,7 +23,7 @@
 !*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
 !*   Chubu University, Kasugai 487-8501, Japan.   2022/09/01           *
 !*                                                                     *
-!*  https://github.com/Mtanaka77/Largescale_Electromagneti_Particle_Simulation  *
+!*  https://github.com/Mtanaka77/Largescale_Electromagnetic_Particle_Simulation  *
 !*                                                                     *
 !**** Version:  7/31/1996 ****************************** 09/12/2000 ****
 !**** Version:  9/01/2022 **************************** Fortran 2003 ****
@@ -80,8 +79,8 @@
 !-----------------------------------------------------------------------
 !*                                                                     *
 !*     /main/    ------   /trans/                                      *
-!*                           /fulmov/,/drmove/,/fulmv2/,/drmov2/       *
-!*                              ---> partbc, partdk                    *
+!*                           /fulmov/,/fulmv2/                         *
+!*                              ---> partbc                            *
 !*                              ---> srimp1-4                          *
 !*                        /cfpsol/,/poissn/,/escorr/                   *
 !*                          full and drift-kinetic                     * 
