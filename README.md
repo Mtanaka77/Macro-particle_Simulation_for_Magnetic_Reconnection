@@ -41,8 +41,7 @@ Execution by mpiexec (may need some tens of co-processors)
 
 ### Simulation of Two Flux Bundles
 
-One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are used in the igc=1 case, for example, in the rec_3d13A file. Then, let's start looking at a merging of two flux bundles. But, one should note that heavy ions move kinetically while light electrons lose some of their particle freedom in the coordinate space.
-
+One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles is first tested in three dimensions. Fully kinetic ions and electrons are used, for example, in the rec_3d23A file. Then, let's start looking at a merging of two flux bundles. 
 In-house graphic subroutines are incorporated in "@mrg37-023A.f03" in order to check the current run in the simulation. Figure 1 in the "EMfield.pdf" PDF plot shows the electric and magnetic fields in the YZ (left) and X (right) components at the early and final times. Two flux bundles at t=5000/wpe are seen touched and sqeezed at the Y= Ly/2 plane. Reading papers of this implicit particle simulation code (Ref. 1-2) and applications to magnetospheric space plasmas (Ref. 3-5) are highly recommended.
 
 
