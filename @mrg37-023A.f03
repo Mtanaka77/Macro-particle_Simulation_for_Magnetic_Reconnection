@@ -1,8 +1,7 @@
 !***********************************************************************
 !*                                                                     *
-!*    ## 3-D Large-Scale Electromagnetic Particle-in-Cell Code ##      *
-!*      << Fully-implicit scheme with kinetic ions and electrons,       *
-!*         or kinetic ions and the drift-kinetic electrons >>          *
+!*      ## 3-D Macroscale Electromagnetic Particle Code ##             *
+!*      << Full-implicit scheme with kinetic ions and electrons >>     *
 !*                                                                     *
 !*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
 !*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
@@ -10,18 +9,12 @@
 !*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_015A.f03: this simulation code                         *
-!*    2. param_A23A.h   : parameter file                               *
-!*    3. rec_3d15A      : Simulation time, box size, parameters of     *
-!*                     ions and electrons, decentering parameter,      *
-!*                     igc index, ...                                  *
+!*    1. @mrg37_023A.f03: this simulation code                         *
+!*    2. param_A23A.h   : parameter file 1                             *
+!*    3. rec_3d23A      : parameter file 2                             *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
-!*    may be used (igc=1). A large time step for kinetic ions and      *
-!*    drift-kinetic electrons, one has dt=10./wpe (igc=2) without      *
-!*    gyrating electrons (igc=2). One should read the reference 2)     *
-!*    in JCP (1993).                                                   *
-!*                                                                     *
+!*    may be used. One should read the reference 2) in JCP (1993).     *
 !*  * Gauss's law must be corrected as errors in divergence term       *
 !*    accumulate in time. This is true if a finite difference scheme   *
 !*    of any kind is utilized.                                         *
@@ -30,7 +23,7 @@
 !*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
 !*   Chubu University, Kasugai 487-8501, Japan.   2022/09/01           *
 !*                                                                     *
-!*   https://github.com/Mtanaka77/Electromagnetic_Particle_in_Cell_Simulation *
+!*  https://github.com/Mtanaka77/Largescale_Electromagnetic_Particle_Simulation  *
 !*                                                                     *
 !**** Version:  7/31/1996 ****************************** 09/12/2000 ****
 !**** Version:  9/01/2022 **************************** Fortran 2003 ****
@@ -44,7 +37,7 @@
 !    whose parallel version is completed by using mpi_sendrecv with 
 !    pe's mx*myA*mz/npc overlaps.
 !
-!    Change in 2022
+!    Feb. and Aug. 2022
 !    1) The mpi routines isend and irecv are used for the bounded case,
 !        call isend(sendbuf), call irecv(recvbuf) 
 !    2) The nearest integer: ip= hxi*rxl(l) +0.5 -> 0.001 - 0.999 -> 0
@@ -69,7 +62,7 @@
 !       on Linux, and is then output as fortr.77.pdf on Windows 10.
 !                                                    May 8, 2022
 !
-!    9) They become true if iwrt(it,5).eq.0 or mod(it,5).eq.0
+!    9) They become true if iwrt(it,5).eq.0 and mod(it,5).eq.0
 ! 
 !     if(iwrt(it,nplot).eq.0) then
 !     if(mod(it,5).eq.0) then
@@ -80,36 +73,33 @@
 !           4            1            4
 !           5            0            0
 !
-!   10) This implicit particle code is free from the Courant condition,
+!   10) This implicit particle code is free from the Courant condition 
 !       while it is different by explicit codes, Delta_x/Delta_t > 1.
 !
 !-----------------------------------------------------------------------
 !*                                                                     *
 !*     /main/    ------   /trans/                                      *
-!*                           /fulmov/,/drmove/,/fulmv2/,/drmov2/       *
-!*                              ---> partbc, partdk                    *
+!*                           /fulmov/,/fulmv2/                         *
+!*                              ---> partbc                            *
 !*                              ---> srimp1-4                          *
 !*                        /cfpsol/,/poissn/,/escorr/                   *
-!*                           full or drift-kinetic particles           * 
+!*                          full and drift-kinetic                     * 
 !*                        /diag1/                                      *
-!*                              ---> fplot3, cplot3                    *
+!*                              ---> fplot3                            *
 !*               /init/   ------  /loadpt/, /readpt/                   *
 !*                                                                     *
 !*      sequential:                                                    *
 !*        /restrt/  -------  arrays (write /read)                      *
 !*                                                                     *
 !-----------------------------------------------------------------------
-!* Fortran 2003 handles such technique as continuity and lower cases,
+!* Fortran 2003 uses line continuity & and lower cases,
 !*  :s%/^C/!/
 !*  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
-!* $ mpif90 -mcmodel=medium @mrg37.f03 -I/opt/pgi/fftw3/include &
+!* $ mpif90 -mcmodel=medium -fast @mrg37.f03 -I/opt/pgi/fftw3/include &
 !*    -L/opt/pgi/fftw3/lib -lfftw3
 !* $ mpiexec -n 6 a.out &
-!-----------------------------------------------------------------------
-!  Fortrtan 2003 /Fortran 2008 by direct write outputs
-!               write(11,'(" arrayx,arrayy(i),arrayz=",3i6)')... 
 !-----------------------------------------------------------------------
 !
       program macro_particles_code
@@ -118,9 +108,6 @@
 !
       include 'mpif.h'
       include 'param_A23A.h'
-!
-      integer(C_INT) igc
-      common/if_igc/ igc
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) rank,size,ipar,ierror,cl_first
@@ -133,7 +120,7 @@
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
-      real(C_DOUBLE)  walltime0,walltime1,walltime2,walltime3
+      real(C_DOUBLE) walltime0,walltime1,walltime2,walltime3
       character(len=10) :: date_now
       character(len=8)  :: time_now
 !*
@@ -157,13 +144,14 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_float)  plodx
       integer(C_INT) kploy,kploz
       common/plotiv/ plodx,kploy,kploz
 !*
       character(len=8)  label(8)
+      character(len=10) cdate
 !
 !-----------------------------------------------------------------------
 !*    datum0 ..... job control (not /common/ parameters).
@@ -174,7 +162,7 @@
 !         Restart: &datum0 kstart= 1 -> call restrt
 !
       real(C_DOUBLE) tfinal,cptot,cpu1
-      integer(C_INT) iresrt,i,j,k,l,istop,iwrt,nframe
+      integer(C_INT) iresrt,i,j,k,l,istop,nframe
       common/irest/ iresrt
 !
       real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00
@@ -189,7 +177,7 @@
 !*  kstart..... used in /init/, /trans/, /fulmov/, in param_A23A.h.
 !   Ez00   .... Ez00 x Ba
 !
-      namelist/datum0/  kstart,tfinal,cptot,igc,istop
+      namelist/datum0/  kstart,tfinal,cptot,istop
       namelist/datum1/  dt,xmax,ymax,zmax,wspec,qspec,   &
                         nspec,vdr,vbeam,Ez00,            &
                         wcewpe,teti,veth,thb,            &
@@ -281,6 +269,7 @@
         write(11,*) 'np1(k),np2(k),nz1(k),nz2(k)...'
         write(11,'(2i10,2x,2i10)') (np1(k),np2(k),nz1(k),nz2(k),k=1,npc)
         write(11,*)
+!   3   format(2i10,2x,2i10)
         close(11)
       end if
 !
@@ -306,9 +295,10 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*) 'One-dimensional array is... ',l
-        write(11,'(" arrayx,arrayy(i),arrayz=",3i6)') &
-                    (arrayx(i),arrayy(i),arrayz(i),i=1,30)
+        write(11,'("One-dimensional array is... ",i10)') l
+        write(11,'("arrayx,arrayy(i),arrayz=",3i6)') &
+                      (arrayx(i),arrayy(i),arrayz(i),i=1,30)
+!   5   format(' arrayx,arrayy(i),arrayz=',3i6)
         close(11)
       end if
 !
@@ -320,10 +310,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*)
-        write(11,'("### @mrg37.f03 (3-d periodic/bound system) ###")')
-        write(11,'("    Macro E.M. particle code (full implicit)")')
-        write(11,*)
+        write(11,'("### @mrg37.f03 (3-d periodic/bound system) ###",/, &
+                   "   Macro E.M. particle code (full implicit)",/)')
         close(11)
       end if
 !
@@ -343,11 +331,12 @@
               status='unknown',position='append',form='formatted')
 !
         write(11,'(8a8,/)') (label(i),i=1,8)
+!
         write(11,'("*date: ",a10,2x,"*time: ",a8,/)') &
-                                      date_now,time_now  
+                                                date_now,time_now 
       end if
 !
-      call lbltop (date_now,label)
+      call lbltop (cdate,label)
 !
 !
 !  All nodes must execute
@@ -363,7 +352,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*) '*Initial parameters... &datum0, &datum1 are:'
+        write(11,'("*Initial parameters... &datum0, &datum1 are:")')
         write(11,datum0)
         write(11,datum1)
         write(11,datum2)
@@ -387,16 +376,9 @@
       if(kstart.ne.0) then
         iresrt= 1
 !
-        if(igc.eq.1) then
         call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
                      xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                      npr,ipar,size,iresrt) 
-!
-        else if(igc.eq.2) then
-        call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                     xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
-                     npr,ipar,size,iresrt) 
-        end if
       end if
 !
 !**********************************************
@@ -415,7 +397,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'(" ** initial walltime ",f7.3," secs")') walltime0
+        write(11,'(" ** initial walltime ",f7.3," secs.")') walltime0
         close(11)
       end if
 !
@@ -447,13 +429,11 @@
       call clocks (walltime1,size,cl_first)
 !
       if(io_pe.eq.1) then
-        if(iwrt(it,nplot).eq.0) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
         write(11,'("**** it=",i5," *****")') it
         close(11)
-        end if
       end if
 !
 !   +++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -471,7 +451,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*) '* Plot hist (final)  it=',it
+        write(11,'("* Plot histry (final)  it=",i6)') it
         close(11)
 !
 !   The history plot is made.
@@ -487,9 +467,18 @@
       call clocks (walltime2,size,cl_first)
 !
       cpu1= walltime2 - walltime0
+!***
+      if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+!
+        write(11,'("**it=",i5,"  cpu (interval):",f9.2," secs. ****",/)') &
+                                                                it,cpu1
+        close(11)
+      end if
 !
 !****************************************
-!*   Final procedure to close the job.  *                              *
+!*   Final procedure to close the job.  * 
 !****************************************
 !
       istop= 1
@@ -497,8 +486,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("** time used (run)",f9.2," secs.,  it=",i5, &
-                                             " ****"),/') cpu1,it
+        write(11,'("** time used (run)",f9.2," sec.,  it=",i5,  &
+                   " ****")') cpu1,it
         close(11) 
       end if
 !
@@ -508,16 +497,9 @@
       iresrt= 2
 !     +++++++++
 !
-      if(igc.eq.1) then
       call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
                    xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                    npr,ipar,size,iresrt) 
-!
-      else if(igc.eq.2) then
-      call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                   xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
-                   npr,ipar,size,iresrt) 
-      end if
 !***
 !
       cl_first= 2
@@ -527,20 +509,185 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("** All time (run + restrt)",f9.2," secs.")') &
-                                               walltime3 -walltime0
+        write(11,'("** All time (run + restrt)",f9.2," sec")')  &
+                                              walltime3 -walltime0
         close(11)
-!
-        open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
-              status='unknown',position='append',form='formatted')
-        call plote
-        close(77)
       end if
 !
       call mpi_finalize (ierror)
 !
       stop
       end program macro_particles_code
+!
+!
+!-----------------------------------------------------------------------
+      subroutine histry
+!-----------------------------------------------------------------------
+      use, intrinsic :: iso_c_binding
+      implicit none
+      include 'param_A23A.h' 
+!
+      integer(C_INT) io_pe
+      common/iope66/ io_pe
+!
+!     parameter   (nhistm=54)
+!     character(len=54) :: elab(nhistm)
+      real(C_DOUBLE) tdec(10000)  !<-- DOUBLE
+      common/ehist/  tdec
+!
+!*
+      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
+                     nha,nplot,nhist
+      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
+                     nha,nplot,nhist
+!
+      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
+                     qspec,wspec,veth,teti,wcewpe,thb,               &
+                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  & 
+                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
+                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
+                     edec
+      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
+                     qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
+                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
+                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
+                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
+                     edec(10000,54)
+!                         +++++++
+      real(C_float)  emax1a,emin1a,emax2a,emin2a,emax1,emin1, &
+                     emax3a,emin3a,emax4a,emin4a,emax3,emin3, &
+                     emax5a,emin5a,emax6a,emin6a,emax5,emin5, &
+                     emax7a,emin7a,emax8a,emin8a,emax7,emin7
+      integer(C_INT) ILN,ILG,i,k
+!     call lplot1 (2,4,ldec,tdec,edec(1,1),emax1a,0.,ILN,'B2 Histr',8,&
+!     call lplot1 (2,5,ldec,tdec,edec(1,2),emax2a,0.,ILN,'E2 Histr',8,&
+!
+!    +++++++++++++++++++++++
+      if(io_pe.ne.1) return
+!    +++++++++++++++++++++++
+!
+      call lblbot(t)
+!     tdec(ldec)= t
+!
+!**
+      open (unit=11,file=praefixc//'.11'//suffix2,             & 
+            status='unknown',position='append',form='formatted')
+!
+      write(11,*) '*histry plot: ldec, tdec(ldec)=',ldec,tdec(ldec)
+      write(11,*)
+!
+      do i= 1,ldec  ! nha interval
+      write(11,'("tdec=",f7.1,8d11.3)') &
+                  tdec(i),edec(i,1),edec(i,2),edec(i,3),edec(i,4), &
+                  edec(i,5),edec(i,6),edec(i,7),edec(i,8)
+      end do
+      close(11)
+!
+! 
+      open (unit=77,file=praefixc//'.77'//suffix2//'.ps',        &
+            status='unknown',position='append',form='formatted')
+!
+      ILN= 1
+      ILG= 2
+!
+      call lplmax (edec(1,1),emax1a,emin1a,ldec)
+      call lplmax (edec(1,2),emax2a,emin2a,ldec)
+      emax1 = max(emax1a,emax2a)
+      emin1 = 0  ! min(emin1a,emin2a)
+!
+      call lplmax (edec(1,3),emax3a,emin3a,ldec)
+      call lplmax (edec(1,4),emax4a,emin4a,ldec)
+      emax3 = max(emax3a,emax4a)
+      emin3 = 0  ! min(emin3a,emin4a)
+!
+      call lplmax (edec(1,5),emax5a,emin5a,ldec)
+      call lplmax (edec(1,6),emax6a,emin6a,ldec)
+      emax5 = max(emax5a,emax6a)
+      emin5 = 0  ! min(emin5a,emin6a)
+!
+!  subroutine lplot1 (ix,iy,npt1,x,y,ymax,ymin,il,lab1,n1,lab2,n2, &
+!                     lab3,n3)
+      call lplot1 (2,4,ldec,tdec,edec(1,1),emax1a,0.,ILN,'B2 Histr',8,&
+                 '        ',8,'        ',8)
+      call lplot1 (2,5,ldec,tdec,edec(1,2),emax2a,0.,ILN,'E2 Histr',8,&
+                 '        ',8,'        ',8)
+      call lplot1 (2,6,ldec,tdec,edec(1,3),emax3a,0.,ILN,'BP2 Hist',8,&
+                 '        ',8,'        ',8)
+      call lplot1 (3,4,ldec,tdec,edec(1,4),emax4a,0.,ILN,'EP2 Hist',8,&
+                 '        ',8,'        ',8)
+      call lplot1 (3,5,ldec,tdec,edec(1,5),emax5a,0.,ILN,'ions.x  ',8,&
+                 '        ',8,'        ',8)
+      call lplot1 (3,6,ldec,tdec,edec(1,6),emax6a,0.,ILN,'ions.h  ',8,&
+                 '        ',8,'        ',8)
+!   ++++++++++++++
+      call chart
+!   ++++++++++++++
+!
+      call lplmax (edec(1,7),emax7a,emin7a,ldec)
+      call lplmax (edec(1,8),emax8a,emin8a,ldec)
+      emax7 = max(emax7a,emax8a)
+      emin7 = 0  ! min(emin7a,emin8a)
+!
+      call lplot1 (2,4,ldec,tdec,edec(1,7),emax7a,0.,ILN,'elec.x  ',8,&
+                 '        ',8,'        ',8)
+      call lplot1 (2,5,ldec,tdec,edec(1,8),emax8a,0.,ILN,'elec.h  ',8,&
+                 '        ',8,'        ',8)
+!   ++++++++++++++
+      call chart
+!   ++++++++++++++
+!**
+      close(77)
+!
+      return
+      end subroutine histry
+!
+!
+!------------------------------------------------------
+      subroutine lplmax (f,fmax,fmin,is)
+!------------------------------------------------------
+      use, intrinsic :: iso_c_binding
+      implicit none
+!
+      integer(C_INT) i,is
+      real(C_DOUBLE) f(is)
+      real(C_float)  fmax,fmin
+!
+      fmax= -1.e10
+      fmin=  1.e10
+!
+      do i= 1,is
+      fmax= max(fmax,real(f(i)))
+      fmin= min(fmin,real(f(i)))
+      end do
+!
+      return
+      end subroutine lplmax
+!
+!
+!------------------------------------------------------
+      subroutine lplmax3 (f1,f2,f3,fmax,fmin,n)
+!------------------------------------------------------
+      use, intrinsic :: iso_c_binding
+      implicit none
+!
+      integer(C_INT) i,n
+      real(C_DOUBLE) f1(n),f2(n),f3(n)
+      real(C_float)  fmax,fmin
+!
+      fmax= -1.e10
+      fmin=  1.e10
+!
+      do i= 1,n
+      fmax= max(fmax,real(f1(i)),real(f2(i)),real(f3(i)))
+      fmin= min(fmin,real(f1(i)),real(f2(i)),real(f3(i)))
+      end do
+!
+      return
+      end subroutine lplmax3
 !
 !
 !-----------------------------------------------------------------------
@@ -572,7 +719,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_float)  plodx
       integer(C_INT) kploy,kploz,ir1,ir2
@@ -612,7 +759,7 @@
       include 'param_A23A.h'
       integer(C_INT) it,interv
 !
-!  Hit is true if mod(it,..)= 0 
+!  True if mod(it,..).eq.0 
       if(mod(it,interv).eq.0) then
         iwrt= 0
       else
@@ -644,9 +791,6 @@
       include 'mpif.h'
       include 'param_A23A.h'
 !
-      integer(C_INT) igc
-      common/if_igc/ igc
-!
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) npr,kstart,ipar,size
       real(C_DOUBLE) tfinal,cptot
@@ -669,7 +813,7 @@
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !* 
-      real(C_DOUBLE) tdec(3000)  !<-- DOUBLE
+      real(C_DOUBLE) tdec(10000)  !<-- DOUBLE
       common/ehist/  tdec
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
@@ -692,12 +836,12 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
-      real(C_DOUBLE) dtsav,adtsav,hdtsav,gnu0,cs
-      real(C_DOUBLE) ase,asb,asl,we,wb,wl
       integer(C_INT) iterm,iterf,iters
-      common/emiter/ ase,asb,asl,we,wb,wl,iterm,iterf,iters
+      real(C_DOUBLE) dtsav,adtsav,hdtsav,gnu0,cs
+      real(C_DOUBLE) asl,we,wb,rsdl1,rsdl2,rsdl3
+      common/emiter/ asl,we,wb,rsdl1,rsdl2,rsdl3,iterm,iterf,iters
 !***
       integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k
       common/irest/ iresrt
@@ -716,7 +860,10 @@
 !
         it= 0
         t = 0
-        ldec= 1  ! at the start time
+!
+        ldec= 1       ! at the start time
+        tdec(ldec)= t
+!       +++++++++++++
 !
         dtsav=  dt
         adtsav= adt
@@ -732,37 +879,24 @@
         call fulmov (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
                      npr,ipc,1,ipar,size)
 !
-        if(igc.eq.1) then
         call fulmov (xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                      npr,ipc,2,ipar,size)
-!
-!  before the conversion step
-        else if(igc.eq.2) then
-        call drmove (xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
-                     vxe,vye,vze,npr,kstart,ipc,2,ipar,size) 
-        end if
 !
           cl_first= 2
           call clocki (walltime2,size,cl_first)
 !
         call emfld0
+          call clocki (walltime3,size,cl_first)
 !
 !*  In the initial step, (vxe,vye,vze) -> (mue,vpe,vhe)
 !   is converted
 !
-        if(igc.eq.2) then
-        call initve (xe,ye,ze,mue,vpe,vhe,vxe,vye,vze,  &
-                     wspec(2),npr,ipar,size)
-        end if
-!
-          cl_first= 2
-          call clocki (walltime3,size,cl_first)
-          call clocki (walltime4,size,cl_first)
-!
         dt=  dtsav
         adt= adtsav
         hdt= hdtsav
+!
 !*                --- for it=0, use /diag1/ ---
+        kstart= 1    !  kstart= 1 for t>0
         go to 300
       end if
 !
@@ -782,16 +916,20 @@
  1000 cl_first= 2
       call clocki (walltime1,size,cl_first)
 !
+!     +++++++++++++++++++++++++++++++++++++++++++
       if(mod(it,5).eq.1 .and. t.ge.tfinal) return
       if((walltime1/60.d0).gt.cptot) return  !<-- in minutes
+!     +++++++++++++++++++++++++++++++++++++++++++
 !
       it= it +1 
       t = t +dt
-!        +++++++++++++++++
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+!
+!     +++++++++++++++++++++++++++
+      if(iwrt(it,nha).eq.0) then  !.and. io_pe.eq.1) then
         ldec= ldec +1  ! only at this time
         tdec(ldec)= t
       end if
+!     +++++++++++++++++++++++++++
 !
 !   Accumulate the moments and do emfild    
 !
@@ -801,15 +939,8 @@
       call fulmov (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
                    npr,ipc,1,ipar,size)
 !
-      if(igc.eq.1) then
       call fulmov (xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                    npr,ipc,2,ipar,size)
-!
-      else if(igc.eq.2) then
-      call drmove (xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
-                   vxe,vye,vze,npr,kstart,ipc,2,ipar,size)
-!                  +++++++++++
-      end if
 !
         cl_first= 2
         call clocki (walltime2,size,cl_first)
@@ -828,19 +959,13 @@
 !   Correction is made once in five steps
 ! 
       if(mod(it,5).eq.0) then
+!     +++++++++++++++++++++++
 ! 
         call fulmv2 (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
                      npr,1,ipar,size)
 !
-        if(igc.eq.1) then
         call fulmv2 (xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                      npr,2,ipar,size)
-!
-        else if(igc.eq.2) then
-        call drmov2 (xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
-                     vxe,vye,vze,npr,2,ipar,size)          
-!                    +++++++++++
-        end if
 !
 !   ex()= ex() +d.pot()
 !
@@ -855,20 +980,14 @@
       call fulmov (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
                    npr,ipc,1,ipar,size)
 !
-      if(igc.eq.1) then
       call fulmov (xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                    npr,ipc,2,ipar,size)
-!
-      else if(igc.eq.2) then
-      call drmove (xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
-                   vxe,vye,vze,npr,kstart,ipc,2,ipar,size)
-!                  +++++++++++
-      end if
 !
 !***********************************************************************
 !*  4.  Renewal : ex0 <--- ex  (after particle-move).                  *
 !***********************************************************************
 !  Rewrite ex() to be one-last exa() to advance forward
+!  the it=0 case by one pass
 !
   300 continue
 !
@@ -885,76 +1004,76 @@
       end do
       end do
 !
-        cl_first= 2
-        call clocki (walltime5,size,cl_first)
 !
-        if(io_pe.eq.1) then
+      cl_first= 2
+      call clocki (walltime5,size,cl_first)
+!
+      if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("# timing: it,t=",i6,f10.3," total, this step &
-              (sec)=",2f10.3,/,"  ful(1),em,es,ful(0)=",4f10.3,/)') &
+        write(11,'("# timing: it,t=",i6,f10.3," total, this step (sec)=", &
+                 2f10.3,/,"  ful(1),em,es,ful(0)=",4f10.3,/)') &
                       it,t,walltime5,walltime5-walltime1,        &
                       walltime2-walltime1,walltime3-walltime2,   &
                       walltime4-walltime3,walltime5-walltime4
         close(11)
-        end if
+      end if
 !
 !***
-      if(iwrt(it,nhist).eq.0 .and. it.gt.1) then
-!                +++++
+      if(ldec.gt.10000) then
+        call rehist
+      end if
+!
+      if(iwrt(it,nhist).eq.0) then
+!     ++++++++++++++++++++++++++++
+      if(it.ne.0) then
 !
         iresrt= 2
 !
-        if(igc.eq.1) then
         call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
                      xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                      npr,ipar,size,iresrt) 
-!
-        else if(igc.eq.2) then
-        call restrt (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                     xe,ye,ze,mue,vpe,vhe,qspec(2),wspec(2),  &
-                     npr,ipar,size,iresrt) 
-        end if
+      end if
       end if
 !***
 !
-      if(mod(it,nha).ne.0 .or. it.eq.0) go to 1000
-!               +++  ++ + 
-!
 !***********************************************************************
-!*  5. Diagnostic routines diag1                                       *
+!*  5. Diagnostic routines diag1 and diag2                             *
 !***********************************************************************
-!   Only mod(it,nha)= 0
 !
-      if(iwrt(it,nplot).eq.0) then
-         iaver= 0
-         call freset
-      end if
+!  iaverg =< nha
+      iaverg= iaverg +1
+      call faverg (iaverg,nha)
 !
-      iaver= iaver +1
-      call faverg (iaver,npl)
+!* After iaverg= nha 
 !
-!* after faverg ! 
+      if(iwrt(it,nha).eq.0) then
+!       if(it.gt.0) then
+        if(.false.) then  
+        call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
 !
-        if(.false.) then
-      call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
+        call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
 !
-      if(igc.eq.1) then
-      call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
-!
-      else if(igc.eq.2) then
-      call diag1 (xe,ye,ze,mue,vpe,vhe,qspec(2),npr,2)
-      end if
-!
-      call fvplot
+        call diag2 (ex,ey,ez,bx,by,bz,pot,       &
+                    qix,qiy,qiz,qex,qey,qez,qi,qe)
         end if
+      end if
 !
-!     gnu0= 1./200.
-      gnu0= 0.d0
-      cs=  veth/sqrt(2.d0*wspec(1))
-      call dragco (gnu0,cs,iaverg,npl)
+! at iaverg= nha
+      if(mod(it,nha).eq.0) then
+!       gnu0= 1./200.
+        gnu0= 0.d0
+        cs=  veth/sqrt(2.d0*wspec(1))
+        call dragco (gnu0,cs,iaverg,nha)
+      end if
 !
+! real*4
+      if(iwrt(it,nha).eq.0) then
+!     ++++++++++++++++++++++++++
+        iaverg= 0
+        call freset
+      end if
       go to 1000
 !
       return
@@ -988,6 +1107,7 @@
       integer(C_INT) ijk
 !
       if(iaver.gt.nav) return
+!     +++++++++++++++++++++++
 !
       do ijk= 0,mxyzA   !<-- real*4 for plots
       cix(ijk)= cix(ijk) +qix(ijk)
@@ -1009,7 +1129,7 @@
       end do
 !***
 !
-      if(iaver.ne.nav) return
+      if(iaver.eq.nav) then
       rnav= 1.d0/nav
 !
       do ijk= 1,mxyzA  !<<-- real*4
@@ -1030,6 +1150,7 @@
       avby(ijk)= rnav*avby(ijk)
       avbz(ijk)= rnav*avbz(ijk)
       end do
+      end if
 !
       return
       end subroutine faverg
@@ -1184,7 +1305,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
       real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
@@ -1195,8 +1316,8 @@
                      xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr,   &
                      exi,eyi,ezi,bxi,byi,bzi,                 &
                      bsqi,acx,acy,acz,ach,dvx,dvy,dvz,vy0,ranfp
-      integer(C_INT) l,i,il,ir,ip,j,jl,jr,jp,k,kl,kr,kp,      &
-                     iwrt,syme,symb
+      integer(C_INT) l,i,il,ir,ip,j,jl,jr,jp,k,kl,kr,kp,iwrt, &
+                     syme,symb
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
@@ -1276,7 +1397,7 @@
         jl= my    !
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.lt.0) then
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -1399,8 +1520,8 @@
       wkix= wxsq
       wkih= whsq
 !
-!        +++++++++++++++++
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,nha).eq.0) then
+!     ++++++++++++++++++++++++++
       if(ksp.eq.1) then
         edec(ldec,5)= wkix
         edec(ldec,6)= wkih
@@ -1484,7 +1605,7 @@
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe,vxe,vye,vze
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
       real(C_DOUBLE) qmult,wmult
-      integer(C_INT) npr,kstart,ipc,ksp,iwrt,ipar,size,MPIerror
+      integer(C_INT) npr,kstart,ipc,ksp,ipar,size,MPIerror
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                               ex,ey,ez,bx,by,bz,       &
@@ -1534,12 +1655,12 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
-      integer(C_INT) i,j,k,ir,il,jr,jl,kr,kl,syme,symb
+      integer(C_INT) i,j,k,ir,il,jr,jl,kr,kl,iwrt,syme,symb
       integer(C_INT) l,ip,jp,kp
       real(C_DOUBLE) bss1,mue1,vhh2,qw,grbx,grby,grbz,rax,ray,raz,    &
                      grhx,grhy,grhz,bsq2,bsa,grha,epara,ach,fric,vhh, &
@@ -1587,6 +1708,7 @@
 !
       qw = qmult/wmult
 !
+!
 !-----------------------------------------------------------------------
 !*    for electrons - all the diamagnetic terms.
 !-----------------------------------------------------------------------
@@ -1626,7 +1748,8 @@
       ray= sby(i,j,k)
       raz= sbz(i,j,k)
 !
-      if(j.lt.0 .or. j.ge.my) then  ! 11/08
+!     if(j.eq.0 .or. j.eq.my) then
+      if(j.lt.0 .or. j.gt.my-1) then
         grbx= 0
         grby= 0
         grbz= 0
@@ -1722,20 +1845,20 @@
 !   these are entended regions
 !
         if(j.ge.my) then
-          j= my 
-        else if(j.lt.0) then  ! on 11/08
+          j= my      ! to be safe within labels
+        else if(jp.lt.0) then
           j=  0
         end if
 !
         bsq2= bx1(i,j,k)**2 +by1(i,j,k)**2 +bz1(i,j,k)**2
         bsa = sqrt(bsq2)
-!                                       11/02
-        vxe(l)= vhe(l)*bx1(i,j,k)/bsa !+( ey0(i,j,k)*bz1(i,j,k) &
-                                      !  -ez0(i,j,k)*by1(i,j,k))/bsq2
-        vye(l)= vhe(l)*by1(i,j,k)/bsa !+( ez0(i,j,k)*bx1(i,j,k) &
-                                      !  -ex0(i,j,k)*bz1(i,j,k))/bsq2
-        vze(l)= vhe(l)*bz1(i,j,k)/bsa !+( ex0(i,j,k)*by1(i,j,k) &
-                                      !  -ey0(i,j,k)*bx1(i,j,k))/bsq2
+!
+        vxe(l)= vhe(l)*bx1(i,j,k)/bsa +( ey0(i,j,k)*bz1(i,j,k) &
+                                        -ez0(i,j,k)*by1(i,j,k))/bsq2
+        vye(l)= vhe(l)*by1(i,j,k)/bsa +( ez0(i,j,k)*bx1(i,j,k) &
+                                        -ex0(i,j,k)*bz1(i,j,k))/bsq2
+        vze(l)= vhe(l)*bz1(i,j,k)/bsa +( ex0(i,j,k)*by1(i,j,k) &
+                                        -ey0(i,j,k)*bx1(i,j,k))/bsq2
 !
         rxl(l) = x(l) +hdt*vxe(l)
         ryl(l) = y(l) +hdt*vye(l)
@@ -1775,10 +1898,10 @@
 !
       if(jp.ge.my) then
         jr= my+1  ! to be safe within labels
-        jl= my    ! on 11/06
+        jl= my    !
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.lt.0) then
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -1798,6 +1921,7 @@
       fzl= 0.5d0*(0.5d0-zz)*(0.5d0-zz)
       fzc= 0.75d0-zz*zz
       fzr= 0.5d0*(0.5d0+zz)*(0.5d0+zz)
+!
 !
       aex = fyr*                                                       &
            ((exa(ir,jr,kr)*fxr+exa(i,jr,kr)*fxc+exa(il,jr,kr)*fxl)*fzr &
@@ -1943,18 +2067,18 @@
       vhh2= vhh**2*wspec(2)/qspec(2)
 !
       bss1= bss(i,j,k)
-!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
+!          bxgrad.B/B      bxgrad.b/B,      ExB    Eq.(9)
       vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
-      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
-      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
-!     vxa= 0 !(aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-!     vya= 0 !(aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-!     vza= 0 !(aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!            11/02                  
+      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2 
+      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2 
+!
+      wkex= wkex +wmult*(0.5d0*(vxa**2 +vya**2 +vza**2) +mue(l)*bsa)
+      wkeh= wkeh +wmult* 0.5d0* vhh**2
+!
 !     +++++++++++++++++++++++++++++++++
 !  For move: ipc= 0
       if(ipc.eq.0) then
-!     ************            
+!     ************
       x(l)= x(l) +dt*( vhh*abx/bsa + vxa )
       y(l)= y(l) +dt*( vhh*aby/bsa + vya )
       z(l)= z(l) +dt*( vhh*abz/bsa + vza )
@@ -1972,9 +2096,6 @@
       rxl(l)= x(l) +adt*vxj(l)
       ryl(l)= y(l) +adt*vyj(l)
       rzl(l)= z(l) +adt*vzj(l)
-!
-      wkex= wkex +wmult*(0.5d0*(vxa**2 +vya**2 +vza**2) +mue(l)*bsa)
-      wkeh= wkeh +wmult* 0.5d0* vhh**2
       end if
 !     +++++++++++++++++++++++++++++++++
       end do      
@@ -1989,8 +2110,8 @@
       wkex= wxsq
       wkeh= whsq
 !
-!        +++++++++++++++++
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,nha).eq.0) then
+!     ++++++++++++++++++++++++++
       if(ksp.eq.1) then
         edec(ldec,5)= wkex
         edec(ldec,6)= wkeh
@@ -2016,7 +2137,7 @@
         call partbc (rxl,ryl,rzl,vxj,vyj,vzj,npr,ipar,size) !<-- estimated
 !
         if(ksp.eq.1) then
-          write(06) 'not ready...'
+          write(06) 'Not ready...'
           stop 
 !    
         else if(ksp.eq.2) then
@@ -2087,7 +2208,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_DOUBLE) xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr, &
                      exi,eyi,ezi,bxi,byi,bzi,               &
@@ -2328,7 +2449,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       integer(C_INT) i,j,k,ir,il,jr,jl,kr,kl,l,ip,jp,kp,syme,symb
       real(C_DOUBLE) bss1,mue1,vhh2,qw,grbx,grby,grbz,rax,ray,raz,    &
@@ -2409,7 +2530,8 @@
       ray= sby(i,j,k)
       raz= sbz(i,j,k)
 !
-      if(j.lt.0 .or. j.ge.my) then  ! 11/08
+!     if(j.eq.0 .or. j.eq.my) then
+      if(j.lt.0 .or. j.gt.my-1) then
         grbx= 0
         grby= 0
         grbz= 0
@@ -2479,10 +2601,10 @@
 !
       if(jp.ge.my) then
         jr= my+1  ! to be safe within labels
-        jl= my    ! 11/06
+        jl= my    !
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.lt.0) then
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -2643,15 +2765,12 @@
       mue1= mue(l)/qspec(2)
       vhh2= vhh**2*wspec(2)/qspec(2)
 !
-      bss1= bss(i,j,k)
-!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
+      bss1= bss(i,j,k) 
+!                                           Eq.(9)
       vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
-      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
-      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
-!     vxa= 0 !(aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-!     vya= 0 !(aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-!     vza= 0 !(aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!             11/02
+      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2 
+      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2 
+!
       rxl(l)=  x(l) +dt*(vhh*abx/bsa +vxa) ! /bsa
       ryl(l)=  y(l) +dt*(vhh*aby/bsa +vya)
       rzl(l)=  z(l) +dt*(vhh*abz/bsa +vza)
@@ -2661,7 +2780,7 @@
       call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
 !
       if(ksp.eq.1) then
-        write(06) 'not ready...'
+        write(06) 'Not ready...'
         stop 
 !    
       else if(ksp.eq.2) then
@@ -2729,7 +2848,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
       common/wkinel/ wkix,wkih,wkex,wkeh
@@ -2772,10 +2891,10 @@
 !
       if(jp.ge.my) then
         jr= my+1  ! to be safe within labels
-        jl= my    ! 11/06
+        jl= my    !
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.lt.0) then
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -2890,7 +3009,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
       integer(C_INT) l
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
@@ -2965,7 +3084,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
       integer(C_INT) l
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
@@ -3014,11 +3133,6 @@
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr,ipar,size
 !------------------------------------------------------
-!     real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-!                                             ex,ey,ez,bx,by,bz,       &
-!                                             ex0,ey0,ez0,bx0,by0,bz0, &
-!                                             bxa,bya,bza
-!     common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
 !
       integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -3040,9 +3154,9 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!
+                     edec(10000,54)
       integer(C_INT) l
+!
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
@@ -3056,21 +3170,15 @@
       do l= ipar,npr,size
       if(x(l).ge.xmax-dx) then
         x(l)= x(l) -xmaxe
-!
       else if(x(l).le.-dx) then
         x(l)= x(l) +xmaxe
       end if
 !*
-!     epara= (aex*abx +aey*aby +aez*abz)/bsa
-!     ach=  qw*epara -mue(l)*grha
-!     fric= gnu(i,j,k)*hdt
-!     vhh= ((1.d0-0.5d0*fric)*vhe(l) +hdt*ach)/(1.d0+0.5d0*fric)
-!     vxe(l)= vhe(l)*bx1(i,j,k)/bsa !+( ey0(i,j,k)*bz1(i,j,k) &
-                                      !  -ez0(i,j,k)*by1(i,j,k))/bsq2
+!       x(l) = 2.*xmaxsp -x(l) <- y
+!      vz(l)= -vz(l)          <- vhe
       if(y(l).ge.ymax) then
         y(l)= 2.d0*ymax -y(l)   
         vhe(l)= -vhe(l)
-!
       else if(y(l).le.0.d0) then
         y(l)= -y(l) 
         vhe(l)= -vhe(l)
@@ -3078,7 +3186,6 @@
 !*
       if(z(l).ge.zmax-dz) then
         z(l)= z(l) -zmaxe
-!
       else if(z(l).le.-dz) then
         z(l)= z(l) +zmaxe
       end if
@@ -3122,7 +3229,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
       integer(C_INT) l
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
@@ -3197,9 +3304,9 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!
+                     edec(10000,54)
       integer(C_INT) l
+!
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
@@ -3218,11 +3325,11 @@
       end if
 !*
       if(y(l).ge.ymax) then
-        y(l)= 2.d0*ymax -y(l)   
+        y(l)= 2.d0*ymax -y(l)
         vhe(l)= -vhe(l)
 !
       else if(y(l).le.0.d0) then
-        y(l)= -y(l) 
+        y(l)= -y(l)
         vhe(l)= -vhe(l)
       end if
 !*
@@ -3232,9 +3339,8 @@
       else if(z(l).le.-dz) then
         z(l)= z(l) +zmaxe
       end if
-!*
       end do
-! 
+!
       return
       end subroutine partdkT
 !
@@ -3321,7 +3427,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.lt.0) then  !<- x le
         jr=  0
         jl= -1
       end if
@@ -3506,7 +3612,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.le.0) then
         jr=  0
         jl= -1
       end if
@@ -3637,7 +3743,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.le.0) then
         jr=  0
         jl= -1
       end if
@@ -3768,7 +3874,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.le.0) then
         jr=  0
         jl= -1
       end if
@@ -3915,7 +4021,7 @@
       if(jp.ge.my) then
         jr= my+1
         jl= my
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.le.0) then
         jr=  0
         jl= -1
       end if
@@ -4425,7 +4531,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_DOUBLE) vrg1,rwd2,anbar
       common/vring/  vrg1
@@ -4550,23 +4656,21 @@
 !
         i= mx/2
         k= mz/2
-        write(11,*) 'Magnetic field at k=',k
+        write(11,'("Magnetic field at k=",i5)') k
 !
         do j= 0,my
         if(mod(j,5).eq.1) then
-        write(11,'("j,k=",2i4,1p3d12.3)') &
-                                j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
+        write(11,'("j,k=",2i4,1p3d12.3)') j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
         end if
         end do
 !
         i= mx/2
         k= 10 +mz/2
-        write(11,*) 'Magnetic field at k=',k
+        write(11,'("Magnetic field at k=",i5)') k
 !
         do j= 0,my
         if(mod(j,5).eq.1) then
-        write(11,'("j,k=",2i4,1p3d12.3)') &
-                                j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
+        write(11,'("j,k=",2i4,1p3d12.3)') j,k,bx(i,j,k),by(i,j,k),bz(i,j,k)
         end if
         end do
 !
@@ -4713,8 +4817,7 @@
       include 'param_A23A.h' 
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
-      integer(C_INT) igc,ipar
-      common/if_igc/ igc
+      integer(C_INT) ipar
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                            ex,ey,ez,bx,by,bz,       &
@@ -4733,7 +4836,8 @@
 !                              ++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                            exa,eya,eza,bxa,bya,bza, &
-                                           bss,                     &
+                                           cmx,cmy,cmz,sbx,sby,sbz, &
+                                           sbx0,sby0,sbz0,bss,      &
                                            cjx,cjy,cjz,crx,cry,crz, &
                                            grh,grx,gry,grz,         &
                                            rhsx,rhsy,rhsz
@@ -4741,8 +4845,6 @@
       real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: &
                                            eex,eey,eez,bbx,bby,bbz
 !------------------------------------------------------------------
-      real(C_DOUBLE) tdec(3000)  !<-- DOUBLE
-      common/ehist/  tdec
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
       common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
@@ -4774,14 +4876,14 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
-      real(C_DOUBLE) wkix,wkih,wkex,wkeh
-      common/wkinel/ wkix,wkih,wkex,wkeh
-!
-      real(C_DOUBLE) ase,asb,asl,we,wb,wl,sbp2,sep2,wbp2,wep2
       integer(C_INT) iterm,iterf,iters
-      common/emiter/ ase,asb,asl,we,wb,wl,iterm,iterf,iters
+      real(C_DOUBLE) asl,we,wb,rsdl1,rsdl2,rsdl3
+      common/emiter/ asl,we,wb,rsdl1,rsdl2,rsdl3,iterm,iterf,iters
+!
+      real(C_DOUBLE) sbp2,sep2,wbp2,wep2
+      common/emite2/ sbp2,sep2,wbp2,wep2
 !
       integer(C_INT) i,j,k,kk,ir,il,kr,kl,syme,symb,            &
                      itag,iwrt,iperio 
@@ -4789,7 +4891,7 @@
                      rax,ray,raz,aex,aey,aez,grhx,grhy,grhz,    &
                      grbx,grby,grbz,bsq2,bsa1,                  &
                      ehh,ebx,eby,ebz,drag,mue1,vhh2,            &
-                     cjy1,cjy2,sb2,se2,aldt2
+                     cjy1,cjy2,db2,de2,sb2,se2,aldt2
 !
       integer(C_INT),dimension(mxyz) :: arrayx,arrayy,arrayz
       common/array1d/ arrayx,arrayy,arrayz
@@ -4958,11 +5060,9 @@
       bxa(i,j,k)= aimpl*bx(i,j,k) +(1.d0-aimpl)*bx0(i,j,k) +bxc
       bya(i,j,k)= aimpl*by(i,j,k) +(1.d0-aimpl)*by0(i,j,k) +byc
       bza(i,j,k)= aimpl*bz(i,j,k) +(1.d0-aimpl)*bz0(i,j,k) +bzc
-!
       bsq2= bxa(i,j,k)**2 +bya(i,j,k)**2 +bza(i,j,k)**2
       bsa1=  sqrt(bsq2)
-!
-      bss(i,j,k)= bsa1
+      bss (i,j,k)= bsa1
 !                                           wce is included here
       rax= bxa(i,j,k)/bsa1
       ray= bya(i,j,k)/bsa1
@@ -4997,46 +5097,23 @@
         cjz(i,j,k)= 0
       else
 !
-      if(igc.eq.1) then
-!     +++++++++++++++++
       cjx(i,j,k)= qix(i,j,k) +qex(i,j,k) &
-            +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax  +dtic*ebx)  &
+            +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)   &
                                                  /(1.d0+dtic2)  &
             +qe(i,j,k)*adt*qwe*(aex +dtice2*ehh*rax +dtice*ebx) &
                                                  /(1.d0+dtice2)
       cjy(i,j,k)= qiy(i,j,k) +qey(i,j,k) &
-            +qi(i,j,k)*adt*qwi*(aey +dtic2*ehh*ray  +dtic*eby)  &
+            +qi(i,j,k)*adt*qwi*(aey +dtic2*ehh*ray +dtic*eby)   &
                                                  /(1.d0+dtic2)  &
             +qe(i,j,k)*adt*qwe*(aey +dtice2*ehh*ray +dtice*eby) &
                                                  /(1.d0+dtice2)
       cjz(i,j,k)= qiz(i,j,k) +qez(i,j,k) &
-            +qi(i,j,k)*adt*qwi*(aez +dtic2*ehh*raz  +dtic*ebz)  &
+            +qi(i,j,k)*adt*qwi*(aez +dtic2*ehh*raz +dtic*ebz)   &
                                                  /(1.d0+dtic2)  &
             +qe(i,j,k)*adt*qwe*(aez +dtice2*ehh*raz +dtice*ebz) &
                                                  /(1.d0+dtice2)
-
-      else if(igc.eq.2) then
-!     ++++++++++++++++++++++
-      cjx(i,j,k)= &
-             qix(i,j,k) +qex(i,j,k) &
-            +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)  &
-                                                 /(1.d0+dtic2) &
-            +qe(i,j,k)*adt*qwe*ehh*rax/drag 
-!
-      cjy(i,j,k)= &
-             qiy(i,j,k) +qey(i,j,k) &
-            +qi(i,j,k)*adt*qwi*(aey +dtic2*ehh*ray +dtic*eby)  &
-                                                 /(1.d0+dtic2) &
-            +qe(i,j,k)*adt*qwe*ehh*ray/drag 
-!
-      cjz(i,j,k)= &
-             qiz(i,j,k) +qez(i,j,k) &
-            +qi(i,j,k)*adt*qwi*(aez +dtic2*ehh*raz +dtic*ebz)  &
-                                                 /(1.d0+dtic2) &
-            +qe(i,j,k)*adt*qwe*ehh*raz/drag 
       end if
 !
-      end if
       end do 
       end do
       end do
@@ -5063,7 +5140,7 @@
       dtice = hdt*qwe*bsa1
       dtice2= dtice**2
 !
-      if(j.lt.0 .or. j.ge.my) then  ! 11/08
+      if(j.lt.0 .or. j.gt.my-1) then
         grbx= 0
         grby= 0
         grbz= 0
@@ -5104,8 +5181,6 @@
       mue1= amu(i,j,k)/qspec(2)
       vhh2= avhh(i,j,k)**2*wspec(2)/qspec(2)
 !
-      if(igc.eq.1) then
-!     +++++++++++++++++
       cjx(i,j,k)= cjx(i,j,k) &
             +adt*qwi*(qiy(i,j,k)*bza(i,j,k) -qiz(i,j,k)*bya(i,j,k)) &
                                                  /(1.d0+dtic2) &
@@ -5149,38 +5224,6 @@
                  -bxa(i,j,k)*qez(i,j,k)*rax -bya(i,j,k)*qez(i,j,k)*ray &
                  +bza(i,j,k)*(qey(i,j,k)*ray +qex(i,j,k)*rax)) &
                                                  /(1.d0+dtice2) 
-!
-      else if(igc.eq.2) then
-!     ++++++++++++++++++++++
-      cjx(i,j,k)= cjx(i,j,k) &
-            +adt*qwi*(qiy(i,j,k)*bza(i,j,k) -qiz(i,j,k)*bya(i,j,k)) &
-                                                 /(1.d0+dtic2) &
-            +adt*qwi*dtic*( &
-                  bxa(i,j,k)*(qiy(i,j,k)*ray +qiz(i,j,k)*raz)  &
-                 -bya(i,j,k)* qix(i,j,k)*ray -bza(i,j,k)*qix(i,j,k)*raz) &
-                                                 /(1.d0+dtic2) & 
-            +qe(i,j,k)*(mue1*grx(i,j,k)/bsa1 +vhh2*crx(i,j,k)/bsq2)
-!              back on 11/08
-!
-      cjy(i,j,k)= cjy(i,j,k) &
-            +adt*qwi*(qiz(i,j,k)*bxa(i,j,k) -qix(i,j,k)*bza(i,j,k)) &
-                                                 /(1.d0+dtic2) &
-            +adt*qwi*dtic*( &
-                 -bxa(i,j,k)*qiy(i,j,k)*rax -bza(i,j,k)*qiy(i,j,k)*raz &
-                 +bya(i,j,k)*(qix(i,j,k)*rax +qiz(i,j,k)*raz)) &
-                                                 /(1.d0+dtic2) &
-            +qe(i,j,k)*(mue1*gry(i,j,k)/bsa1 +vhh2*cry(i,j,k)/bsq2)
-!
-      cjz(i,j,k)= cjz(i,j,k) &
-            +adt*qwi*(qix(i,j,k)*bya(i,j,k) -qiy(i,j,k)*bxa(i,j,k)) &
-                                                 /(1.d0+dtic2) &
-            +adt*qwi*dtic*(  &
-                 -bxa(i,j,k)*qiz(i,j,k)*rax -bya(i,j,k)*qiz(i,j,k)*ray &
-                 +bza(i,j,k)*(qiy(i,j,k)*ray +qix(i,j,k)*rax)) &
-                                                 /(1.d0+dtic2) &
-            +qe(i,j,k)*(mue1*grz(i,j,k)/bsa1 +vhh2*crz(i,j,k)/bsq2)
-      end if
-!
       end do
       end do
       end do
@@ -5264,10 +5307,11 @@
 !
 !     ++++++++++++ r ++++++ s ++++++++++++++++++++++++++++++++++++
       call cfpsol (ex,ey,ez,rhsx,rhsy,rhsz,np1,np2,nz1,nz2,ipar, &
-                   iterm,iterf) 
+                   rsdl1,iterm,iterf) 
 !     ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
 !***
       if(mod(it,5).eq.1) then
+!     +++++++++++++++++++++++
         syme= -1 
         call outmesh3 (ex,ey,ez) 
         call filt3e (ex,ey,ez,0.d0,0.d0,0.d0,ifilx,ifily,ifilz,syme)
@@ -5322,12 +5366,9 @@
       do i= 0,mx-1
       bx(i,0,k)= bx0(i,0,k)  &
                         +dt*(eya(i,0,kr)  -eya(i,0,kl))/hz2
-!                          -(eza(i,1,k) -eza(i,-1,k)) <- =0 
       by(i,0,k)= 0
       bz(i,0,k)= bz0(i,0,k)  & 
                         -dt*(eya(ir,0,k) -eya(il,0,k))/hx2
-!                       +dt*( (exa(i,j+1,k) -exa(i,j-1,k))/hy2 <- =0 
-!                            -(eya(ir,j,k)  -eya(il,j,k))/hx2)
 !
       bx(i,my,k)= bx0(i,my,k)  &
                         +dt*(eya(i,my,kr)  -eya(i,my,kl))/hz2
@@ -5339,6 +5380,7 @@
 !
 !  Entended mesh points for particles 
       if(mod(it,5).eq.1) then
+!     +++++++++++++++++++++++
         symb= +1 
         call outmesh3 (bx,by,bz)
         call filt3e (bx,by,bz,0.d0,0.d0,0.d0,ifilx,ifily,ifilz,symb)
@@ -5375,11 +5417,9 @@
       we=    se2/float(3*mxyz)
       wbp2= sbp2/float(2*mxyz)
       wep2= sep2/float(2*mxyz)
-      asb= 0 
-      ase= 0
 !
-!        +++++++++++++++++
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,nha).eq.0) then
+!     ++++++++++++++++++++++++++
         edec(ldec,1)=  wb
         edec(ldec,2)=  we
         edec(ldec,3)=  wbp2
@@ -5394,9 +5434,7 @@
 !
       if(io_pe.eq.1) then
         if(iwrt(it,nplot).eq.0) then
-!                  +++++
-!       if(mod(it,10).eq.1) then
-!
+!       ++++++++++++++++++++++++++++
         call lblbot (t)
 !
         do k= 0,mz-1
@@ -5453,7 +5491,7 @@
 !*** Original: 4/23/1992 ******************* Fortran 2003: 12/21/2021 **
 !-----------------------------------------------------------------------
       subroutine cfpsol (ex,ey,ez,rhsx,rhsy,rhsz,np1,np2,nz1,nz2,ipar, &
-                         iterm,iterf)
+                         rsdl1,iterm,iterf)
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
@@ -5470,7 +5508,7 @@
       integer(C_INT) ipar,iterm,iterf,ierr
 !
       integer(C_INT) ipr(10),ijk
-      real(C_DOUBLE) rpr(10),rsdl
+      real(C_DOUBLE) rpr(10),rsdl1
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !  BCG subroutines
 !
@@ -5504,7 +5542,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       integer(C_INT) i,j,k,itrmx,iwrt,ierror
       real(C_DOUBLE) wsq
@@ -5570,7 +5608,7 @@
 !                      ipr,rpr,iw,w,wp,ierr)
 !
 !  After bcgstb
-!     rpr(2)  rsdl
+!     rpr(2)  rsdl1
 !     ipr(2)  iterf 
 !----------------------------------------------------
 !*  write back to ex, ey and ez.       3/07/1999
@@ -5617,12 +5655,12 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-!                     iterf  cond  sec   rsdl
+!                     iterf  cond  sec   rsdl1
         iterf= ipr(2)
-        rsdl = rpr(2)
+        rsdl1= rpr(2)
         write(11,'("#(bcgstb-em) it=",i5," iterf,ierr=",i3,i5,    &
-               " (",f6.3," sec); rsdl=",1pd13.5,"; <e>=",d13.5)') &
-                                     it,iterf,ierr,rpr(3),rsdl,wsq
+               " (",f6.3," sec); rsdl1=",1pd13.5,"; <e>=",d13.5)') &
+                                it,iterf,ierr,rpr(3),rsdl1,wsq
         close(11)
       end if
 !
@@ -5638,9 +5676,6 @@
       use, intrinsic :: iso_c_binding
       implicit none
       include 'param_A23A.h' 
-!
-      integer(C_INT) igc
-      common/if_igc/ igc
 !
 !***********************************************************************
 !*    Define the whole CFP matrix.                                     *
@@ -5704,7 +5739,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       integer(C_INT) i,j,k,ii,jj,kk,m
       real(C_DOUBLE) hxhy4,hxhz4,hyhz4,bxa,bya,bza,bss,     &
@@ -6155,19 +6190,12 @@
 !  adt*ex()/q0
       fmain = adtsq*qwi*qi(i,j,k)/((1.d0 +dtic2)*q0) 
 !
-      if(igc.eq.1) then
       fmaine= adtsq*qwe*qe(i,j,k)/((1.d0 +dtice2)*q0) 
-!
-      else if(igc.eq.2) then
-      fpare= adtsq*qwe*qe(i,j,k)/((1.d0 +aimpl*gnu(i,j,k)*hdt)*q0)
-      fexbe= qe(i,j,k)/(bss*q0)  !<<- 1/bss, see L.4750
-      end if
 !
       rax= bxa/bss
       ray= bya/bss
       raz= bza/bss
 !
-      if(igc.eq.1) then
 !     +++++++++++++++++
       a11=  fmain*(1.d0 +dtic2*rax**2) +fmaine*(1.d0 +dtice2*rax**2)
       a22=  fmain*(1.d0 +dtic2*ray**2) +fmaine*(1.d0 +dtice2*ray**2)
@@ -6181,22 +6209,6 @@
 !
       a31=  fmain*(dtic2*raz*rax +dtic*ray) +fmaine*(dtice2*raz*rax +dtice*ray)
       a32=  fmain*(dtic2*raz*ray -dtic*rax) +fmaine*(dtice2*raz*ray -dtice*rax)
-!
-      else if(igc.eq.2) then
-!     ++++++++++++++++++++++
-      a11=  fmain*(1.d0 +dtic2*rax**2) +fpare*rax*rax
-      a22=  fmain*(1.d0 +dtic2*ray**2) +fpare*ray*ray
-      a33=  fmain*(1.d0 +dtic2*raz**2) +fpare*raz*raz
-!
-      a12=  fmain*(dtic2*rax*ray +dtic*raz) +fpare*rax*ray +fexbe*raz
-      a13=  fmain*(dtic2*rax*raz -dtic*ray) +fpare*rax*raz -fexbe*ray
-!
-      a21=  fmain*(dtic2*ray*rax -dtic*raz) +fpare*ray*rax -fexbe*raz
-      a23=  fmain*(dtic2*ray*raz +dtic*rax) +fpare*ray*raz +fexbe*rax
-!
-      a31=  fmain*(dtic2*raz*rax +dtic*ray) +fpare*raz*rax +fexbe*ray
-      a32=  fmain*(dtic2*raz*ray -dtic*rax) +fpare*raz*ray -fexbe*rax
-      end if
 !
 !**********************************************************
 !*  Core matrix: l= 1-3 and m= 9-11 are added.            *
@@ -6460,7 +6472,7 @@
          if(io_pe.eq.1) then
          open (unit=11,file=praefixc//'.11'//suffix2,             & 
                status='unknown',position='append',form='formatted')
-         write(11,*) '+ After wwstbi in ierr(1000 or 1010)=',ierr
+         write(11,'("+ After wwstbi in ierr(1000 or 1010)=",i6)') ierr
          close(11)
          end if
 !
@@ -6501,7 +6513,7 @@
 !
 !
         write(11,'("bcgstb: cpu time, bs,bi,bj,bk=",1p4d12.3)') &
-                                          t2-t1,t3-t2,t4-t3,t5-t4
+                                         t2-t1,t3-t2,t4-t3,t5-t4
         close(11)
       end if
 !
@@ -6539,7 +6551,7 @@
       integer(C_INT) ipar,itrm,ierr
 !
       real(C_DOUBLE) bb,qrofp,qrofn,qv,alpha,beta,omega, &
-                     bnrm,tr,tt,rr,uu,rsdl,bbb
+                     bnrm,tr,tt,rr,uu,rsdl1,bbb
       real(C_DOUBLE) ttt(2),ttt2(2),qqrofn,qv1
       integer(C_INT) itr,nstb,ierror,i
 !
@@ -6733,11 +6745,11 @@
          go to 2000
       endif
 !
-      rsdl= sqrt(rr)/bnrm
-      uu  = sqrt(uu/float(mxyz3)) 
+      rsdl1= sqrt(rr)/bnrm
+      uu   = sqrt(uu/float(mxyz3)) 
 !
 !     ***********************************
-      if(rsdl.lt.eps) go to 2000
+      if(rsdl1.lt.eps) go to 2000
 !
       if(itr.le.itrm) then
         go to 1000     !!<--iteration continues
@@ -6749,15 +6761,16 @@
 !*-----------------------------------------***--------------------------
 !                                       end of iteration
  2000 itrm = itr
-      eps  = rsdl
+      eps  = rsdl1
 !
-!     if(mod(it,100).eq.1) then
       if(io_pe.eq.1) then
+!     if(mod(it,nha).eq.1) then
+!
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("++wwstbk: itr=",i4,"  uu,rsdl=",1p2d13.4)') &
-                                                      itr,uu,rsdl
+        write(11,'(" ++wwstbk: itr=",i4,"  uu,rsdl1=",1p2d13.4)') &
+                                                      itr,uu,rsdl1
         close(11)
       end if
 !     end if
@@ -6973,7 +6986,7 @@
         jc= na(i,j)
         jj= ja(i,j)
         write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
-                                                i,j,jc,ax(i,j),jj,aa(i,j)
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -6983,7 +6996,7 @@
         jc= na(i,j)
         jj= ja(i,j)
         write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
-                                                i,j,jc,ax(i,j),jj,aa(i,j)
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -7094,7 +7107,7 @@
         jc= na(i,j)
         jj= ja(i,j)
         write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
-                                              i,j,jc,ax(i,j),jj,aa(i,j)
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -7104,7 +7117,7 @@
         jc= na(i,j)
         jj= ja(i,j)
         write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
-                                              i,j,jc,ax(i,j),jj,aa(i,j)
+                                               i,j,jc,ax(i,j),jj,aa(i,j)
         end do
         end do
 !
@@ -7707,9 +7720,6 @@
       include 'aslfftw3.f03'
       include 'param_A23A.h' 
 !
-      integer(C_INT) igc
-      common/if_igc/ igc
-!
       complex(C_DOUBLE_COMPLEX),dimension((mx/2+1),myA,mz) :: &
                                                       qi_c,qe_c
       real(C_DOUBLE),dimension(mx,myA,mz) :: qi_cc,qe_cc
@@ -7771,12 +7781,12 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       integer(C_INT) iterm,itrf0,iters,iperio,itag
       real(C_float)  xmax4,ymax4,zmax4
-      real(C_DOUBLE) ase,asb,asl,we,wb,wl
-      common/emiter/ ase,asb,asl,we,wb,wl,iterm,itrf0,iters
+      real(C_DOUBLE) asl,we,wb,rsdl1,rsdl2,rsdl3
+      common/emiter/ asl,we,wb,rsdl1,rsdl2,rsdl3,iterm,itrf0,iters
 !
       real(C_DOUBLE),dimension(0:my) :: filt
       common/bpfilt/ filt
@@ -7795,16 +7805,14 @@
 !     ifilzs= 3  !!
 !*********************
 !  escorr is made at L.770 
-!     if(mod(it,5).eq.1) then
+!     if(mod(it,5).eq.1) then  <- L.960
 !***         ++++
 ! 
       do k= 0,mz-1 
       do j= 0,my
       do i= 0,mx-1
-      qi(i,j,k)= dmin1(qi(i,j,k), 1.2d0*q0) !<<- cutoff
-      qe(i,j,k)= dmax1(qe(i,j,k),-1.2d0*q0) 
-!     qi(i,j,k)= dmax1(qi(i,j,k), 1.2d0*q0) !<<- max and min cutoff
-!     qe(i,j,k)= dmin1(qe(i,j,k),-1.2d0*q0) 
+      qi(i,j,k)= dmax1(qi(i,j,k), 1.2d0*q0) !<<- max and min cutoff
+      qe(i,j,k)= dmin1(qe(i,j,k),-1.2d0*q0) 
       end do
       end do
       end do
@@ -7833,8 +7841,7 @@
       do m= 1,myA
       do l= 1,mx/2+1
 !
-      if((l.eq.1 .or. l.eq.mx/2+1) .or. n.eq.1) then
-!     if(l.eq.1 .and. n.eq.1) then
+      if(l.eq.1 .and. n.eq.1) then
         qi_c(l,m,n)= 0
         qe_c(l,m,n)= 0
       else
@@ -7887,6 +7894,7 @@
 !     call fftw_destroy_plan(planf)
 !     deallocate(rin, zout)
 !
+!
 !***********************************************************************
 !* 2. Solve the full implicit equation for delta.phi.                  *
 !***********************************************************************
@@ -7897,7 +7905,7 @@
       do k= 0,mz-1
       do j= 0,my
       do i= 0,mx-1
-      if(j.eq.0 .or. j.eq.my) then  ! bound at j=0 or j=my
+      if(j.eq.0 .or. j.eq.my) then  ! bound at my
         rho(i,j,k)= 0
       else
       rho(i,j,k)=  -(qi(i,j,k) +qe(i,j,k))/q0            &
@@ -7939,10 +7947,10 @@
       end do
       end do
 !***
-!                  ++ R
-!     ++++++++++++++++++++++++++++
-      call escsol (ss,xx,wl,iters)
-!     ++++++++++++++++++++++++++++
+!                  ++ R  rsdl2
+!     +++++++++++++++++++++++++++++++
+      call escsol (ss,xx,rsdl2,iters)
+!     +++++++++++++++++++++++++++++++
 !    
       do k= 0,mz-1
       do j= 0,my
@@ -7966,7 +7974,8 @@
 ! 
       if(io_pe.eq.1) then
         if(iwrt(it,nplot).eq.0) then
-!                  +++++
+!       ++++++++++++++++++++++++++++
+!
         call lblbot (t)
 !
         do k= 0,mz-1
@@ -8042,17 +8051,18 @@
       asl= sqrt(sel/float(3*mxyz))
 !
       if(io_pe.eq.1) then
-        if(iwrt(it,nplot).eq.0) then
+        if(iwrt(it,nha).eq.0) then
+!       ++++++++++++++++++++++++++
 !
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("----- it=",i5," ---------------------------------")') &
-                      it
-        write(11,'("*iterm, iterf, iters=",i4,i5,i4,  &
-                /,"      <e2>,<b2>=",1p2d12.3,         &
-                  "  >>> we,wb,wl=",3d12.3," <<<",/)') &
-                      iterm,itrf0,iters,asl,asb,we,wb,wl
+        write(11,'("----- it=",i5," ---------------------------------")')&
+                                     it
+        write(11,'("*iterm, iterf, iters=",3i4,     &
+                /,"  <asl>,rsdl2=",1p2d12.3,        &
+                  "  >>> we,wb=",2d12.3," <<<",/)') &
+                                     iterm,itrf0,iters,asl,rsdl2,we,wb
         close(11)
         end if
       end if
@@ -8062,17 +8072,18 @@
 !
 !
 !-----------------------------------------------------------------------
-      subroutine escsol (ss,xx,rsdl,iters)
+      subroutine escsol (ss,xx,rsdl2,iters)
 !------------------------**-R-------------------------------------------
 !   call cresmd is called
       use, intrinsic :: iso_c_binding
       implicit none
 !
       include 'param_A23A.h' 
+!
 !     parameter  (nob2=19,iblk2=1)
 !*----------------------------------------------------------------------
       real(C_DOUBLE),dimension(mxyz) :: ss,xx
-      real(C_DOUBLE) rsdl
+      real(C_DOUBLE) rsdl2
       integer(C_INT) iters
 !***                                      ! escsol routine
       real(C_DOUBLE),dimension(mxyz,nob2) :: aa       !!<--first defined
@@ -8121,10 +8132,11 @@
 !                  ++ out           +++ +++
 !
       iters = ipr(2)
-      rsdl  = rpr(2)
+      rsdl2 = rpr(2)
 !
-      if (ierr.ne.0) then
-!     if(iwrt(it,nha).eq.0) then
+!     if (ierr.ne.0) then
+      if(iwrt(it,nha).eq.0) then
+!     ++++++++++++++++++++++++++
          wsq= 0
 !
          do ijk= 1,mxyz 
@@ -8133,17 +8145,19 @@
 !
          wsq= sqrt(wsq/mxyz)
 !
-         if(io_pe.eq.1) then
+        if(io_pe.eq.1) then
           open (unit=11,file=praefixc//'.11'//suffix2,             & 
                 status='unknown',position='append',form='formatted')
 !
 !     ipr(1) = itrm
 !     rpr(1) = eps = 1.0d-3
-          write(11,'("#(cresmd-esc)  it=",i5,";  iters,ierr=",i3,i5,    &
-                   " (in ",f6.3," sec); rsdl=",1pd13.5,"; <p>=",d13.5)') &
-                                           it,iters,ierr,rpr(3),rsdl,wsq
+          write(11,'("#(cresmd-esc)  it=",i5,";  iters,ierr=",i3,      &
+                   i5," (in ",f6.3," sec); rsdl2=",1pd13.5,"; <p>=",   &
+                   d13.5)') it,iters,ierr,rpr(3),rsdl2,wsq
+          close(11)
         end if
       end if
+!     end if
 !
       return
       end subroutine escsol
@@ -8156,9 +8170,6 @@
       implicit none
 !
       include 'param_A23A.h'
-!
-      integer(C_INT) igc
-      common/if_igc/ igc
 !
 !     parameter  (nob2=19,iblk2=1)
 !*----------------------------------------------------------------
@@ -8219,7 +8230,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ni,ne
 !
@@ -8284,7 +8295,7 @@
         do i= 0,mx-1 
 !* side 1:               for phi(i,0,k): to the left
 !
-        ca(1) =  1.d0   !  nob2 
+        ca(1) =  1.d0   !           nob2 
         ca(2) =  1.d0
 !*
         lxyz= i +mx*(0 +myA*k)
@@ -8329,34 +8340,21 @@
 !                                                /(1.d0+dtic2)  &
 !           +qe(i,j,k)*adt*qwe*(aex +dtice2*ehh*rax +dtice*ebx) &
 !                                                /(1.d0+dtice2) &
-!     cjx(i,j,k)= qix(i,j,k) +qex(i,j,k) &
+!     cjx(i,j,k)=  qix(i,j,k) +qex(i,j,k) &
 !           +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)  &
 !                                                /(1.d0+dtic2) &
 !           +qe(i,j,k)*(adt*qwe*ehh*rax/drag + ebx/bsa1)
 !
       akap1 = qqwi*ahdt2        /((1 +dtic2)*q0)
-      if(igc.eq.1) then
-        akae1 = qqwe*ahdt2      /((1 +dtice2)*q0)
-      else if(igc.eq.2) then
-        akae1 = 0
-      end if
 !
-!   igc=1: akae1, akga2, electrons are similar to ions
-!   igc=2: akae1= 0, agam2= qqwe*ahdt2/q0 -> ehh*rax,...
+      akae1 = qqwe*ahdt2      /((1 +dtice2)*q0)
+!
       akap2 = qqwi*ahdt2*dtic2/((1 +dtic2)*q0)
-      if(igc.eq.1) then
-        agam2 = qqwe*ahdt2*dtice2/((1 +dtice2)*q0)
-      else if(igc.eq.2) then
-        agam2 = qqwe*ahdt2/q0
-      end if
+      agam2 = qqwe*ahdt2*dtice2/((1 +dtice2)*q0)
       akga2 = akap2*ni(i,j,k) +agam2*ne(i,j,k)
 !
       akap3 = qqwi*ahdt2*dtic /((1 +dtic2)*q0) 
-      if(igc.eq.1) then
-        aele3 = qqwe*ahdt2*dtice/((1 +dtice2)*q0)
-      else if(igc.eq.2) then
-        aele3 = 0 !! qspec(2)*adt/q0  !! 11/06
-      end if          ! 1/B term
+      aele3 = qqwe*ahdt2*dtice/((1 +dtice2)*q0)
 !
 !* (i-1,j-1,k) 
 !
@@ -8385,7 +8383,6 @@
        ca(3)= 1/hxsq                    &
                  +akap1*ni(i,j,k)/hxsq  &
                  -akap1*(ni(i+1,j,k)-ni(i-1,j,k))/hx2**2  &
-!   igc=2: akae1= 0, akga2
                  +akae1*ne(i,j,k)/hxsq  &
                  -akae1*(ne(i+1,j,k)-ne(i-1,j,k))/hx2**2  &
 !                                   ! akga2= ni()*dtic2/() +ne()
@@ -8712,7 +8709,7 @@
       integer(C_INT) nobx,ipr(10)
       real(C_DOUBLE) rpr(10)
 !
-      real(C_DOUBLE) eps,rsdl
+      real(C_DOUBLE) eps,rsdl3
 !     common/cresm1/ aa  !!<-- poissn, nobx= 7
 !!    common/cresm1/ aa  !!<-- escsol, nobx= 19 
 !*----------------------------------------------------------------------
@@ -8782,10 +8779,13 @@
       end do
 !
       iterp = ipr(2)
-      rsdl  = rpr(2)
+      rsdl3 = rpr(2)
 !
 !     if(ierr.ne.0) then
-!        write (6 ,*) '#(bcg-ps)  iter, rsdl= ',ipr(2),rpr(2)
+!       open (unit=11,file=praefixc//'.11'//suffix2,             & 
+!             status='unknown',position='append',form='formatted')
+!       write(11,*) '#(bcg-ps)  iter, rsdl3= ',ipr(2),rpr(2)
+!       close(11)
 !     end if
 !
       return
@@ -8842,7 +8842,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !----------------------------------------------------------------------
@@ -9120,8 +9120,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("#(cresmd) <bb>,<ss>=",2d12.3,"itrm,eps,ierr=", &
-                i5,d12.3,i5)') bb,ss,itrm,eps,ierr
+        write(11,'("#(cresmd) <bb>,<ss>=",2d12.3," itrm,eps,ierr=", &
+                  i5,d12.3,i5)') bb,ss,itrm,eps,ierr
         close(11)
       end if
 !
@@ -9282,9 +9282,8 @@
 !     conv0= 1.d0 ! conv ??
       conv= sres/(srhs +1.d-15)  ! residue /rhs(b)
 !
-!     write(11,900) itr,sres,conv,avex
-! 900 format(1h ,'#(crm)  itr=',i3,'  res=',1pe12.5,', res/rhs=',
-!    *       e12.5,', <x>=',e12.5)
+!     write(11,'("#(crm)  itr=",i3,"  res=",1pd12.5,", res/rhs=",
+!            d12.5,", <x>=",d12.5)') itr,sres,conv,avex
 !
 !                                 ** successfully converged **
       if(conv.lt.eps) then
@@ -9739,7 +9738,7 @@
 !-----------------------------------------------------------------------
       subroutine diag1 (x,y,z,vx,vy,vz,qmult,npr,ksp)
 !-----------------------------------------------------------------------
-!  Plot x-vz and/or qix-qez
+!  Plot x-vz or qix-qez
 !
       use, intrinsic :: iso_c_binding
       implicit none
@@ -9750,12 +9749,6 @@
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE) qmult
       integer(C_INT) npr,ksp,MPIerror
-!
-      integer(C_INT) igc
-      common/if_igc/ igc
-!
-      integer(C_INT) io_pe
-      common/iope66/ io_pe
 ! 
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                               ex,ey,ez,bx,by,bz,       &
@@ -9799,14 +9792,14 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_DOUBLE) wkix,wkih,wkex,wkeh
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
-!     real(C_float),dimension(7) :: vxav,vyav,vzav,vxrmsd,vyrmsd,   &
-!                                   vzrmsd,vsqr,anpt        !<-- real*4
-!     common/diagpr/ vxav,vyav,vzav,vxrmsd,vyrmsd,vzrmsd,vsqr,anpt
+      real(C_DOUBLE),dimension(7) :: vxav,vyav,vzav,vxrmsd,vyrmsd, &
+                                     vzrmsd,vsqr,anpt,ekin  !<-- real*4?
+      common/diagpr/ vxav,vyav,vzav,vxrmsd,vyrmsd,vzrmsd,vsqr,anpt,ekin
 !
       real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
       common/diagp2/ fvx,fvy,fvz
@@ -9814,22 +9807,25 @@
       integer(C_INT) iwrt,lskip,jj,ix,iy,iz,i,j,k,l,itag,iperio
       real(C_DOUBLE) vlimx,vlimz,delx,delz,x1,x2,radi,  &
                      xcnt,ycnt,zcnt,ddx,ddy,ddz,        &
-                     anp,bs
+                     anp,ss,vx1,vy1,vz1,vxs1,vys1,vzs1, &
+                     bs
 !                             +++++++++
       real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: &
                                         eex,eey,eez,qqi,qqe,qqq
 !
+      integer(C_INT) io_pe
+      common/iope66/ io_pe
+!
 !*  ####### diag1 #######
 !
-      if(iwrt(it,nha).ne.0) return
-!            .and. iwrt(it,nplot).ne.0) return
-!     ++++++++++++++++++++++++++++++++++++++++++++++++
+      if(iwrt(it,nplot).ne.0) return
+!     ++++++++++++++++++++++++++++++
 !
       call lblbot (t)
 !
 !* [1] ******************************************
-      if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
-!                                  ++++++++++
+      if(iwrt(it,nplot).eq.0) then
+!
       do j=1,7
       do i=1,101
       fvx(i,j,ksp)= 1.d-2
@@ -9857,14 +9853,10 @@
       lskip=  npr/8000.
 !
 !-----------------------------------------------------------------------
-!*  **Plasma current**
+!*  **plasma current**
 !-----------------------------------------------------------------------
 !
-!     if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
-      if(.false.) then
-!
       if(ksp.eq.1) then
-!
         do k= 0,mz-1
         do j= 0,my
         do i= 0,mx-1
@@ -9877,7 +9869,6 @@
         end do
 !
 !  (qix,qiy,qiz) real*4 
-!
         open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
               status='unknown',position='append',form='formatted')
 !
@@ -9892,7 +9883,6 @@
         close(77)
 ! 
       else if(ksp.eq.2) then
-!
         do k= 0,mz-1
         do j= 0,my
         do i= 0,mx-1
@@ -9918,16 +9908,15 @@
 !                    'elec    ',8)
         close(77)
       end if
-      end if
 !***
       end if
 !* [1] ******************************************
 !
 !-----------------------------------------------------------------------
-!*  Temperature.
+!*  temperature.
 !-----------------------------------------------------------------------
 !
-!     if(mod(it,nha).eq.0 .and. io_pe.eq.1) then
+!     if(io_pe.eq.1) then
 !       open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
 !             status='unknown',position='append',form='formatted')
 !
@@ -9948,21 +9937,15 @@
 !   Velocity distribution function.
 !-----------------------------------------------------------------------
 !* [2] *********************************************
-      if(iwrt(it,nha).eq.0) then
-!                +++
+      if(iwrt(it,nplot).eq.0) then
 !*
-      if(io_pe.eq.1) then
-        open (unit=11,file=praefixc//'.11'//suffix2,             & 
-              status='unknown',position='append',form='formatted')
-!
-        if(ksp.eq.1) then
-          write(11,'("t=",f7.1," wkix,wkih=",1p2d12.3)') t,wkix,wkih
-        else
-          write(11,'("t=",f7.1," wkex,wkeh=",1p2d12.3)') t,wkex,wkeh
-        end if
-!
-        close(11)
-      end if
+!     if(io_pe.eq.1) then
+!       open (unit=11,file=praefixc//'.11'//suffix2,             & 
+!             status='unknown',position='append',form='formatted')
+!       write(11,'("diag2 t=",f7.1," wkix,wkih=",1p2d12.3," wkex,wkeh=", &
+!                 2d12.3)') t,wkix,wkih,wkex,wkeh
+!       close(11)
+!     end if
 !
 !  Reset ggg()=0 and reduce the size intervals to all components
 !   Sums of x, y, z, vx,vy, vz
@@ -10028,21 +10011,19 @@
       end do
 !***
 !
-      if(io_pe.eq.1) then
-!        ++++++++++
-!
+      xcnt= 0.5*xmax
       ycnt= 0.5*ymax
       zcnt= 0.5*zmax
+      ddx=  7.
       ddy= 15.
       ddz= zmax/6. 
-!
+!**
+      if(io_pe.eq.1) then
 !*
-      do l= 1,np0
+      do l= 1,npr
       if(abs(y(l)-ycnt).gt.ddy) go to 332
-      if(abs(z(l)-zcnt).gt.ddz) go to 332  
 !
-      jj= (z(l) -zcnt)/ddz +3.51           ! z slices
-!        1,2,3, 4, 5,6,7
+      jj= (z(l) -zcnt)/ddz +3.51           ! z slice ?
       if((jj.ge.1).and.(jj.le.7)) then
 !
       ix= (vx(l) +vlimx)/delx +1.0
@@ -10058,116 +10039,54 @@
   334 if(iabs(iz-26).gt.50)  go to 332
         fvz(iz,jj,ksp)= fvz(iz,jj,ksp) +qmult
       end if
+  332 end do 
 !
-  332 continue
-      end do 
+!-----------------------------------------------------------------------
+!     bulk velocity and temperature - 7 bins.
+!-----------------------------------------------------------------------
+      ss = 0
+      anp= 0
 !
-      end if  ! if(io_pe.eq.1) then
-      end if  ! if(iwrt(it,nha).eq.0) then
+      vx1=  0
+      vy1=  0
+      vz1=  0
+      vxs1= 0
+      vys1= 0
+      vzs1= 0
 !
+!*  for ions/elec: (vx,vy,vz).
+!
+      do l= 1,npr 
+      ss = ss + qmult*(vx(l)**2 +vy(l)**2 +vz(l)**2)
+      anp= anp +qmult
+!
+      vx1= vx1 +qmult*vx(l)
+      vy1= vy1 +qmult*vy(l)
+      vz1= vz1 +qmult*vz(l)
+!
+      vxs1= vxs1 +qmult*vx(l)**2
+      vys1= vys1 +qmult*vy(l)**2
+      vzs1= vzs1 +qmult*vz(l)**2
+      end do
+!
+      ss= 0.5d0*wspec(ksp)*ss
+!
+      vsqr(ksp)= ss 
+!
+      anpt(ksp)= anp
+      vxav(ksp)= vx1
+      vyav(ksp)= vy1
+      vzav(ksp)= vz1
+      vxrmsd(ksp)= vxs1
+      vyrmsd(ksp)= vys1
+      vzrmsd(ksp)= vzs1
+      end if
+!**
+      end if
 !* [2] *********************************************
 !
       return
       end subroutine diag1
-!
-!
-!-----------------------------------------------------------------------
-      subroutine fvplot 
-!-----------------------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-      include 'param_A23A.h'
-!
-      real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
-      common/diagp2/ fvx,fvy,fvz
-!
-      integer(C_INT) io_pe
-      common/iope66/ io_pe
-!
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-!
-      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec,wspec,veth,teti,wcewpe,thb,               &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec
-      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!
-      real(C_DOUBLE),dimension(101) :: vsa,vsb
-      real(C_float)  fimax,fimin,femax,femin
-      integer(C_INT) k,ILN,iwrt
-!
-      if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
-!**
-        open (unit=77,file=praefixc//'.77'//suffix2//'.ps',        &
-              status='unknown',position='append',form='unformatted')
-!
-!*  fv-plots for the zones y3 - y4  (total of 7 zones)
-!
-        do k= 1,101
-        vsa(k)= vlima*(-1.d0 +(k-1)/50.d0) 
-        vsb(k)= vlimb*(-1.d0 +(k-1)/50.d0) 
-        end do
-!
-!     call lplot(-2,4,ldec,tdec,edec(1,1),ILN,elab(1),8, &
-!     subroutine lplot (ix,iy,npts,xsc,q,IL,lab1,n1,lab2,n2, & 
-!
-        ILN= 1
-        call lplmax3 (fvx(1,3,1),fvy(1,3,1),fvz(1,3,1),fimax,fimin,101)
-        call lplmax3 (fvx(1,3,2),fvy(1,3,2),fvz(1,3,2),femax,femin,101)
-!
-        call hplot (2,4,101,vsa,fvx(1,3,1),0.,fimax,ILN,'io.5/8  ',8, &
-                    '   vx   ',8,'        ',8)
-        call hplot (2,5,101,vsa,fvy(1,3,1),0.,fimax,ILN,'io.5/8  ',8, &
-                    '   vy   ',8,'        ',8)
-        call hplot (2,6,101,vsa,fvz(1,3,1),0.,fimax,ILN,'io.5/8  ',8, &
-                    '   vz   ',8,'        ',8)
-!
-        call hplot (3,4,101,vsb,fvx(1,3,2),0.,femax,ILN,'el.5/8  ',8, &
-                    '   mu   ',8,'        ',8)
-        call hplot (3,5,101,vsb,fvz(1,3,2),0.,femax,ILN,'el.5/8  ',8, &
-                    '   vh   ',8,'        ',8)
-        call chart
-!
-        call hplot (2,4,101,vsa,fvx(1,4,1),0.,fimax,ILN,'io.6/8  ',8, &
-                    '   vx   ',8,'        ',8)
-        call hplot (2,5,101,vsa,fvy(1,4,1),0.,fimax,ILN,'io.6/8  ',8, &
-                    '   vy   ',8,'        ',8)
-        call hplot (2,6,101,vsa,fvz(1,4,1),0.,fimax,ILN,'io.6/8  ',8, &
-                    '   vz   ',8,'        ',8)
-!
-        call hplot (3,4,101,vsb,fvx(1,4,2),0.,femax,ILN,'el.6/8  ',8, &
-                    '   mu   ',8,'        ',8)
-        call hplot (3,5,101,vsb,fvz(1,4,2),0.,femax,ILN,'el.6/8  ',8, &
-                    '   vh   ',8,'        ',8)
-        call chart
-!
-        close(77)
-      end if
-!
-!**
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
-!
-        if(ldec.ge.3000) then
-          call rehist
-        end if
-      end if
-!
-      return
-      end subroutine fvplot
 !
 !
 !-----------------------------------------------------------------------
@@ -10219,7 +10138,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       real(C_DOUBLE) bxa,bya,bza,bs,vpara,vpx,ran
       integer(C_INT) ip,jp,kp,i,j,k,l
@@ -10336,6 +10255,565 @@
 !
 !
 !-----------------------------------------------------------------------
+      subroutine diag2 (ex,ey,ez,bx,by,bz,pot,        &
+                        qix,qiy,qiz,qex,qey,qez,qi,qe)
+!-----------------------*********-*******--------------------------------
+      use, intrinsic :: iso_c_binding
+      implicit none
+!
+      include 'param_A23A.h' 
+      include 'mpif.h'
+!
+      integer(C_INT) nobx
+      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
+                                        ex,ey,ez,bx,by,bz, &
+                                        qix,qiy,qiz,qex,qey,qez,qi,qe, &
+                                        pot,sxi,syi,szi,ax,ay,az
+!------------------------------------------------------------------------
+      integer(C_INT) io_pe
+      common/iope66/ io_pe
+!
+      integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
+      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
+                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+!
+      real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
+                     dx,dy,dz
+      common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
+                     hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
+! -----------------------------------------------------------------------
+!
+      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
+                     nha,nplot,nhist
+      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
+                     nha,nplot,nhist
+!
+      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
+                     qspec,wspec,veth,teti,wcewpe,thb,               &
+                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
+                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
+                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
+                     edec
+      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
+                     qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
+                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
+                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
+                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
+                     edec(10000,54)
+!
+      integer(C_INT) iterm,itrf0,iters
+      real(C_DOUBLE) asl,we,wb,rsdl1,rsdl2,rsdl3
+      common/emiter/ asl,we,wb,rsdl1,rsdl2,rsdl3,iterm,itrf0,iters
+!
+      real(C_DOUBLE),dimension(7) :: vxav,vyav,vzav,vxrmsd,vyrmsd, &
+                                     vzrmsd,vsqr,anpt,ekin
+      common/diagpr/ vxav,vyav,vzav,vxrmsd,vyrmsd, &
+                     vzrmsd,vsqr,anpt,ekin
+!
+      real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
+      real(C_DOUBLE),dimension(101) :: vsa,vsb
+      common/diagp2/ fvx,fvy,fvz
+!
+      real(C_DOUBLE),dimension(my) :: dpm,xpm
+!
+      real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: bbx,bby,bbz
+!                             +++++++++
+      integer(C_INT) iwrt,i,j,k,ir,il,                        &
+                     kr,kl,ndim,itag,iterpx,iperio,           & 
+                     ic,kc,ia,ib,ka,kb,i1,i2,                 &
+                     jj,j0,jp,iterp,ks,nn,kk,k0,k1,k2
+      real(C_DOUBLE) dp1,dp2,dpmax,dp0,dpp,se2,sb2,sbp2,sbt2, &
+                     sey,sqi,sqe,sjyi,sjye,                   &
+                     fn,tih,tix,tep,tex,etot,detot,ws
+!      
+      if(iwrt(it,nplot).ne.0) return
+!     ++++++++++++++++++++++++++++++
+      if(io_pe.eq.0) return
+!     +++++++++++++++++++++
+!
+!----------------------------------------------------------------
+!*  averaged quantities are defined properly for mod(it,npl).eq.0
+!   including it=0, with npl= min(nplot,nfwrt).
+!
+      if(iwrt(it,nplot).eq.0) then
+!**
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+        write(11,*) 'fortr.15...'
+        close(11)
+!
+        open (unit=15,file=praefixc//'.15'//suffix2,               &
+              status='unknown',position='append',form='unformatted')
+!
+        write(15) t,qix,qiy,qiz,qex,qey,qez,qi,qe  !! synchronize ?
+        write(15) t,ex,ey,ez,bx,by,bz
+        close(15)
+      end if
+!
+!*  *** field plots ***
+!*----------------------------------------------------------------------
+!*  vector potential a, defined by b= curl(a).
+!*  then, we have laplacian*a(x,y,z)= -curl(b) in 3-d.
+!*----------------------------------------------------------------------
+!
+      if(.false.) then
+!     if(iwrt(it,nplot).eq.0) then
+!**
+      call lblbot (t)
+!
+      do k= -2,mz+1  !<-- full index
+      do j= -1,my+1
+      do i= -2,mx+1
+      ax(i,j,k)= 0
+      ay(i,j,k)= 0
+      az(i,j,k)= 0
+!
+      sxi(i,j,k)= 0
+      syi(i,j,k)= 0
+      szi(i,j,k)= 0
+      end do
+      end do
+      end do
+!
+      do k= 0,mz-1
+      do j= 0,my
+      do i= 0,mx-1
+      if(j.eq.0 .or. j.eq.my) then
+        sxi(i,j,k)= (by(i,j,kr) -by(i,j,kl))/hz2
+        syi(i,j,k)= (bz(ir,j,k) -bz(il,j,k))/hx2  &
+                   -(bx(i,j,kr) -bx(i,j,kl))/hz2
+        szi(i,j,k)= -(by(ir,j,k) -by(il,j,k))/hx2
+      else
+!
+      ir= pxr(i)
+      il= pxl(i)
+!
+      kr= pzr(k)
+      kl= pzl(k)
+!
+      sxi(i,j,k)=  (by(i,j,kr) -by(i,j,kl))/hz2   & 
+                  -(bz(i,j+1,k) -bz(i,j-1,k))/hy2
+!
+      syi(i,j,k)=  (bz(ir,j,k) -bz(il,j,k))/hx2   &
+                  -(bx(i,j,kr) -bx(i,j,kl))/hz2
+!
+      szi(i,j,k)=  (bx(i,j+1,k) -bx(i,j-1,k))/hy2 &
+                  -(by(ir,j,k) -by(il,j,k))/hx2
+      end if
+      end do
+      end do
+      end do
+!
+!--------------------
+      ndim= 3
+!--------------------
+      call poissn (ax,sxi,nobx,ndim,itersx,iterp)
+      call poissn (ay,syi,nobx,ndim,itersx,iterp)
+      call poissn (az,szi,nobx,ndim,itersx,iterp)
+!**   
+      do k= 0,mz-1
+      do j= 0,my
+      do i= 0,mx-1
+      bbx(i,j,k)= ax(i,j,k)
+      bby(i,j,k)= ay(i,j,k)
+      bbz(i,j,k)= az(i,j,k)
+      end do
+      end do
+      end do
+!
+!  (bx,by,bz) real*4
+!**
+      open (unit=11,file=praefixc//'.11'//suffix2,             & 
+            status='unknown',position='append',form='formatted')
+      write(11,*) 'diag2: fplot3 and cplt2d ...'
+      close(11)
+!
+      open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
+            status='unknown',position='append',form='formatted')
+!
+      iperio= 0
+      itag= 51
+      call fplot3 (bbx,bby,bbz,0.,0.,0.,real(xmax),real(ymax),real(zmax), &
+                   iperio,itag,'Vect.Mag',8)
+!     iperio= 0
+!     itag= 75
+!     call cplt2d (bbx,real(xmax),real(ymax),real(zmax),iperio,itag, &
+!                    'Vect.ax ',8)
+      close(77)
+      end if
+!
+!*----------------------------------------------------------------------
+!*  (total) scalar potential.
+!*----------------------------------------------------------------------
+!*  correction part (no average).
+!
+      if(iwrt(it,nplot).eq.0) then
+!**
+      open (unit=11,file=praefixc//'.11'//suffix2,             & 
+            status='unknown',position='append',form='formatted')
+      write(11,*) 'diag2: hplot...'
+      close(11)
+!
+      open (unit=15,file=praefixc//'.15'//suffix2,               &
+            status='unknown',position='append',form='unformatted')
+!
+!       itag= 3
+!       call cplot3 (ppot,real(xmax),real(ymax),real(zmax),'corr.pot',8)
+!                    <-- real*4
+!
+!*  fv-plots for the zones y3 - y4  (total of 7 zones)
+!
+      do k= 1,101
+      vsa(k)= vlima*(-1.d0 +(k-1)/50.d0) 
+      vsb(k)= vlimb*(-1.d0 +(k-1)/50.d0) 
+      end do
+!
+      call hplot (2,4,101,vsa,fvx(1,3,1),1,'ion.5/8 ',8,'vx',2,' ',1)
+      call hplot (2,5,101,vsa,fvy(1,3,1),1,'ion 5/8 ',8,'vy',2,' ',1)
+      call hplot (2,6,101,vsa,fvz(1,3,1),1,'ion 5/8 ',8,'vz',2,' ',1)
+!
+      call hplot (3,4,101,vsb,fvx(1,3,2),1,'ele 5/8 ',8,'mu',2,' ',1)
+      call hplot (3,5,101,vsb,fvz(1,3,2),1,'ele 5/8 ',8,'vh',2,' ',1)
+!
+      call hplot (2,4,101,vsa,fvx(1,4,1),1,'ion 6/8 ',8,'vx',2,' ',1)
+      call hplot (2,5,101,vsa,fvy(1,4,1),1,'ion 6/8 ',8,'vy',2,' ',1)
+      call hplot (2,6,101,vsa,fvz(1,4,1),1,'ion 6/8 ',8,'vz',2,' ',1)
+
+      call hplot (3,4,101,vsb,fvx(1,4,2),1,'ele 6/8 ',8,'mu',2,' ',1)
+      call hplot (3,5,101,vsb,fvz(1,4,2),1,'ele 6/8 ',8,'vh',2,' ',1)
+!
+      close(15)
+      end if
+!
+      if(.true.) return
+!     +++++++++++++++++  edec to be future
+!
+!-----------------------------------------------------------------------
+!*  find the peaks of ay.
+!-----------------------------------------------------------------------
+!*  define ay using bx... (not avbx...), as it isn't defined 
+!   for all mod(it,nfwrt).ne.0
+!
+      if(iwrt(it,nfwrt).eq.0) then
+!***
+      do k= -2,mz+1  !<-- full index
+      do j= -1,my+1
+      do i= -2,mx+1
+      ay(i,j,k)= 0
+      end do
+      end do
+      end do
+!
+      do k= 0,mz-1
+      do j= 0,my
+      do i= 0,mz-1
+      if(j.lt.0 .or. j.gt.my-1) then
+        syi(i,j,k)= 0
+      else
+      syi(i,j,k)=  (bz(pxr(i),j,k) -bz(pxl(i),j,k))/hx2   &
+                  -(bx(i,j,pzr(k)) -bx(i,j,pzl(k)))/hz2
+      end if
+      end do
+      end do
+      end do
+!
+!--------------------------
+      ndim= 2
+!--------------------------
+      iterpx= 200
+      call poissn (ay,syi,nobx,ndim,itersx,iterp)
+! 
+      ic= mx/2 +1
+      kc= mz/2 +1
+!*
+      ia= ic -3
+      ib= ic +3
+!
+      ka= kc -2
+      kb= kc +2
+!
+!*  find the maximum of ay for  given (j,kc).
+!
+      do j= 1,my+1  ! 530
+      i1= 0.25*mx
+      i2= 0.75*mx
+!     im= 0.5*mx
+!
+      dp1= -1.d+10   !!!
+      do i= 1,mx/2 ! 531
+      if(ay(i,j,kc).gt.dp1) then
+         dp1= ay(i,j,kc)
+         i1 = i
+      end if
+      end do
+!
+      dp2= -1.d+10
+      do i= mx/2+1,mx  ! 533
+      if(ay(i,j,kc).gt.dp2) then
+         dp2= ay(i,j,kc)
+         i2 = i
+      end if
+      end do
+!
+      dpmax= max(dp1,dp2)  !! max()
+      dp0 = dpmax 
+!
+      do i= i1,i2  ! 535
+      if(ay(i,j,kc).lt.dp0) then
+         dp0= ay(i,j,kc)
+!        im = i
+      end if 
+      end do
+!
+      dpm(j)= dpmax -dp0
+      xpm(j)= 0.5d0*(gx(i2) +gx(i2+1)) -0.5d0*(gx(i1) +gx(i1+1))
+!     ip (j)= im
+      end do  ! 530
+!
+      jp= 0.5*my
+      dpp= -1.d+10
+      do j= 1,my
+      if(dpm(j).gt.dpp) then
+         dpp= dpm(j)
+         jp= j
+      end if
+      end do
+!
+      edec(ldec, 9)= dpm(jp)
+!
+      do jj= 1,6
+      j0= 1 +(my/6)*(jj-1)
+      edec(ldec,12+jj)= dpm(j0)
+      edec(ldec,42+jj)= xpm(j0)
+      end do
+!
+!***************************************
+!*  integral: int (- (curl e)_z) dx    *
+!***************************************
+!*  between the ay-minimum and its maximum.
+!
+      do kk= 1,6  ! 540
+      k0= 1 +(mz/6)*(kk-1)
+!
+      ws= 0
+      nn= 0
+      ia= mx/2 -5
+      ib= mx/2 +5
+!
+      do i= ia,ib
+      do j= 0,my
+!
+      nn= nn +1
+      ws= ws +ez(i,j,k0) -ex(i,j,k0)
+      end do
+      end do
+!
+!     call mpi_allreduce (ws,ws2,1,mpi_real8,mpi_sum,  &
+!                         mpi_comm_world,MPIerror)
+!     ws= ws2
+!
+      edec(ldec,24+jj)= ws/nn
+      end do  ! 540
+!
+!-----------------------------------------------------------------------
+!*    field energy.
+!-----------------------------------------------------------------------
+!*    total magnetic energy 
+!
+      sb2 = 0
+      se2 = 0
+      sbp2= 0
+      sbt2= 0
+!
+      do k= 0,mz-1
+      do j= 0,my
+      do i= 0,mx-1
+      sb2 = sb2  +bx(i,j,k)**2 +by(i,j,k)**2 +bz(i,j,k)**2
+      se2 = se2  +ex(i,j,k)**2 +ey(i,j,k)**2 +ez(i,j,k)**2
+!
+      sbt2= sbt2 +bx(i,j,k)**2
+      sbp2= sbp2 +by(i,j,k)**2 +bz(i,j,k)**2
+      end do
+      end do
+      end do
+!
+!*  w= 0.5*m*v**2 +b**2/2.0
+!
+      edec(ldec,1)=  0.5d0* sb2/float(3*mxyz)
+      edec(ldec,2)=  0.5d0*sbp2/float(3*mxyz)
+      edec(ldec,3)=  0.5d0*sbt2/float(mxyz)
+!
+!-------------------------------
+!*   range of summations. 
+!-------------------------------
+!* for all y.
+!
+      sey= 0
+      sqi= 0
+      sqe= 0
+      sjyi= 0
+      sjye= 0
+!
+      do k= ka,kb
+      do i= ia,ib
+      do j= 1,my
+      sey= sey +ey(i,j,k)
+      sqi= sqi +qi(i,j,k)
+      sqe= sqe +qe(i,j,k)
+!
+      sjyi= sjyi +qiy(i,j,k)
+      sjye= sjye +qey(i,j,k)
+      end do
+      end do
+      end do
+!
+      edec(ldec,7) =  sey/(35*my)
+      edec(ldec,8) = sjye/(35*my)
+      edec(ldec,10)= (sjyi +sjye)/(35*my)
+      edec(ldec,11)=  sqi/(35*my)
+      edec(ldec,12)= -sqe/(35*my)
+!
+!* for fixed y1.
+!
+      do kk= 1,6 
+      k0= 1 +(mz/6)*(kk-1)
+      k1= k0 -2
+      k2= k0 +2
+!
+      nn = 0
+      sey= 0
+      sqi= 0
+      sqe= 0
+      sjyi= 0 
+      sjye= 0
+!
+      do k= k1,k2
+      do j= 0,my
+      do i= 0,mx-1
+      nn= nn +1
+!
+      sey= sey +ey(i,j,k)
+      sqi= sqi +qi(i,j,k)
+      sqe= sqe +qe(i,j,k)
+!
+      sjyi= sjyi +qiy(i,j,k)
+      sjye= sjye +qey(i,j,k)
+      end do
+      end do
+      end do
+!
+      edec(ldec,18+jj)=  sey/nn
+      edec(ldec,36+jj)= -sqe/nn
+      edec(ldec,30+jj)= sjye/nn
+      end do
+!
+!  common/diagpr/ vxav,vyav,vzav,vxrmsd,vyrmsd, &
+!                 vzrmsd,vsqr,anpt,ekin <-- are summed
+!*vocl loop, scalar
+!***
+      do ks=1,2
+      fn= 0
+      if(anpt(ks).ne.0.d0) fn= 1.d0/anpt(ks)
+!
+      ekin(ks)= vsqr(ks)*fn
+      vxav(ks)= vxav(ks)*fn
+      vyav(ks)= vyav(ks)*fn
+      vzav(ks)= vzav(ks)*fn
+!
+      vxrmsd(ks)= sqrt(vxrmsd(ks)*fn-vxav(ks)**2)
+      vyrmsd(ks)= sqrt(vyrmsd(ks)*fn-vyav(ks)**2)
+      vzrmsd(ks)= sqrt(vzrmsd(ks)*fn-vzav(ks)**2)
+      end do
+!
+!*  for ions, vy is close to parallel.
+      tih= wspec(1)* vyrmsd(1)**2
+      tix= wspec(1)*(vxrmsd(1)**2 +vzrmsd(1)**2)/2.d0
+!
+      tep= wspec(2)* vyrmsd(2)**2
+      tex= wspec(2)*(vxrmsd(2)**2 +vzrmsd(2)**2)/2.d0
+!
+      edec(ldec,4)= tix
+      edec(ldec,5)= tih
+      edec(ldec,6)= tep
+      edec(ldec,7)= tex
+!
+      efb =  0.5d0* sb2/float(mxyz0)
+      efe =  0.5d0* se2/float(mxyz0)
+      etot= efe +efb +ekin(1) +ekin(2)
+!
+      if(it.le.1) etot0= etot
+      detot= 100.d0*(etot-etot0)/etot0
+!
+      if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+        write(11,*) 'efb,efe=',efb,efe
+        write(11,*) 'ekin(1),ekin(2)=',ekin(1),ekin(2)
+        close(11)
+      end if
+!
+      if(it.ne.0) then
+         edec(ldec,49)= wb
+         edec(ldec,50)= we
+         edec(ldec,51)= rsdl2
+      else
+         edec(ldec,49)= 0
+         edec(ldec,50)= 0
+         edec(ldec,51)= 0
+      end if
+!
+      edec(ldec,52)= itrf0
+      edec(ldec,53)= iters
+      edec(ldec,54)= 0  ! ctrans
+!
+      if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+!
+        write(11,9351) edec(ldec,1),edec(ldec,2),edec(ldec,3),  &
+                       ekin(1),ekin(2),etot,detot
+ 9351   format(' <b2>, <b2p>, <b2t>=',1p3e11.4,    &
+               '  wi, we=',2e11.4,'  e.tot=',e11.4,  &
+               '  e.dev(%)=',0pf7.2,/)
+!
+        write(11,9350) tih,tix,tep,tex,nspec(1),nspec(2)
+ 9350   format(' (tpar,tperp) of ions, el...',1p4e10.2,  &
+                 ';    npr=',i10,/)
+!
+        write(11,9352)
+ 9352   format('     vxav        vyav        vhav',  &
+               '       vxrmsd      vyrmsd      vhrmsd')
+        write(11,9353) (vxav(ks),vyav(ks),vzav(ks),vxrmsd(ks),vyrmsd(ks), &
+                        vzrmsd(ks),ks=1,2)
+ 9353   format(1p6d12.4)
+!
+        write(11,9355) wb,we,rsdl2
+ 9355   format(' wb,we,rsdl2=',1pd12.3,/)
+!
+        write(11,9357) itrf0,iters
+ 9357   format(' itrf0,iters=',2i8,/)
+!
+        close(11)
+      end if
+!***
+      end if
+!
+      if(iwrt(it,nhist).eq.0) then
+      if(it.eq.0) return
+        call hist
+      end if
+!     +++++++++++++++++  edec to be future
+!
+      return
+      end subroutine diag2
+!
+!
+!-----------------------------------------------------------------------
       subroutine init (xi,yi,zi,vxi,vyi,vzi,qmulti,wmulti,  &  
                        xe,ye,ze,vxe,vye,vze,qmulte,wmulte,  &
                        npr,kstart)
@@ -10402,7 +10880,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !***
       integer(C_INT) i,j,k,l,ijk
       real(C_DOUBLE) vith,wg  !thb1,sn,cs
@@ -10527,11 +11005,11 @@
         write(11,*) '               j= -1,0,1,...,my-1,my,my+1'
         write(11,*) '               k= -1,0,1,...,mz-1,mz,mz+1 '
         write(11,*) ' i, pxc,  j, pyc,  k, pzc.....'
-        write(11,701) (i,pxc(i),i,pyc(i),i,pzc(i),i=-1,mx+1)
-        write(11,703) (i,pyc(i),i=mx+2,my+1)   ! my+1
-  701   format(' pxc(',i3,')=',i4,' pyc(',i3,')=',i4,  &
-               ' pzc(',i3,')=',i4)
-  703   format(14x,' pyc(',i3,')=',i4)
+        write(11,'(" pxc(",i3,")=",i4," pyc(",i3,")=",i4,  &
+                  " pzc(",i3,")=",i4)') &
+                      (i,pxc(i),i,pyc(i),i,pzc(i),i=-1,mx+1)
+        write(11,'(14x," pyc(",i3,")=",i4)') &
+                      (i,pyc(i),i=mx+2,my+1)
         close(11)
       end if
 !
@@ -10592,19 +11070,16 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,290)
+        write(11,'(//)')
         write(11,*) 'inner cells: mx,my+1,mz=',mx,my+1,mz
-        write(11,291) hx,hy,hz
-        write(11,292)
-  290   format(//)
-  291   format('# hx=',1pd13.5,',  hy=',d13.5,',  hz=',d13.5,/)
-  292   format(' i,     gx,      hx;     gy,    hy;     gz,    hz',/)
+        write(11,'("# hx=",1pd13.5,",  hy=",d13.5,",  hz=",d13.5,/)') &
+                                               hx,hy,hz
+        write(11,'(" i,     gx,      hx;     gy,    hy;     gz,    hz", &
+                   /)')
 !
-        write(11,293) (i,gx(i),gy(i),gz(i),i=-1,0) 
-        write(11,293) (i,gx(i),gy(i),gz(i),i=1,mx+1) 
-        write(11,297) (i,gy(i),i=mx+2,my+2)
-  293   format(i5,1p3d12.3)
-  295   format(i5,12x,1pd12.3)
+        write(11,'(i5,1p3d12.3)') (i,gx(i),gy(i),gz(i),i=-1,0) 
+        write(11,'(i5,1p3d12.3)') (i,gx(i),gy(i),gz(i),i=1,mx+1) 
+        write(11,'(i5,12x,1pd12.3)') (i,gy(i),i=mx+2,my+1)
 !
         close(11)
       end if
@@ -10647,8 +11122,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'(/," hx=",1pd15.7,",  hy=",d15.7,",  hz=",d15.7,/)') &
-                                                          hx,hy,hz
+        write(11,'(//," hx=",1pd15.7,",  hy=",d15.7,",  hz=",d15.7,/)') &
+                                                             hx,hy,hz
       end if
 !
 !***********************************************************************
@@ -10763,21 +11238,19 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'(" >> density  q0= ",1pd12.3," <<")') q0
+        write(11,'("  >> density  q0= ",1pd12.3," << ")') q0
 !
         write(11,*) 'total number of ions  npr=',npr
         do l= 1,npr
         if(l.le.10) then
-          write(11,'(i8,6d12.3)') &
-                          l,xi(l),yi(l),zi(l),vxi(l),vyi(l),vzi(l)
+          write(11,'(i8,6d12.3)') l,xi(l),yi(l),zi(l),vxi(l),vyi(l),vzi(l)
         end if 
         end do
  
         write(11,*) 'total number of elec.  npr=',npr
         do l= 1,npr
         if(l.le.10) then
-          write(11,'(i8,6d12.3)') &
-                          l,xe(l),ye(l),ze(l),vxe(l),vye(l),vze(l)
+          write(11,'(i8,6d12.3)') l,xe(l),ye(l),ze(l),vxe(l),vye(l),vze(l)
         end if 
         end do
  
@@ -10875,7 +11348,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !***
       real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
       common/profl/  arb,zcent,ycent1,ycent2,Ez00,
@@ -11007,11 +11480,10 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("** Distribution fdr, fv1, fv2 (accumulated) ** ",/)')
+        write(11,'(" ** Distribution fdr, fv1, fv2 (accumulated) ** "/)')
 !
 !       do j= 1,101
-!       write(11,662) j,fdr(j),fv1(j),fv2(j)
-! 662   format(i6,3d12.3)
+!       write(11,'(i6,3d12.3)') j,fdr(j),fv1(j),fv2(j)
 !       end do
         close(11)
       end if
@@ -11153,8 +11625,9 @@
 !
         write(11,*) 'loadpt ksp=',ksp
         write(11,'("  the total npr=",i10,/,        &
-                   "  <vx1>, <vy1>, <vz1>=",1p3d12.3)') &
-                                  nn,vx1/nn,vy1/nn,vz1/nn
+               "  <vx1>, <vy1>, <vz1>=",1p3d12.3)') &
+                             nn,vx1/nn,vy1/nn,vz1/nn
+!
         close(11)
       end if
 !
@@ -11164,10 +11637,10 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,666) npr,qmult,wmult
-  666   format(/,' ## npr=',i10,'  qspec(ksp)=',f7.3,',  wspec(ksp)=',f7.3)
-        write(11,667) vthx(ksp),vthz(ksp),vdr(ksp),vbeam(ksp)
-  667   format('    vthx,vthz(ksp)=',2f8.4,'  vdr,vbeam(ksp)=',2f8.4)
+        write(11,'(" ## npr=",i10,"  qspec(ksp)=",f7.3, &
+                  "wspec(ksp)=",f7.3)') npr,qmult,wmult
+        write(11,'("    vthx,vthz(ksp)=",2f8.4,"  vdr,vbeam(ksp)=", &
+                  2f8.4)') vthx(ksp),vthz(ksp),vdr(ksp),vbeam(ksp)
         close(11)
       end if 
 !
@@ -11211,7 +11684,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !***
       real(C_DOUBLE) sq0,ssq0
       integer(C_INT) l
@@ -11325,7 +11798,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
 !*    volume element r*dr*dtheta; r is included in funr.
 !
@@ -11401,174 +11874,6 @@
 !
 !
 !-----------------------------------------------------------------------
-      subroutine histry
-!-----------------------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-      include 'param_A23A.h' 
-!
-!     parameter   (nhistm=54)
-      integer(C_INT) io_pe
-      common/iope66/ io_pe
-!
-      real(C_DOUBLE) tdec(3000)  !<-- DOUBLE
-      common/ehist/  tdec
-!
-      character(len=54) :: elab(nhistm)
-!*
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-!
-      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec,wspec,veth,teti,wcewpe,thb,               &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec
-      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!                         +++++++
-      real(C_float)  emax1a,emin1a,emax2a,emin2a,emax1,emin1, &
-                     emax3a,emin3a,emax4a,emin4a,emax3,emin3, &
-                     emax5a,emin5a,emax6a,emin6a,emax5,emin5, &
-                     emax7a,emin7a,emax8a,emin8a,emax7,emin7
-      integer(C_INT) ILN,ILG,i,k
-!
-!    +++++++++++++++++++++++
-      if(io_pe.ne.1) return
-!    +++++++++++++++++++++++
-!
-      call lblbot(t)
-!     tdec(ldec)= t
-!
-!**
-      open (unit=11,file=praefixc//'.11'//suffix2,             & 
-            status='unknown',position='append',form='formatted')
-!
-      write(11,*) '*histry: ldec, tdec(ldec)=',ldec,tdec(ldec)
-      write(11,*)
-!
-      do i= 1,ldec ! in every nha 
-      write(11,'("tdec=",f7.1,8d11.3)') &
-                  tdec(i),edec(i,1),edec(i,2),edec(i,3),edec(i,4), &
-                  edec(i,5),edec(i,6),edec(i,7),edec(i,8)
-                  
-      end do
-!
-      close(11)
-!
-! 
-      open (unit=77,file=praefixc//'.77'//suffix2//'.ps',        &
-            status='unknown',position='append',form='formatted')
-!
-      ILN= 1
-      ILG= 2
-!
-      call lplmax (edec(1,1),emax1a,emin1a,ldec)
-      call lplmax (edec(1,2),emax2a,emin2a,ldec)
-      emax1 = max(emax1a,emax2a)
-      emin1 = 0  ! min(emin1a,emin2a)
-!
-      call lplmax (edec(1,3),emax3a,emin3a,ldec)
-      call lplmax (edec(1,4),emax4a,emin4a,ldec)
-      emax3 = max(emax3a,emax4a)
-      emin3 = 0  ! min(emin3a,emin4a)
-!
-      call lplmax (edec(1,5),emax5a,emin5a,ldec)
-      call lplmax (edec(1,6),emax6a,emin6a,ldec)
-      emax5 = max(emax5a,emax5a)
-      emin5 = 0  ! min(emin3a,emin4a)
-!
-      call lplot (2,4,ldec,tdec,edec(1,1),emax1a,0.,ILN,'B2 Histr',8,&
-                 '        ',8,'        ',8)
-      call lplot (2,5,ldec,tdec,edec(1,2),emax2a,0.,ILN,'E2 Histr',8,&
-                 '        ',8,'        ',8)
-      call lplot (2,6,ldec,tdec,edec(1,3),emax3a,0.,ILN,'B2P Hist',8,&
-                 '        ',8,'        ',8)
-      call lplot (3,4,ldec,tdec,edec(1,4),emax4a,0.,ILN,'E2P Hist',8,&
-                 '        ',8,'        ',8)
-      call lplot (3,5,ldec,tdec,edec(1,5),emax5a,0.,ILN,'ionx His',8,&
-                 '        ',8,'        ',8)
-      call lplot (3,6,ldec,tdec,edec(1,6),emax6a,0.,ILN,'ionh His',8,&
-                 '        ',8,'        ',8)
-!   ++++++++++++++
-      call chart
-!   ++++++++++++++
-!
-      call lplmax (edec(1,7),emax7a,emin7a,ldec)
-      call lplmax (edec(1,8),emax8a,emin8a,ldec)
-      emax7 = max(emax7a,emax8a)
-      emin7 = 0  ! min(emin7a,emin8a)
-!
-      call lplot (2,4,ldec,tdec,edec(1,7),emax7a,0.,ILN,'elex His',8,&
-                 '        ',8,'        ',8)
-      call lplot (2,5,ldec,tdec,edec(1,7),emax8a,0.,ILN,'eleh His',8,&
-                 '        ',8,'        ',8)
-!   ++++++++++++++
-      call chart
-!   ++++++++++++++
-!**
-      close(77)
-!
-      return
-      end subroutine histry
-!
-!
-!------------------------------------------------------
-      subroutine lplmax (f,fmax,fmin,is)
-!------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-      integer(C_INT) i,is
-      real(C_DOUBLE) f(is)
-      real(C_float)  fmax,fmin
-!
-      fmax= -1.e10
-      fmin=  1.e10
-!
-      do i= 1,is
-      fmax= max(fmax,real(f(i)))
-      fmin= min(fmin,real(f(i)))
-      end do
-!
-      return
-      end subroutine lplmax
-!
-!
-!------------------------------------------------------
-      subroutine lplmax3 (f1,f2,f3,fmax,fmin,n)
-!------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-      integer(C_INT) i,n
-      real(C_DOUBLE) f1(n),f2(n),f3(n)
-      real(C_float)  fmax,fmin
-!
-      fmax= -1.e10
-      fmin=  1.e10
-!
-      do i= 1,n
-      fmax= max(fmax,real(f1(i)),real(f2(i)),real(f3(i)))
-      fmin= min(fmin,real(f1(i)),real(f2(i)),real(f3(i)))
-      end do
-!
-      return
-      end subroutine lplmax3
-!
-!
-!-----------------------------------------------------------------------
       subroutine rehist
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
@@ -11595,7 +11900,7 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
 !
       integer(C_INT) j,l,l1
 !
@@ -11669,10 +11974,10 @@
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
+                     edec(10000,54)
       real(C_float ) ctrans
 !
-      real(C_DOUBLE) tdec(3000)  !<-- DOUBLE
+      real(C_DOUBLE) tdec(10000)  !<-- DOUBLE
       common/ehist/  tdec
 !
 !          +++++++                    +++++++
@@ -11772,7 +12077,7 @@
 !
         do i= 1,12
         write(11,'("i=",i8,1p6d12.3)') &
-                      i,xxi(i),yyi(i),zzi(i),vvxi(i),vvyi(i),vvzi(i)
+                    i,xxi(i),yyi(i),zzi(i),vvxi(i),vvyi(i),vvzi(i)
         end do
 !
         write(11,*)
@@ -11780,7 +12085,7 @@
 !
         do i= 1,12
         write(11,'("i=",i8,1p6d12.3)') &
-                      i,xxe(i),yye(i),zze(i),vvxe(i),vvye(i),vvze(i)
+                    i,xxe(i),yye(i),zze(i),vvxe(i),vvye(i),vvze(i)
         end do
       end if
 !
@@ -11884,7 +12189,8 @@
 !
         do i= 1,12
         write(11,'("i=",i8,1p6d12.3)') &
-                         i,xi(i),yi(i),zi(i),vxi(i),vyi(i),vzi(i)
+                     i,xi(i),yi(i),zi(i),vxi(i),vyi(i),vzi(i)
+  400   format('i=',i8,1p6d12.3)
         end do
 !
         write(11,*)
@@ -11892,7 +12198,7 @@
 !
         do i= 1,12
         write(11,'("i=",i8,1p6d12.3)') &
-                         i,xe(i),ye(i),ze(i),vxe(i),vye(i),vze(i)
+                     i,xe(i),ye(i),ze(i),vxe(i),vye(i),vze(i)
         end do
 !
 !
@@ -11901,8 +12207,8 @@
         do j= 0,3
         do i= 0,3
         write(11,'(3i3,1p6d12.3)') &
-                         i,j,k,ex(i,j,k),ey(i,j,k),ez(i,j,k),bx(i,j,k), &
-                         by(i,j,k),bz(i,j,k)
+                     i,j,k,ex(i,j,k),ey(i,j,k),ez(i,j,k),bx(i,j,k), &
+                     by(i,j,k),bz(i,j,k)
         end do
         end do
         end do
@@ -11937,7 +12243,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'(" *** Start files are loaded ***",/)') 
+        write(11,'(" *** Start files are loaded ***")') 
         close(11)
       end if  
       return
@@ -11950,15 +12256,15 @@
 !
 !
 !-----------------------------------------------------------------------
-      subroutine lbltop (date_now,label)
+      subroutine lbltop (date,label)
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
       include 'param_A23A.h' 
 !
       character(len=8)  :: label(8),label1(8)
-      character(len=10) :: date_now,date_now1
-      common/headr1/ label1,date_now1
+      character(len=10) :: date,date1
+      common/headr1/ label1,date1
 !
       label1(1)= label(1)
       label1(2)= label(2)
@@ -11968,7 +12274,7 @@
       label1(6)= label(6)
       label1(7)= label(7)
       label1(8)= label(8)
-      date_now1= date_now
+      date1= date
 !
       return
       end subroutine lbltop
@@ -12006,9 +12312,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,20) h
-        write(11,20) h
-   20   format(///,'## run terminated ----- ',a8)
+        write(11,'(///,"## run terminated ----- ",a8)') h
         close(11)
       end if
 !
@@ -12110,11 +12414,11 @@
       end subroutine date_and_time_7
 !
 !
+!* data are written here 
 !-----------------------------------------------------------------------
-      subroutine lplot (ix,iy,npts,xsc,q,ymax,ymin,IL,lab1,n1,lab2,n2, & 
-                        lab3,n3)
+      subroutine lplot (ix,iy,npts,XSC,Q,IL,char1,n1,char2,n2,char3,n3)
 !-----------------------------------------------------------------------
-!* IFR= 7 ---> -ymin < y < ymax plot.
+!*    ifr= 7 ---> -ymin < y < ymax plot.
 !
       use, intrinsic :: iso_c_binding
       implicit none
@@ -12123,232 +12427,41 @@
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
-      real(C_DOUBLE),dimension(3000) :: xsc,q
-      real(C_DOUBLE),dimension(101)  :: vsc,ff
-      real(C_float), dimension(3000) :: u,v
+      real(C_DOUBLE),dimension(npts) :: xsc,q  !!<-- OK
 !          +++++++
-      integer(C_INT) ix,iy,npts,IFR,IL,n1,n2,n3
-      integer(C_INT) i1,j1,isc,i,j,k,nfine,iplot
+      integer(C_INT) ix,iy,npts,IL,n1,n2,n3
+      integer(C_INT) iplot,ipen 
 !
-      real(C_float) ymin,ymax
-      real(C_float) xcm(6),ycm(6),pl(6),pr(6),ql(6),qr(6)
+      character(len=*) char1,char2,char3  !!<-- (*) 12/26/2021
+      character(len=8) label(8)
+      character(len=10) date
+      common/headr1/  label,date
 !
-      character(len=8) lab1,lab2,lab3
-      character(len=8) label(8),date_now*10,cax*1
-      common/headr1/ label,date_now
-      common/headr2/ time,xp_leng
-      common/pplcom/ nfine,pl1(10),pr1(10),ql1(10),qr1(10),  &
-                     xmin1(10),xmax1(10),ymin1(10),ymax1(10)
+      real(C_DOUBLE)  time1
+      common/headr2/  time1
 !
-!   for Fujitsu.
-!     data  xcm/18.46,2*9.867,3*6.18/,
-!    *      ycm/16.85,2*7.435,3*4.381/,
-!    *      pl/2*2.00,15.132,2.00,8.00,18.20/,
-!    *      ql/1.95,10.885,1.95,13.832,7.891,1.95/
-!
-!   for NEC.
-      data  xcm/21.0, 2*10.00, 3*7.00/,  &
-            ycm/15.0, 2*6.80, 3*3.90/,   &
-            pl/2.0,  2.0,14.0, 1.0,9.0,17.0/, &
-            ql/2.3, 10.5,2.3, 12.9,7.6,2.3/
-      logical  lab_skip
-!
-      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0, &
-                    pl1,pr1,ql1,qr1,scx,scy,time,xp_leng,   &
-                    xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,    &
-                    y1,y2,y3,y4,xc,xd,xl,xu,yc,yl,yr
 !***
       iplot= 1
-      go to 1
+      go to 100
 !
-!-----------------------------------------------------------------------
-      entry hplot (ix,iy,npts,vsc,ff,ymin,ymax,IL,lab1,n1,lab2,n2,  &
-                   lab3,n3)
-!-----------------------------------------------------------------------
-      iplot=2
+      entry hplot (ix,iy,npts,xsc,q,IL,char1,n1,char2,n2,char3,n3)
+      iplot= 2
 !
-    1 isc= 1
+  100 if(io_pe.eq.1) then
+!***
+      ipen= 0
 !
-      do i=1,6
-      pr(i)= pl(i) +xcm(i)
-      end do
+      open (unit=18,file=praefixc//'.18'//suffix2,                   &
+            status='unknown',position='append',form='unformatted')
 !
-      do j=1,6
-      qr(j)= ql(j) +ycm(j)
-      end do
+      write(18) iplot,ipen
+      write(18) npts,ix,iy,IL,n1,n2,n3
+      write(18) time1,xsc,q
+      write(18) label,date,char1,char2,char3
+      close(18)
 !
-      lab_skip= .false.
-      if(il.eq.7) lab_skip= .true.
-!
-!                 ******************************************************
-!*                **  Make a copy before the top-left frame is drawn. **
-!                 ******************************************************
-      hh = 0.70
-      hhs= 0.60
-!
-      i1= iabs(ix)
-      j1= iabs(iy)
-      if(i1.ge.3) go to 10
-      if(j1.eq.3.or.j1.ge.5) go to 10
-!                                              ************************
-!                                              ** label of the page. **
-!                                              ************************
-      call symbol (0.1,18.0,hh,label(1),0.,8)
-!     call symbol (3.1,18.0,hh,date_now, 0.,10)
-      call symbol (15.9,0.1,hh,'t =',0.,3)
-      call number (999.0,999.0,hh,time,0.,5)
-!
-   10 continue
-!
-      if(iplot.eq.1) then
-!++
-      do i= 1,npts
-      u(i)= xsc(i)
-      end do
-      xmin= u(1)
-      xmax= u(npts)
-!                             ************************************
-!                             ** three-point average if il > 0  **
-!                             ************************************
-      if(IL.eq.1) then
-        v(1)   = q(1)
-        v(npts)= q(npts)
-!
-        do i= 2,npts-1
-        v(i)=   q(i)
-!       v(i)= 0.33333*(q(i-1)+q(i)+q(i+1))
-        end do
       end if
-!                                                *****************
-!                                                **  log. scale **
-!                                                *****************
-      if(iabs(IL).eq.2) then
-         do i= 1,npts
-         if(v(i).gt.0.) then
-            v(i)= alog10(v(i))
-         else
-            v(i)= -10.
-         end if
-         end do
-      end if
-      end if
-!                                                ****************
-!                                                **  iplot= 2  **
-!                                                ****************
-      if(iplot.eq.2) then
-        do i= 1,npts
-        u(i)= vsc(i)
-        v(i)=  ff(i)
-        end do
-      end if
-!
-!                                **************************************
-!                                ** set a new scale and draw a frame **
-!                                **************************************
-      dx= (xmax-xmin)/xcm(i1)
-      dy= (ymax-ymin)/ycm(j1)
-      x0= xmin
-      y0= ymin
-!
-      call scalex (pl(i1),ql(j1),x0,y0,dx,dy,isc)
-!
-      pl1(isc)= pl(i1)
-      pr1(isc)= pr(i1)
-      ql1(isc)= ql(j1)
-      qr1(isc)= qr(j1)
-      xmin1(isc)= xmin
-      xmax1(isc)= xmax
-      ymax1(isc)= ymax
-      ymin1(isc)= ymin
-!                                                      *************
-!                                                      **  frame  **
-!                                                      *************
-      call plot (pl(i1),ql(j1),3)
-      call plot (pl(i1),qr(j1),2)
-      call plot (pr(i1),qr(j1),2)
-      call plot (pr(i1),ql(j1),2)
-      call plot (pl(i1),ql(j1),2)
-!                                                    ******************
-!                                                    **  tick marks  **
-!                                                    ******************
-      scx= xcm(i1)/5.0
-      scy= ycm(j1)/4.0
-!
-      x0= pl(i1)
-      y1= ql(j1)
-      y4= qr(j1)
-      y2= y1 +0.25
-      y3= y4 -0.25
-!
-      do k=1,4
-      x0= x0 +scx
-      call plot (x0,y1,3)
-      call plot (x0,y2,2)
-      call plot (x0,y3,3)
-      call plot (x0,y4,2)
-      end do
-!
-      y0= ql(j1)
-      x1= pl(i1)
-      x4= pr(i1)
-      x2= x1 +0.25
-      x3= x4 -0.25
-!
-      do k=1,3
-      y0= y0 +scy
-      call plot (x1,y0,3)
-      call plot (x2,y0,2)
-      call plot (x3,y0,3)
-      call plot (x4,y0,2)
-      end do
-!                                                     **************
-!                                                     ** numbers. **
-!                                                     **************
-!
-      if(.not.lab_skip) then
-        call number (pl(i1)-0.5,ql(j1)-0.45,hhs,xmin,0.,101)
-        call number (pr(i1)-1.5,ql(j1)-0.45,hhs,xmax,0.,101)
-!
-        call number (pl(i1)-2.0,ql(j1)     ,hhs,ymin,0.,101)
-        call number (pl(i1)-2.0,qr(j1)-0.30,hhs,ymax,0.,101)
-      end if
-!
-!                                                     **************
-!                                                     **  labels. **
-!                                                     **************
-      xc= 0.5*(pl(i1)+pr(i1))
-      xu= xc -1.60
-      xd= xc -0.20*n2/2
-!
-      yr= qr(j1)+0.15
-      yl= ql(j1)-0.70
-!
-      call symbol (xu,yr,hh,lab1,0.,n1)
-      call symbol (xd,yl,hh,lab2,0.,n2)
-!
-      xl= pl(i1)-1.50
-      yc= 0.5*(ql(j1)+qr(j1))
-      call symbol (xl,yc,hh,lab3,0.,n3)
-!                                     **********************************
-!                                     **  no plot is made if npts < 0 **
-!                                     **********************************
-   70 if(npts.lt.0) return
-!
-      call plotl (u(1),v(1),isc,3)
-!**
-      if(iplot.eq.1) then
-         do i=1,npts
-         call plotl (u(i),v(i),isc,2)
-         end do
-      else
-         do i=1,npts
-         call plotl (u(i+1),v(i)  ,isc,2)
-         call plotl (u(i+1),v(i+1),isc,2)
-         end do
-      end if
-!**
-      call plotl (u(npts),v(npts),isc,3)
-!
+!***
       return
       end subroutine lplot
 !
@@ -12404,8 +12517,8 @@
 !
       character(len=8) char1
       character(len=8) label(8)
-      character(len=10) date_now
-      common/headr1/ label,date_now
+      character(len=10) date
+      common/headr1/ label,date
 !
       real(C_DOUBLE) time1 
       common/headr2/ time1
@@ -12427,7 +12540,7 @@
       write(18) time,xmax,ymax,zmax,x1,x2,radi,nr,lskip,n1
       write(18) (x(i),y(i),z(i),vx(i),vy(i),vz(i),i=1,nr,lskip)
 !         merge to all x-vz ?
-      write(18) label,date_now,char1
+      write(18) label,date,char1
 !
       close(18)
 !
@@ -12593,6 +12706,262 @@
       end function ranff 
 !
 !
+! ++ Data plots are executed with this program (not post processing) ++
+!-----------------------------------------------------------------------
+      subroutine lplot1 (ix,iy,npt1,x,y,ymax,ymin,IL,lab1,n1,lab2,n2, &
+                         lab3,n3)
+!-----------------------------------------------------------------------
+!  <<warning>>  order and number of arguments /lplot/ have been changed.
+!               also, x (time) is defined for all range.
+!               date: 5/18/96 at mit.
+!***********************************************************************
+!   il=1................ linear plot of (x,y)
+!   il=2................ log10 plot of (x,log y)
+!***********************************************************************
+      use, intrinsic :: iso_c_binding
+      implicit none
+!
+      integer(C_INT) ix,iy,npt1,IL,n1,n2,n3
+      real(C_float)  ymax,ymin
+      character(len=8) lab1,lab2,lab3
+!
+      real(C_DOUBLE) x(750000),y(750000)
+      real(C_float)  u(750000),v(750000)
+!
+      character(len=8) label(8),cdate*10
+      real(C_DOUBLE) time1
+      integer(C_INT) nfine
+      real(C_float)  pl1,pr1,ql1,qr1,xmin1,xmax1,ymin1,ymax1, &
+                     xcm(6),ycm(6),pl(6),pr(6),ql(6),qr(6)
+!     
+      common/headr1/ label,cdate
+      common/headr2/ time1
+!     common/headr2/ time,xp_leng
+      common/pplcom/ nfine,pl1(10),pr1(10),ql1(10),qr1(10),  &
+                     xmin1(10),xmax1(10),ymin1(10),ymax1(10)
+!
+      integer(C_INT) iplot,npt,isc,i,j,k,i1,j1
+      real(C_float)  time,hh,hhs,dx,dy,x0,y0,scx,scy,x1,x2,x3,x4, &
+                     y1,y2,y3,y4,xl,xc,xu,xd,yc,yr,yl,xmax,xmin
+!
+!   for fujitsu.
+!     data  xcm/18.46,2*9.867,3*6.18/,
+!    *      ycm/16.85,2*7.435,3*4.381/,
+!    *      pl/2*2.00,15.132,2.00,8.00,18.20/,
+!    *      ql/1.95,10.885,1.95,13.832,7.891,1.95/
+!
+!   for nec.
+      data  xcm/21.0, 2*10.00, 3*7.00/,       &
+            ycm/15.0, 2*6.80, 3*3.90/,        &
+            pl/2.0,  2.0,14.0, 1.0,9.0,17.0/, &
+            ql/2.3, 10.5,2.3, 12.9,7.6,2.3/
+!
+      time= time1
+!
+      iplot=1
+      go to 1
+!
+!-----------------------------------------------------------------------
+      entry hplot1 (ix,iy,npt1,x,y,ymax,ymin,IL,lab1,n1,lab2,n2,lab3,n3)
+!-----------------------------------------------------------------------
+      iplot=2
+!
+    1 npt= npt1
+      isc= 1
+!
+      do i=1,6
+      pr(i)= pl(i) +xcm(i)
+      end do
+!
+      do j=1,6
+      qr(j)= ql(j) +ycm(j)
+      end do
+!
+!                 ******************************************************
+!*                **  make a copy before the top-left frame is drawn. **
+!                 ******************************************************
+      hh = 0.70
+      hhs= 0.60
+!
+      i1= iabs(ix)
+      j1= iabs(iy)
+      if(i1.ge.3) go to 10
+      if(j1.eq.3.or.j1.ge.5) go to 10
+!                                              ************************
+!                                              ** label of the page. **
+!                                              ************************
+      call symbol (0.1,18.0,hh,label(1),0.,8)
+!     call symbol (3.1,18.0,hh,cdate, 0.,10)
+      call symbol (15.9,0.1,hh,'t =',0.,3)
+      call number (999.0,999.0,hh,time,0.,5)
+!
+   10 continue
+!
+      do i=1,npt
+      u(i)= x(i)
+      end do
+!
+      xmax= u(npt)
+      xmin= u(1)
+!                             ************************************
+!                             ** three-point average if il > 0  **
+!                             ************************************
+      if(IL.gt.0) then
+        v(1)=   y(1)
+        v(npt)= y(npt)
+        do i=2,npt-1
+        v(i)= y(i)
+!       v(i)= 0.33333*(y(i-1)+y(i)+y(i+1))
+        end do
+      else
+        do i=1,npt
+        v(i)= y(i)
+        end do
+      end if
+!                                                *****************
+!                                                **  log. scale **
+!                                                *****************
+      if(iabs(IL).eq.2) then
+         do i=1,npt
+         if(v(i).gt.0.) then
+            v(i)= alog10(v(i))
+         else
+            v(i)= -10.
+         end if
+         end do
+      end if
+!                                **************************************
+!                                ** set a new scale and draw a frame.**
+!                                **************************************
+      if(iplot.eq.2) then
+         ymax= -1.e10
+         ymin=  1.e10
+!
+         do i= 1,npt
+         ymax= amax1(ymax,v(i))
+         ymin= amin1(ymin,v(i))
+         end do
+!
+         if(ymin.ge.0.) then
+           ymax= 1.1*ymax
+           ymin= 0.
+         else
+           ymax= amax1(0.,ymax)
+           ymin= 1.1*ymin
+         end if
+      end if
+!
+      if(ymax.le.ymin) ymax= ymin+1.0
+      if(iabs(IL).eq.2) then
+         if(ymax.gt.0.0) ymax= ymax+1.0
+      end if
+!
+      dx= (xmax-xmin)/xcm(i1)
+      dy= (ymax-ymin)/ycm(j1)
+      x0= xmin
+      y0= ymin
+!
+      call scalex (pl(i1),ql(j1),x0,y0,dx,dy,isc)
+!
+      pl1(isc)= pl(i1)
+      pr1(isc)= pr(i1)
+      ql1(isc)= ql(j1)
+      qr1(isc)= qr(j1)
+      xmin1(isc)= xmin
+      xmax1(isc)= xmax
+      ymax1(isc)= ymax
+      ymin1(isc)= ymin
+!                                                      *************
+!                                                      **  frame. **
+!                                                      *************
+      call plot (pl(i1),ql(j1),3)
+      call plot (pl(i1),qr(j1),2)
+      call plot (pr(i1),qr(j1),2)
+      call plot (pr(i1),ql(j1),2)
+      call plot (pl(i1),ql(j1),2)
+!                                                    ******************
+!                                                    **  tick marks. **
+!                                                    ******************
+      scx= xcm(i1)/5.0
+      scy= ycm(j1)/4.0
+!
+      x0= pl(i1)
+      y1= ql(j1)
+      y4= qr(j1)
+      y2= y1 +0.25
+      y3= y4 -0.25
+!
+      do k=1,4
+      x0= x0 +scx
+      call plot (x0,y1,3)
+      call plot (x0,y2,2)
+      call plot (x0,y3,3)
+      call plot (x0,y4,2)
+      end do
+!
+      y0= ql(j1)
+      x1= pl(i1)
+      x4= pr(i1)
+      x2= x1 +0.25
+      x3= x4 -0.25
+!
+      do k=1,3
+      y0= y0 +scy
+      call plot (x1,y0,3)
+      call plot (x2,y0,2)
+      call plot (x3,y0,3)
+      call plot (x4,y0,2)
+      end do
+!                                                     **************
+!                                                     ** numbers. **
+!                                                     **************
+!
+      call number (pl(i1)-0.5,ql(j1)-0.45,hhs,xmin,0.,101)
+      call number (pr(i1)-1.5,ql(j1)-0.45,hhs,xmax,0.,101)
+!
+      call number (pl(i1)-2.0,ql(j1)     ,hhs,ymin,0.,101)
+      call number (pl(i1)-2.0,qr(j1)-0.30,hhs,ymax,0.,101)
+!
+!                                                     **************
+!                                                     **  labels. **
+!                                                     **************
+      xc= 0.5*(pl(i1)+pr(i1))
+      xu= xc -1.60
+      xd= xc -0.20*n2/2
+!
+      yr= qr(j1)+0.15
+      yl= ql(j1)-0.70
+!
+      call symbol (xu,yr,hh,lab1,0.,n1)
+      call symbol (xd,yl,hh,lab2,0.,n2)
+!
+      xl= pl(i1)-1.50
+      yc= 0.5*(ql(j1)+qr(j1))
+      call symbol (xl,yc,hh,lab3,0.,n3)
+!                                     **********************************
+!                                     **  no plot is made if npt1 < 0 **
+!                                     **********************************
+   70 if(npt1.lt.0) return
+!
+      call plotl (u(1),v(1),isc,3)
+!**
+      if(iplot.eq.1) then
+         do i=1,npt
+         call plotl (u(i),v(i),isc,2)
+         end do
+      else
+         do i=1,npt-1
+         call plotl (u(i+1),v(i)  ,isc,2)
+         call plotl (u(i+1),v(i+1),isc,2)
+         end do
+      end if
+!**
+      call plotl (u(npt),v(npt),isc,3)
+!
+      return
+      end subroutine lplot1
+!
+!
 !-----------------------------------------------------------------------
       subroutine cplt2a (q,xmax,ymax,zmax,iperio,iptag,char1,n1)
 !-----------------------------------------------------------------------
@@ -12604,8 +12973,8 @@
 !*
       integer  n1
       real(C_DOUBLE)   time1
-      character(len=8) char1,label(8),date_now*10
-      common/headr1/ label,date_now
+      character(len=8) char1,label(8),date*10
+      common/headr1/ label,date
       common/headr2/ time1
 !
       integer        pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
@@ -12664,7 +13033,7 @@
 !     write(18) iplot,iperio,iptag
 !     write(18) time,xmax,ymax,zmax,npx,npy,npz,n1
 !     write(18) a,b
-!     write(18) label,date_now,char1
+!     write(18) label,date,char1
 ! 
 !---------------------------------------------------------
 !********************************
@@ -12677,7 +13046,7 @@
       hh= 0.60
       hs= 0.40
       call symbol (0.1,18.2,hh,label(1),0.,8)
-!     call symbol (0.1, 0.1,hh,date_now,0.,10)
+!     call symbol (0.1, 0.1,hh,date,0.,10)
       call symbol (15.9,0.1,hh,'t=',0.,2)
       call number (16.5,0.1,hh,time,0.,101)
 !
@@ -12802,8 +13171,8 @@
 !*
       integer(C_INT) n1,iperio,iptag
       real(C_DOUBLE) time1
-      character(len=8) label(8),date_now*10,char1
-      common/headr1/ label,date_now
+      character(len=8) label(8),date*10,char1
+      common/headr1/ label,date
       common/headr2/ time1
 !
       integer(C_INT) i1,iplot,npy,npz,nyz,nzp,isel,             &
@@ -12828,11 +13197,11 @@
       jk= 0
 !
       npy= 0
-      do j= 2,my,2  !<-- j+1= my+1
+      do j= 2,my,2
       npy= npy +1
 !
         npz= 0
-        do k= 2,mz-1,2  !<-- k+1= mz
+        do k= 2,mz-1,2 
         npz= npz +1
 !
         kr= k+1 
@@ -12857,7 +13226,7 @@
 !     write(18) iplot,iperio,iptag
 !     write(18) time,xmax,zmax,npx,npz,n1
 !     write(18) ax,ay,az
-!     write(18) label,date_now,char1
+!     write(18) label,date,char1
 ! 
 !---------------------------------------------------------
 !********************************
@@ -12867,7 +13236,7 @@
       hh= 0.60
       hs= 0.40
       call symbol (0.1,18.2,hh,label(1),0.,8)
-!     call symbol (0.1, 0.1,hh,date_now,0.,10)
+      call symbol (0.1, 0.1,hh,date,0.,10)
       call symbol (15.9,0.1,hh,'t=',0.,2)
       call number (16.5,0.1,hh,time,0.,101)
 !
@@ -12953,7 +13322,7 @@
       do j= 1,ny
       do k= 1,nz
       jk= jk +1
-      am1= amax1(am1,ax(jk)) !<- ok
+      am1= amax1(am1,ax(jk))  !<- ok
       am2= amin1(am2,ax(jk))
       end do
       end do
@@ -13001,14 +13370,14 @@
       real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
 !
       integer(C_INT)  n1,ik,jk,i1,j1,k1,ii,i,j,k,npx,npy,npz, &
-                      il,ir,jl,jr,kl,kr,nyz,nxz,npz2,ncontr
+                      il,ir,jl,jr,kl,kr,nyz,nxz,ncontr
       real(C_float)   time,xl2,xr2,yl,yr,zl,zr,hh,qc,qc2,       &
                       am21,am41,am22,am42,ams1,ams2,ams,          &
                       gdx,gdy,gdz,wamin,wamax,xmin,ymin,zmin,zleng
 
       real(C_DOUBLE)  time1
-      character(len=8) label(8),date_now*10,char1
-      common/headr1/  label,date_now
+      character(len=8) label(8),cdate*10,char1
+      common/headr1/  label,cdate
       common/headr2/  time1
 !
       integer(C_INT) io_pe
@@ -13032,11 +13401,11 @@
       jk= 0
 !
       npy= 0
-      do j= 2,my,2  !<-- j+1= my+1
+      do j= 2,my,2  !<-- j=my+1
       npy= npy +1
 !
         npz= 0
-        do k= 2,mz-1,2  !<-- k+1= mz
+        do k= 2,mz-1,2
         npz= npz +1
 !
         kr= k+1 
@@ -13055,15 +13424,15 @@
       ik= 0
 !
       npx= 0
-      do i= 2,mx-1,2  !<-- ir= mx
+      do i= 2,mx-1,2 
       npx= npx +1
 !
       ir= i+1 
       il= i-1 
 !
-        npz2= 0
-        do k= 2,mz-1,2  !<-- kr= mz
-        npz2= npz2 +1
+        npz= 0
+        do k= 2,mz-1,2  !<-- k= mz-1
+        npz= npz +1
 !
         kr= k+1 
         kl= k-1 
@@ -13086,7 +13455,7 @@
 !                          <--- limit elongated y-length.
       hh = 0.70
       call symbol (0.1,18.2,hh,label(1),0.,8)
-!     call symbol (0.1, 0.1,hh,date_now,0.,10)
+      call symbol (0.1, 0.1,hh,cdate,0.,10)
       call symbol (15.9,0.1,hh,'t=',0.,2)
       call number (16.5,0.1,hh,time,0.,101)
 !
@@ -13102,11 +13471,10 @@
       am22= amin1(am22,a(jk))
       end do
 !
-!
       am41= -1.e+10
       am42=  1.e+10
 !
-      do ik= 1,npx*npz2
+      do ik= 1,npx*npz
       am41= amax1(am41,b(ik))
       am42= amin1(am42,b(ik))
       end do
@@ -13160,11 +13528,11 @@
       call number (zl-1.3, xr2-0.3,hh,zmax,0.,5)
       call number (zl-1.3, xl2-0.5,hh,xmax,0.,5)
 !
-      nxz= npx*npz2
+      nxz= npx*npz
       call daisho (b,nxz,wamin,wamax)
 !
       ncontr= 7  ! 11
-      call eqcntr (b,ww,npz2,npx,zl,xl2,zr,xr2,wamin,0.0,wamax, &
+      call eqcntr (b,ww,npz,npx,zl,xl2,zr,xr2,wamin,0.0,wamax, &
                    7000,ncontr,1) 
 !
 !---------------------
@@ -14584,32 +14952,39 @@
 !
        if(abs(anu).gt.1.e1 .or.  &
           abs(anu).lt.1.e-1) then
-        write(isymb,'(1pe9.2)') anu    ! e9.2
+        write(isymb,31) anu
+   31   format(1pe9.2)
        else
-        write(isymb,'(f7.2)') anu      ! f7.2
+        write(isymb,32) anu
+   32   format(f7.2)
        end if
 !
        if(.true.) go to 300
-       if(abs(anu).lt.10000.) then  !! 5 digits
+       if(abs(anu).lt.10000.) then  ! 5 digits
          if(abs(anu).gt.0.1) then
-           write(isymb,'(f6.1)') anu        ! f6.1
+           write(isymb,40) anu
+   40      format(f6.1)
          else
-           if(abs(anu).gt.0.001) then 
-             write(isymb,'(f6.3)') anu      ! f6.3
+           if(abs(anu).gt.0.001) then  ! f6.3
+             write(isymb,41) anu
+   41        format(f6.3)
            else
-             if(abs(anu).gt.0.001) then 
-               write(isymb,'(1pe9.2)') anu  ! e9.2
+             if(abs(anu).gt.0.001) then  ! f6.3
+               write(isymb,42) anu   ! e9.2
+   42          format(1pe9.2)
              else
-               write(isymb,'(f6.1)') anu    ! f6.1  0.0
+               write(isymb,40) anu   ! 0.0
              end if
            end if
          end if
 !
        else
          if(abs(anu).lt.100000.) then
-           write(isymb,'(f7.1)') anu       ! f7.1
+           write(isymb,51) anu     ! f7.1
+   51      format(f7.1)
          else
-           write(isymb,'(1pe9.2)') anu     ! e9.2
+           write(isymb,52) anu     ! e9.2
+   52      format(1pe9.2)
          end if
        end if
   300  continue
