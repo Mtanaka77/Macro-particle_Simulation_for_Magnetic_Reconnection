@@ -1,6 +1,6 @@
 !  param_A23A.h
 !
-      integer(C_INT) npc,mx,my,mz,mxyz0,np0,myA,kd,   &
+      integer        npc,mx,my,mz,mxyz0,np0,myA,kd,   &
                      mxyz,mxyz3,mxyzA,                &
                      nob,nob2,nob3,iblk,iblk2,iblk3,  &
                      nhistm

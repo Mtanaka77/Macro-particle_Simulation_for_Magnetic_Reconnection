@@ -1,7 +1,7 @@
 !***********************************************************************
 !*                                                                     *
 !*    ## 3-D Large-Scale Electromagnetic Particle-in-Cell Code ##      *
-!*      << Fully-implicit scheme with kinetic ions and electronsi >>   *
+!*      << Fully-implicit scheme with kinetic ions and electrons >>    *
 !*                                                                     *
 !*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
 !*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
@@ -16,6 +16,7 @@
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
 !*    may be used. One should read the reference 2) in JCP (1993).     *
+!*                                                                     *
 !*  * Gauss's law must be corrected as errors in divergence term       *
 !*    accumulate in time. This is true if a finite difference scheme   *
 !*    of any kind is utilized.                                         *
@@ -80,11 +81,10 @@
 !-----------------------------------------------------------------------
 !*                                                                     *
 !*     /main/    ------   /trans/                                      *
-!*                           /fulmov/,/drmove/,/fulmv2/,/drmov2/       *
-!*                              ---> partbc, partdk                    *
+!*                           /fulmov/,/fulmv2/                         *
+!*                              ---> partbc                            *
 !*                              ---> srimp1-4                          *
 !*                        /cfpsol/,/poissn/,/escorr/                   *
-!*                           full or drift-kinetic particles           * 
 !*                        /diag1/                                      *
 !*                              ---> fplot3, cplot3                    *
 !*               /init/   ------  /loadpt/, /readpt/                   *
@@ -102,7 +102,7 @@
 !*    -L/opt/pgi/fftw3/lib -lfftw3
 !* $ mpiexec -n 6 a.out &
 !-----------------------------------------------------------------------
-!  Fortrtan 2003/2008 by direct write outputs
+!  Fortrtan 2003 /Fortran 2008 by direct write outputs
 !               write(11,'(" arrayx,arrayy(i),arrayz=",3i6)')... 
 !-----------------------------------------------------------------------
 !
@@ -525,18 +525,18 @@
 !-----------------------------------------------------------------------
 !*    the seed of random numbers must be odd integers.
 !
-      use, intrinsic :: iso_c_binding
+!     use, intrinsic :: iso_c_binding
       implicit none
       include 'param_A23A.h'
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer        it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
       common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
-      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
+      real*8         xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,teti,wcewpe,thb,               &
                      rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
@@ -551,11 +551,11 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(3000,12)
 !
-      real(C_float)  plodx
-      integer(C_INT) kploy,kploz,ir1,ir2
+      real*4  plodx
+      integer kploy,kploz,ir1,ir2
       common/plotiv/ plodx,kploy,kploz
 !
-      real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
+      real*8  arb,zcent,ycent1,ycent2,Ez00,vrg1
       common/profl/  arb,zcent,ycent1,ycent2,Ez00
       common/ranfa/  ir1  !! integer for ir1
       common/ranfb/  ir2
@@ -717,9 +717,6 @@
 !
         call emfld0
 !
-!*  In the initial step, (vxe,vye,vze) -> (mue,vpe,vhe)
-!   is converted
-!
           cl_first= 2
           call clocki (walltime3,size,cl_first)
           call clocki (walltime4,size,cl_first)
@@ -769,7 +766,6 @@
 !
       call fulmov (xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
                    npr,ipc,2,ipar,size)
-!                  +++++++++++
 !
         cl_first= 2
         call clocki (walltime2,size,cl_first)
@@ -4843,13 +4839,17 @@
       kr= pzr(k)
       kl= pzl(k)
 !*
-      bx(i,0,k)= bx0(i,0,k) +dt*(eya(i,0,kr) -eya(i,0,kl))/hz2
+      bx(i,0,k)= bx0(i,0,k) +dt*( (eya(i,0,kr) -eya(i,0,kl))/hz2 &
+                                -2*eza(i,1,k)/hy2) 
       by(i,0,k)= 0
-      bz(i,0,k)= bz0(i,0,k) -dt*(eya(ir,0,k) -eya(il,0,k))/hx2
+      bz(i,0,k)= bz0(i,0,k) +dt*(-(eya(ir,0,k) -eya(il,0,k))/hx2 &
+                                +2*exa(i,1,k)/hy2) 
 !
-      bx(i,my,k)= bx0(i,my,k) +dt*(eya(i,my,kr) -eya(i,my,kl))/hz2
+      bx(i,my,k)= bx0(i,my,k) +dt*( (eya(i,my,kr) -eya(i,my,kl))/hz2 &
+                                 +2*eza(i,my,k)/hy2)
       by(i,my,k)= 0
-      bz(i,my,k)= bz0(i,my,k) -dt*(eya(ir,my,k) -eya(il,my,k))/hx2
+      bz(i,my,k)= bz0(i,my,k) +dt*(-(eya(ir,my,k) -eya(il,my,k))/hx2 &
+                                 -2*exa(i,my,k)/hy2) 
       end do
       end do
 !
@@ -4996,6 +4996,7 @@
         cjz(i,j,k)= 0
       else
 !
+!     +++++++++++++++++
       cjx(i,j,k)= qix(i,j,k) +qex(i,j,k) &
             +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax  +dtic*ebx)  &
                                                  /(1.d0+dtic2)  &
@@ -5251,7 +5252,6 @@
       by(i,j,k)= by0(i,j,k)  &
                         +dt*( (eza(ir,j,k) -eza(il,j,k))/hx2    &
                              -(exa(i,j,kr) -exa(i,j,kl))/hz2 )
-!
       bz(i,j,k)= bz0(i,j,k)  & 
                         +dt*( (exa(i,j+1,k) -exa(i,j-1,k))/hy2  &
                              -(eya(ir,j,k)  -eya(il,j,k))/hx2)
@@ -5268,16 +5268,17 @@
       kr= pzr(k)
       kl= pzl(k)
 !*
-      bx(i,0,k)= bx0(i,0,k) +dt*(eya(i,0,kr)  -eya(i,0,kl))/hz2
-!                              -(eza(i,1,k) -eza(i,-1,k)) <- =0 
+      bx(i,0,k)= bx0(i,0,k) +dt*( (eya(i,0,kr) -eya(i,0,kl))/hz2 &
+                                -2*eza(i,1,k)/hy2) 
       by(i,0,k)= 0
-      bz(i,0,k)= bz0(i,0,k) -dt*(eya(ir,0,k) -eya(il,0,k))/hx2
-!                           +dt*( (exa(i,j+1,k) -exa(i,j-1,k))/hy2 <- =0 
-!                                -(eya(ir,j,k)  -eya(il,j,k))/hx2)
+      bz(i,0,k)= bz0(i,0,k) +dt*(-(eya(ir,0,k) -eya(il,0,k))/hx2 &
+                                +2*exa(i,1,k)/hy2) 
 !
-      bx(i,my,k)= bx0(i,my,k) +dt*(eya(i,my,kr) -eya(i,my,kl))/hz2
+      bx(i,my,k)= bx0(i,my,k) +dt*( (eya(i,my,kr) -eya(i,my,kl))/hz2 &
+                                 +2*eza(i,my,k)/hy2)
       by(i,my,k)= 0
-      bz(i,my,k)= bz0(i,my,k) -dt*(eya(ir,my,k) -eya(il,my,k))/hx2
+      bz(i,my,k)= bz0(i,my,k) +dt*(-(eya(ir,my,k) -eya(il,my,k))/hx2 &
+                                 -2*exa(i,my,k)/hy2) 
       end do
       end do
 !
@@ -5384,6 +5385,22 @@
 !
         end if
       end if
+!
+        if(.false.) then
+      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+!
+        i= mx/2
+        j= my/2
+        do k= 0,mz-1
+        write(11,'(3i4,1p6d12.3)') i,j,k,ex(i,j,k),ey(i,j,k),ez(i,j,k), &
+                      bx(i,j,k),by(i,j,k),bz(i,j,k)
+        end do
+!
+        close(11)
+      end if
+        end if
 !
       return
       end subroutine emfild
@@ -6095,7 +6112,6 @@
 !
 !  adt*ex()/q0
       fmain = adtsq*qwi*qi(i,j,k)/((1.d0 +dtic2)*q0) 
-!
       fmaine= adtsq*qwe*qe(i,j,k)/((1.d0 +dtice2)*q0) 
 !
       rax= bxa/bss
@@ -8246,7 +8262,7 @@
 !                                                /(1.d0+dtic2) &
 !           +qe(i,j,k)*(adt*qwe*ehh*rax/drag + ebx/bsa1)
 !
-      akap1 = qqwi*ahdt2      /((1 +dtic2)*q0)
+      akap1 = qqwi*ahdt2        /((1 +dtic2)*q0)
       akae1 = qqwe*ahdt2      /((1 +dtice2)*q0)
 !
       akap2 = qqwi*ahdt2*dtic2/((1 +dtic2)*q0)
@@ -11406,7 +11422,7 @@
 !
       call lplot (2,4,ldec,tdec,edec(1,7),emax7a,0.,ILN,'elex His',8,&
                  '        ',8,'        ',8)
-      call lplot (2,5,ldec,tdec,edec(1,7),emax8a,0.,ILN,'eleh His',8,&
+      call lplot (2,5,ldec,tdec,edec(1,8),emax8a,0.,ILN,'eleh His',8,&
                  '        ',8,'        ',8)
 !   ++++++++++++++
       call chart
