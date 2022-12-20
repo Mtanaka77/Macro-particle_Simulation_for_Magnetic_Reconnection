@@ -1,5 +1,5 @@
  &datum0  kstart=0,tfinal=4000.d0,cptot=360.1d0,
-          igc=1,istop=0,
+          istop=0,
  &end                  
  &datum1  dt=1.0d0,xmax=300.d0,ymax=600.d0,zmax=300.d0, 
           wspec(1)=100.d0,qspec(1)=1.0d0,vbeam(1)=0.45d-2,
