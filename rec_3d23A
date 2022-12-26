@@ -1,19 +1,19 @@
- &datum0  kstart=0,tfinal=4000.d0,cptot=360.1d0,
-          istop=0,
+ &datum0  kstart=0,tfinal=3000.d0,cptot=360.1d0,
+          igc=1,istop=0,
  &end                  
  &datum1  dt=1.0d0,xmax=300.d0,ymax=600.d0,zmax=300.d0, 
           wspec(1)=100.d0,qspec(1)=1.0d0,vbeam(1)=0.45d-2,
           wspec(2)=1.d0, qspec(2)=-1.0d0,vbeam(2)=-0.45d-2,
-          vdr(1)=0.d0,vdr(2)=0.d0,Ez00=0.0d-2,
-          wcewpe=1.0d0,teti=1.0d0,veth=0.20d0,thb=90.d0,
+          vdr(1)=0.d0,vdr(2)=0.d0,Ez00=0.125d-2,
+          wcewpe=0.2d0,teti=1.0d0,veth=0.20d0,thb=90.d0,
           aimpl=0.60d0,rwd=50.d0,
           epsln1=1.d-5,pi=3.141592653589d0, 
           ifilx=1,ifily=1,ifilz=1,
           ifilxs=3,ifilys=3,ifilzs=3,
           itermx=1,iterfx=150,itersx=150,
-          iloadp=0,arb=0.4d0,nha=10,
+          iloadp=0,arb=0.4d0,nha=5,
  &end         
- &datum2  nhist=1000,nplot=250,nfwrt=250,npwrt=777777,
+ &datum2  nhist=1000,nplot=200,nfwrt=200,npwrt=777777,
           vlima=0.06d0,vlimb=0.6d0,bmin=1.0d-8,emin=1.0d-8,
  &end
  &datum3  label(1)='MGR3:32 '
@@ -21,8 +21,8 @@
           label(3)='t=1.0 te'
           label(4)='/ti=1 mi'
           label(5)='=100 wc='
-          label(6)='1.0 vbea'
-          label(7)='m kinetc'
-          label(8)='ion,elec'
+          label(6)='0.2 vbea'
+          label(7)='m=1.3d-3'
+          label(8)=' kin-iel'
  &end                                      
 
