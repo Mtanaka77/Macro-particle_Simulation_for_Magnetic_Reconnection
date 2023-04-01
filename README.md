@@ -1,5 +1,9 @@
 ## Largescale Electromagnetic Particle-in-Cell Simulation for High-Temperature Plasmas ## 
 
+As "Open Internet Access by Molecular Dynamics Simulations", a couple of various codes are shown in https://github.com/Mtanaka77/, which are "Relativistic and Electromagnetic Molecular Dynamics Simulation for Nanoscale Phenomena", "Large-scale Electromagnetic Particle-in-Cell Simulation", and "SIESTA on Vector-Parallel Clusters". 
+This page is discussed on the large-scale electromagnetic code (J. Comp. Physics, 1993, Ref. 1), and magnetic reconnection ( Phys. Plasmas, 1996, Ref. 3). Please visit other companion pages other than this Large-scale Electromagnetic Simulations".
+
+
 ### Magnetic Reconnection and Solar-Magnetospheric Coupling ###
 
 Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large amount of energy to be released ?  This is typically observed as magnetic reconnection. There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer in the mean time paid attention to inertia resistivity of thinning the neutral sheet. Some time later in 1995 (Ref.3), a particle simulation was executed to show the reconnection mechanism of different inertia of ions and electrons resulting in large energy release of earth's magnetotail.
