@@ -6,7 +6,7 @@ This page is discussed on the large-scale electromagnetic code (J. Comp. Physics
 
 ### Magnetic Reconnection and Solar-Magnetospheric Coupling ###
 
-Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large amount of energy to be released ?  This is typically observed as magnetic reconnection. There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as a hypothesis to inertia resistivity of thinning the current sheet. Much later by a particle-in-cell simulation, it was proven to show inertia of ions and electrons as the reconnection mechanism, resulting in large energy release of earth's magnetotail (Ref.3).
+Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large amount of energy to be released ?  This is typically observed as magnetic reconnection. There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as a hypothesis to inertia resistivity of thinning the current sheet. Much later by a particle-in-cell simulation, it was proven to show that inertia of ions and electrons is the mechanism for magnetic reconnection, resulting in large energy release of earth's magnetotail (Ref.3).
 
 An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics. Both electric and magnetic fields at low frequencies are solved by a slightly backward time decentering technique. Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
 
