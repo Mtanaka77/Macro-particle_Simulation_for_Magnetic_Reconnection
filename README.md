@@ -8,7 +8,7 @@ This page is discussed on the large-scale electromagnetic code (J. Comp. Physics
 
 Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large amount of energy to be released ?  This is typically observed as magnetic reconnection. There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as a hypothesis of inertia resistivity to thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly proven that inertia of ions and electrons is the mechanism for magnetic reconnection, resulting in large energy release of earth's magnetotail (Ref.3).
 
-### Implicit Decentered Particle-in-Cell Simulation Code and a Large Time Step ###
+### Implicit Particle-in-Cell Simulation Code ###
 
 An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics (Ref. 3-5). 
 Both electric and magnetic fields are solved at low frequencies by a slightly backward time decentering technique. 
