@@ -10,9 +10,10 @@ Why is a current sheet of the distant magnetotail of the earth to be thinned and
 
 ### Implicit Particle-in-Cell Simulation Code ###
 
-An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics (Ref. 3-5). 
-Both electric and magnetic fields are solved at low frequencies by a slightly backward time decentering technique. 
-The backward de-centering does not affect low frequency phenomena \omega*Dt << 1 (JCP, 1993).
+An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics (Refs. 3-5). 
+Both electric and magnetic fields are solved at low frequencies by a slightly backward time decentering technique,
+and particles are advanced in time. 
+The backward decentering does not affect low frequency phenomena \omega*Dt << 1 (JCP, 1993 - Ref.2).
 Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
 
 One utilizes the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
