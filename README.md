@@ -1,13 +1,13 @@
 ## Largescale Electromagnetic Particle-in-Cell Simulation for High-Temperature Plasmas ## 
 
-As "Open Internet Access by Molecular Dynamics Simulations", a couple of various codes are shown in these repositories. 
-This page is discussed on the large-scale electromagnetic code (J. Comp. Physics, 1993, Ref. 1), and 
+As one of "Open Internet Access by Molecular Dynamics Simulations", this page is discussed on the large-scale electromagnetic code (J. Comp. Physics, 1993, Ref. 1), and 
 magnetic reconnection (Phys. Plasmas, 1995, Ref. 3). 
 
 
-### Magnetic Reconnection and Solar-Magnetospheric Coupling ###
+### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
 
-Why is a current sheet of the distant magnetotail of the earth to be thinned and why is a large amount of energy to be released ?  This is typically observed as magnetic reconnection. There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as a hypothesis of inertia resistivity to thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly proven that inertia of ions and electrons is the mechanism for magnetic reconnection, resulting in large energy release of earth's magnetotail (Ref.3).
+Why is a current sheet of the distant magnetotail of our earth to be thinned ?
+Why is a large amount of energy to be released ?  This is typically observed as magnetic reconnection. There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as a hypothesis of inertia resistivity to thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly proven that inertia of ions and electrons is the mechanism for magnetic reconnection, resulting in large energy release of earth's magnetotail (Ref.3).
 
 ### Implicit Particle-in-Cell Simulation Code ###
 
