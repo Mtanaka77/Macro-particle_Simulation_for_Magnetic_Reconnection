@@ -1,8 +1,6 @@
 ## Largescale Electromagnetic Particle-in-Cell Simulation for High-Temperature Plasmas ## 
 
-As "Open Internet Access by Molecular Dynamics Simulations", a couple of various codes are shown in these repositories. 
-This page is discussed on the large-scale electromagnetic code (J. Comp. Physics, 1993, Ref. 1), and 
-magnetic reconnection (Phys. Plasmas, 1995, Ref. 3). 
+As "Open Internet Access by Molecular Dynamics Simulations", a couple of various codes are shown in these repositories, where this page is discussed on the large-scale electromagnetic code (J. Comp. Physics, 1993, Ref. 1), and magnetic reconnection (Phys. Plasmas, 1995, Ref. 3). 
 
 
 ### Magnetic Reconnection and Solar-Magnetospheric Coupling ###
