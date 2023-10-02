@@ -7,7 +7,9 @@ magnetic reconnection (Phys. Plasmas, 1995, Ref. 3).
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
 
 Why is a current sheet of the distant magnetotail of our earth to be thinned ?
-And why is a large amount of energy to be released, which is typically observed in magnetic reconnection ? There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as a hypothesis of inertia resistivity to thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly proven that inertia of ions and electrons is the mechanism for magnetic reconnection, resulting in large energy release of earth's magnetotail (Ref.3).
+And why is a large amount of energy to be released, which is typically observed in magnetic reconnection ? 
+
+There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as 'hypothesis' of inertia resistivity of thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly proven that 'inertia of ions and electrons' is the mechanism for magnetic reconnection, then resulting in large energy release of earth's magnetotail (Ref.3).
 
 ### Implicit Particle-in-Cell Simulation Code ###
 
