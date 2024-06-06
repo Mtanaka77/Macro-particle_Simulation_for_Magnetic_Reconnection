@@ -1,7 +1,7 @@
-## Largescale Electromagnetic Particle Simulation of High-Temperature Plasmas ## 
+## Macro-Particle Simulation of Magnetic Reconnection ## 
 
-This page is discussed on the large-scale electromagnetic code (J. Comp. Physics, 1993, Ref. 1), and 
-magnetic reconnection (Phys. Plasmas, 1995, Ref. 3). 
+This page is discussed on the macro-particle electromagnetic simulation (J. Comp. Physics, 1993, Ref. 1), 
+and magnetic reconnection (Phys. Plasmas, 1995, Ref. 3). 
 
 
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
