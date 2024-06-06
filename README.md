@@ -1,14 +1,13 @@
 ## Largescale Electromagnetic Particle Simulation of High-Temperature Plasmas ## 
 
-This page is discussed on the large-scale electromagnetic code (J. Comp. Physics, 1993, Ref. 1), and 
-magnetic reconnection (Phys. Plasmas, 1995, Ref. 3). 
+This page is discussed on the largescale electromagnetic simulation code 
+(J. Comp. Physics, 1993, Ref. 1), and magnetic reconnection (Phys. Plasmas, 1995, Ref. 3). 
 
 
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
 
-Why is a large amount of energy to be released in the distant magnetotail of the earth, 
-and why is a current sheet of to be thinned ? This energy release is suddenly and 
-typically observed as magnetic reconnection. 
+Why is a large amount of solar-earth energy released in the distant magnetotail ? 
+This energy release is suddenly and typically observed as solar-earth magnetic reconnection. 
 
 There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as 'hypothesis' of inertia resistivity of thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly shown and proved that 'inertia of ions and electrons' is the key of input and output flows for magnetic reconnection, then resulting in large energy release of earth's magnetotail (Ref.3).
 
