@@ -15,18 +15,35 @@ theory to nuclear-fusion oriented anomalous resistivity. To our view, it was not
 that Dr. Speicer said as 'hypothesis' inertia resistivity of thinning the current sheet,
 which was not paid attention because of popularity of anomalous resistivity. 
 
-Much later by a particle-in-cell simulation, it was clearly shown and proved that 'inertia of ions and electrons' is the key of input and output flows for magnetic reconnection, then resulting in large energy release of earth's magnetotail (Ref.1).
+Much later by using the particle-in-cell simulation, it was clearly proved 
+that 'inertia of ions and electrons' is the key of input and output flows of 
+magnetic reconnection resulting in the large energy release of earth's magnetotail (Ref.1).
 
 ### Implicit Particle-in-Cell Simulation Code ###
 
-An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics (Ref. 1,4-5). 
-Both electric and magnetic fields are solved at low frequencies by a slightly backward time decentering technique. 
-The backward de-centering does not affect low frequency phenomena, \omega*Dt << 1 (JCP, 1993).
-Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
+An electromagnetic particle simulation code is utilized in solar and magnetospheric 
+space physics (Ref. 1, 4-5). 
+Both electric and magnetic fields are solved at low frequencies by a slightly 
+backward time decentering technique (Ref. 2,3). 
+The backward de-centering code does not affect low-frequency phenomena, 
+\omega*Dt << 1 with Dt the time step and \omega the inverse of electron plasma 
+frequency (JCP, 1993).
+Magnetic reconnection and the solar wind-earth's magnetic field coupling 
+are quite suitable for applying this simulation code.
 
-One utilizes the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
-The title, major references, and remarks of this simulation code are written in the top of the @mrg37_023A.f03 file.
-Major subroutines are named /fulmov/, /emfild/, /cfpsol/, which are used in every time step, while /escorr/ and /fulmv2/ are called in 5 time steps interval. 
+In the simulation, one utilizes the time-decentered scheme that is typically \aimpl=0.6, 
+while the time-centered scheme in the explicit code (\aimpl=0.5) is used 
+only in other directories of molecular dynamics simulations of \omega Dt <<1.
+
+Four physical units in the sumulation are, i) time: 1/wpe, ii) length: c/wpe 
+ (where c/wpe is the electron inertia length), iii) mass: electron mass, and 
+iv) charge: electron charge. 
+The program is written in Fortran 2003/2008 and it is coded for parallelization 
+by MPI version 3 or 4.
+The title, major references and remarks of this simulation code are written 
+in the top part of the @mrg37_023A.f03 file.
+The major subroutines are called as /fulmov/, /emfild/ and /cfpsol/, which are used 
+in every time steps, while /escorr/ and /fulmv2/ are called in 5 time steps interval. 
 
 The correction to the longitudinal part of the electric field is made in /escorr/. Although 
 the Poisson equation for the electric field is to be solved only initially, it is actually 
