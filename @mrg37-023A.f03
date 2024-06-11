@@ -1,43 +1,46 @@
 !***********************************************************************
 !*                                                                     *
-!*    ## 3-D Large-Scale Electromagnetic Particle-in-Cell Code ##      *
+!*    ## Macro-particle Simulation Code for Magnetic Reconnection ##   *
 !*      << Fully-implicit scheme with kinetic ions and electrons >>    *
 !*                                                                     *
 !*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
 !*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
 !*             3) M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).     *
 !*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
+!*             5) H.Shimazu, M.Tanaka, S.Machida, J.Geophys.Res.,      *
+!*                  101, 27565 (1996).                                 *
+!*             6) M.Tanaka, Bulletin of Chubu University (Mar,2022).   *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_023A.f03: this simulation code                         *
+!*    1. @mrg37_023A.f03: simulation code, job number serial '23'      *
 !*    2. param_A23A.h   : parameter file                               *
-!*    3. rec_3d15A      : Simulation time, box size, parameters of     *
-!*                     ions and electrons, decentering parameter,      *
+!*    3. rec_3d23A      : Simulation time, box size, parameters of     *
+!*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
-!*    may be used. One should read the reference 2) in JCP (1993).     *
+!*    may be used. One should read the reference Ref.2 JCP (1993).     *
 !*                                                                     *
-!*  * Gauss's law must be corrected as errors in divergence term       *
-!*    accumulate in time. This is true if a finite difference scheme   *
-!*    of any kind is utilized.                                         *
+!*  * Gauss's law must be corrected as errors since divergence term    *
+!*    do accumulate in time steps. This is quite true if a finite      *
+!*    difference scheme of any kind is utilized.                       *
 !*                                                                     *
-!*     The author and maintainer of these simulation codes are         *
+!*     The author and maintainer of these simulation codes are by      *
 !*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
 !*   Chubu University, Kasugai 487-8501, Japan.   2022/09/01           *
 !*                                                                     *
-!*   https://github.com/Mtanaka77/Electromagnetic_Particle_in_Cell_Simulation *
+!*  https://github.com/Mtanaka77/Macro-Particle_Simulation_of_Magnetic_Reconnection *
 !*                                                                     *
-!**** Version:  7/31/1996 ****************************** 09/12/2000 ****
-!**** Version:  9/01/2022 **************************** Fortran 2003 ****
+!**** First Version: 7/31/1996 ************************* 09/12/2000 ****
+!**** Late Version:  9/01/2022 ****************** Fortran 2003/2008 ****
 !
-!    @mrg3.f03: Non-periodic in y direction (two-points) and periodic  
-!    (three-points) in x and z directions.
+!    @mrg3-A023.f03: Non-periodic in y direction (two-points) and 
+!    periodic (three-points) in x and z directions.
 !
-!      A full-implicit plasma simulation code was created at /cfpsol/
-!    routines. It was successfully applied in 2-D by 1995. 
-!    The present code is Fortran 2003 rewritten in MPICH Ver.3, 
-!    whose parallel version is completed by using mpi_sendrecv with 
-!    pe's mx*myA*mz/npc overlaps.
+!      The full-implicit plasma simulation code was created at 
+!    /cfpsol/ subroutines. It was successfully applied in 2D by 1995 
+!    and 3D in 1996. The present code is Fortran 2003/2008 rewritten 
+!    in MPICH Ver.3 and Ver.4, whose parallel version is completed 
+!    by using mpi_sendrecv with PE's mx*myA*mz/npc overlaps.
 !
 !    Change in 2022
 !    1) The mpi routines isend and irecv are used for the bounded case,
@@ -80,33 +83,33 @@
 !
 !-----------------------------------------------------------------------
 !*                                                                     *
-!*     /main/    ------   /trans/                                      *
-!*                           /fulmov/,/fulmv2/                         *
+!*     /main/ ------ /trans/                                           *
+!*                        /fulmov/,/fulmv2/                            *
 !*                              ---> partbc                            *
-!*                              ---> srimp1-4                          *
+!*                              ---> srimp1-srimp4                     *
 !*                        /cfpsol/,/poissn/,/escorr/                   *
 !*                        /diag1/                                      *
 !*                              ---> fplot3, cplot3                    *
-!*               /init/   ------  /loadpt/, /readpt/                   *
+!*                  /init/ ------ /loadpt/, /readpt/ initally          *
 !*                                                                     *
 !*      sequential:                                                    *
-!*        /restrt/  -------  arrays (write /read)                      *
+!*        /restrt/ ------- arrays (write /read)                        *
 !*                                                                     *
 !-----------------------------------------------------------------------
-!* Fortran 2003 handles such technique as continuity and lower cases,
+!* Fortran 2003 handles technique as continuity and lower cases, by
 !*  :s%/^C/!/
 !*  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
-!* $ mpif90 -mcmodel=medium @mrg37.f03 -I/opt/pgi/fftw3/include &
-!*    -L/opt/pgi/fftw3/lib -lfftw3
-!* $ mpiexec -n 6 a.out &
+!* $ mpif90 -mcmodel=medium -fPIC @mrg37-023A.f03 -I/opt/fftw3/include -L/opt/fftw3/lib -lfftw3
+!* $ mpiexec -n number_of_cpu's a.out &
 !-----------------------------------------------------------------------
 !  Fortrtan 2003 /Fortran 2008 by direct write outputs
 !               write(11,'(" arrayx,arrayy(i),arrayz=",3i6)')... 
 !-----------------------------------------------------------------------
 !
       program macro_particles_code
+!
       use, intrinsic :: iso_c_binding
       implicit none
 !
@@ -217,12 +220,10 @@
 !
       ipar = 1 + rank     !! pe #= 1,2,3...
 !
-!  for 2 process/ve, io is rank= size-1
-!  for 1 process/ve, io is rank= size
       io_pe = 0
       if(ipar.eq.1) io_pe = 1
 !
-! Check results
+! Check results if it is necessary
       fortr51(1)='fortr.51'
       fortr51(2)='fortr.52'
       fortr51(3)='fortr.53'
@@ -254,6 +255,7 @@
 !  ++++++++++++++++++++++++++++++++++++++++++++++++++++
 !     kd= mz/npc is defined in param_A23A.h
 !
+!             number_of_cpu's
       do k= 1,npc         
       np1(k)= (k-1)*3*mx*(my+1)*kd +1    !<-- np1(1)=1
       np2(k)=     k*3*mx*(my+1)*kd       !<-- np2(2)=3*mx*myA*kd
@@ -266,8 +268,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,form='formatted')
 !
         write(11,*) 'mx,myA,mz=',mx,myA,mz
-        write(11,*) '3*mxyz=',3*mx*myA*mz
-        write(11,*) '3*mxyz/kd=',3*mx*myA*kd
+        write(11,*) '3*mxyz(the total) =',3*mx*myA*mz
+        write(11,*) '3*mxyz/kd(divided)=',3*mx*myA*kd
         write(11,*)
         write(11,*) 'np1(k),np2(k),nz1(k),nz2(k)...'
         write(11,'(2i10,2x,2i10)') (np1(k),np2(k),nz1(k),nz2(k),k=1,npc)
@@ -275,13 +277,13 @@
         close(11)
       end if
 !
-!* Tables to (arrayx, arrayy, arrayz)
+!* Tables to arrays in (arrayx, arrayy, arrayz)
 !
       npr= np0
 ! 
       l= 0
 !*
-      do k= 0,mz-1  !<<-  k=0
+      do k= 0,mz-1  !<<-  k=0 (start from 0)
       do j= 0,my    !     j=0
       do i= 0,mx-1  !     i=0
       l= l+1
@@ -303,9 +305,9 @@
         close(11)
       end if
 !
-!*********************************************
-!*  The macro-particle fully-implicit code.  *
-!*********************************************
+!********************************************************
+!*  The macro-particle fully-implicit simulation code.  *
+!********************************************************
 !
       if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -313,7 +315,7 @@
 !
         write(11,*)
         write(11,'("### @mrg37.f03 (3-d periodic/bound system) ###")')
-        write(11,'("    Macro E.M. particle code (full implicit)")')
+        write(11,'(" Macro EM particle simulation code (implicit)")')
         write(11,*)
         close(11)
       end if
@@ -324,8 +326,8 @@
       label(4)='econnect'
       label(5)='ion in 3'
       label(6)='-D space'
-      label(7)='        '
-      label(8)='        '
+      label(7)=' ions/el'
+      label(8)='ectrons '
 !
       call date_and_time_7 (date_now,time_now)
 !
@@ -341,7 +343,7 @@
       call lbltop (date_now,label)
 !
 !
-!  All nodes must execute
+!  All nodes must execute at the beginning
 !*                       ++++++++
       open (unit=05,file=praefixs,form='formatted')
 !
@@ -392,7 +394,7 @@
                  npr,kstart)
 !    ++++++++++++++++++++++++++++++++++++++++++++++++++++
 !
-      cl_first= 1
+      cl_first= 1   ! measure timing
       call clocks (walltime0,size,cl_first)
 !
       if(io_pe.eq.1) then
@@ -404,7 +406,7 @@
       end if
 !
 !*************************
-!*    Main part.         *
+!*    Main part starts   *
 !*************************
 !
       istop= 0
@@ -470,10 +472,11 @@
       cl_first= 2
       call clocks (walltime2,size,cl_first)
 !
-      cpu1= walltime2 - walltime0
+      cpu1= walltime2 - walltime0 
+      call date_and_time_7 (date_now,time_now)
 !
 !****************************************
-!*   Final procedure to close the job.  *                              *
+!*   Final procedure to close this job. *                              *
 !****************************************
 !
       istop= 1
@@ -506,6 +509,10 @@
 !
         write(11,'("** All time (run + restrt)",f9.2," secs.")') &
                                                walltime3 -walltime0
+!
+        call date_and_time_7 (date_now,time_now)
+        write(11,'("*Final date: ",a10,2x,"*time: ",a8,/)') &
+                                      date_now,time_now  
         close(11)
 !
         open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
@@ -525,11 +532,12 @@
 !-----------------------------------------------------------------------
 !*    the seed of random numbers must be odd integers.
 !
-!     use, intrinsic :: iso_c_binding
+      use, intrinsic :: iso_c_binding
+!
       implicit none
       include 'param_A23A.h'
 !
-      integer        it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer*4      it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
       common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
@@ -552,7 +560,7 @@
                      edec(3000,12)
 !
       real*4  plodx
-      integer kploy,kploz,ir1,ir2
+      integer*4   kploy,kploz,ir1,ir2
       common/plotiv/ plodx,kploy,kploz
 !
       real*8  arb,zcent,ycent1,ycent2,Ez00,vrg1
@@ -560,7 +568,7 @@
       common/ranfa/  ir1  !! integer for ir1
       common/ranfb/  ir2
 !
-      integer        ir,iq
+      integer*4      ir,iq
       common/ranfff/ ir,iq
 !***
 !  rec_3d: in param_A23A.h...    
@@ -830,7 +838,9 @@
         cl_first= 2
         call clocki (walltime5,size,cl_first)
 !
-        if(io_pe.eq.1) then
+!       if(io_pe.eq.1) then
+        if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+!
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
@@ -867,13 +877,13 @@
 !
 !* after faverg ! 
 !
-        if(.false.) then
-      call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
+      if(.false.) then
+        call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
 !
-      call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
+        call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
 !
-      call fvplot
-        end if
+        call fvplot
+      end if
 !
 !     gnu0= 1./200.
       gnu0= 0.d0
@@ -1163,11 +1173,10 @@
       ht=  0.5d0*hh
       ht2= ht**2
 !
-!
 !***********************************************************************
 !* 1. Advance particles:                                               *
 !***********************************************************************
-!  << needs the left-side grid for y, the central grids for x,z >>
+!  << Needs the left-side grid for y, the central grids for x,z >>
 !
 !   To improve orbit tracking, the magnetic field in the Lorentz term
 !   is evaluated at the mid-orbit positions (also in do 300).
@@ -1206,7 +1215,7 @@
         jl= my    !
         fyr= 0
         fyl= 1.d0
-      else if(jp.lt.0) then  ! on 11/08
+      else if(jp.lt.0) then 
         jr=  0
         jl= -1
         fyr= 1.d0
@@ -1391,576 +1400,6 @@
 !
       return
       end subroutine fulmov
-!
-!
-!-----------------------------------------------------------------------
-      subroutine drmove (x,y,z,mue,vpe,vhe,qmult,wmult,vxe,vye,vze,   &
-                         kstart,npr,ipc,ksp,ipar,size) 
-!-----------------------------------------------------------------------
-!********************************************************* 11/30/87 ****
-!*    perpendicular --->  e*b, grad.b, curvature drift motions         *
-!*    parallel      ---> -mue*grad.b force                             *
-!*                                                                     *
-!*    mue(l)= (magnetic moment)/mass,  vhe(l) the parallel velocity    *
-!*    conversion: (vx,vy,vz) ---> (mue,vperp,vpara) by initve.         *
-!***********************************************************************
-!--------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-      include 'mpif.h'
-      include 'param_A23A.h' 
-!
-      real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe,vxe,vye,vze
-      real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
-      real(C_DOUBLE) qmult,wmult
-      integer(C_INT) npr,kstart,ipc,ksp,iwrt,ipar,size,MPIerror
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                              ex,ey,ez,bx,by,bz,       &
-                                              ex0,ey0,ez0,bx0,by0,bz0, &
-                                              qix,qiy,qiz,qex,qey,qez, &
-                                              emx,emy,emz,qi,qe,amu,   &
-                                              avhh,gnu
-      common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
-      common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
-      common/srimp8/ amu,avhh
-      common/dragcf/ gnu
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                              exa,eya,eza,bxa,bya,bza, &
-                                              grx,gry,grz,crx,cry,crz, &
-                                              grh,sbx,sby,sbz,bss,     &
-                                              bx1,by1,bz1
-!----------------------------------------------------------------
-!
-      integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
-!
-      real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
-                     dx,dy,dz
-      common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
-                     hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
-!
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-!
-      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec,wspec,veth,teti,wcewpe,thb,               &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec
-      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!
-      real(C_DOUBLE) wkix,wkih,wkex,wkeh,wxsq,whsq
-      common/wkinel/ wkix,wkih,wkex,wkeh
-!
-      integer(C_INT) i,j,k,ir,il,jr,jl,kr,kl,syme,symb
-      integer(C_INT) l,ip,jp,kp
-      real(C_DOUBLE) bss1,mue1,vhh2,qw,grbx,grby,grbz,rax,ray,raz,    &
-                     grhx,grhy,grhz,bsq2,bsa,grha,epara,ach,fric,vhh, &
-                     crxa,crya,crza,grxa,grya,grza,                   &
-                     vxa,vya,vza,aex,aey,aez,abx,aby,abz
-      real(C_DOUBLE) xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr
-!
-      integer(C_INT) io_pe
-      common/iope66/ io_pe
-!
-!***********************************************************************
-!* 0. Define the e,b of time level (n+aimpl) when ipc=0 or >1.         *
-!*    but, for ipc=1, exa= ex0.                                        *
-!***********************************************************************
-!
-      do k= 0,mz-1
-      do j= 0,my 
-      do i= 0,mx-1
-      exa(i,j,k)= aimpl*ex(i,j,k) +(1.d0-aimpl)*ex0(i,j,k)
-      eya(i,j,k)= aimpl*ey(i,j,k) +(1.d0-aimpl)*ey0(i,j,k)
-      eza(i,j,k)= aimpl*ez(i,j,k) +(1.d0-aimpl)*ez0(i,j,k)
-!
-      bxa(i,j,k)= aimpl*bx(i,j,k) +(1.d0-aimpl)*bx0(i,j,k) +bxc
-      bya(i,j,k)= aimpl*by(i,j,k) +(1.d0-aimpl)*by0(i,j,k) +byc
-      bza(i,j,k)= aimpl*bz(i,j,k) +(1.d0-aimpl)*bz0(i,j,k) +bzc
-!
-      bx1(i,j,k)= bx0(i,j,k) +bxc
-      by1(i,j,k)= by0(i,j,k) +byc
-      bz1(i,j,k)= bz0(i,j,k) +bzc
-      end do                       !!! for particles only
-      end do
-      end do
-!                                  !<-- extend regions
-      call outmesh3 (exa,eya,eza)  !<-- Make -2,-1,mx,mx+1 
-      call outmesh3 (bxa,bya,bza)
-!     call outmesh3 (ex0,ey0,ez0)
-      call outmesh3 (bx1,by1,bz1)
-!
-      syme= -1
-      call filt3e (exa,eya,eza,0.d0,0.d0,0.d0,ifilx,ifily,ifilz,syme)
-!
-      symb= +1
-      call filt3e (bxa,bya,bza,bxc,byc,bzc,ifilx,ifily,ifilz,symb)
-      call filt3e (bx1,by1,bz1,bxc,byc,bzc,ifilx,ifily,ifilz,symb)
-!
-      qw = qmult/wmult
-!
-!-----------------------------------------------------------------------
-!*    for electrons - all the diamagnetic terms.
-!-----------------------------------------------------------------------
-!*       grh.....  (b/|b|)*grad.b       (scalar)
-!*       grx...... (b/|b|)^grad.b       (vector)
-!*       crx...... (b/|b|)^((b/|b|)*grad.(b/|b|))
-!-----------------------------------------------------------------------
-!
-      do k= 0,mz-1
-      do j= 0,my 
-      do i= 0,mx-1
-      bss(i,j,k)= sqrt(bxa(i,j,k)**2 +bya(i,j,k)**2 +bza(i,j,k)**2)
-      sbx(i,j,k)=  bxa(i,j,k)/bss(i,j,k)
-      sby(i,j,k)=  bya(i,j,k)/bss(i,j,k)
-      sbz(i,j,k)=  bza(i,j,k)/bss(i,j,k)
-      end do
-      end do
-      end do
-!                                  !<-- extend regions
-      call outmesh1 (bss)
-      call outmesh3 (sbx,sby,sbz)
-!
-!-----------------------------------------------------------------------
-!*  Cross products used to calculate the diamagnetic terms.
-!-----------------------------------------------------------------------
-!
-      do k= 0,mz-1
-      do j= 0,my 
-      do i= 0,mx-1
-      ir= pxr(i)
-      il= pxl(i)
-!
-      kr= pzr(k)
-      kl= pzl(k)
-!
-      rax= sbx(i,j,k)  !<-- bxa/bss
-      ray= sby(i,j,k)
-      raz= sbz(i,j,k)
-!
-      if(j.lt.0 .or. j.ge.my) then  ! 11/08
-        grbx= 0
-        grby= 0
-        grbz= 0
-      else
-        grbx= (bss(ir,j,k)  -bss(il,j,k))/hx2
-        grby= (bss(i,j+1,k) -bss(i,j,k)) /hy  ! j=0    -> bss.L 0
-        grbz= (bss(i,j,kr)  -bss(i,j,kl))/hz2 ! j=my-1 -> bss.R m
-      end if 
-!
-!  mue/(qspec(2)*B) (b x dB/dx) ...grx(i,j,k)
-      grx(i,j,k)= ray*grbz -raz*grby
-      gry(i,j,k)= raz*grbx -rax*grbz
-      grz(i,j,k)= rax*grby -ray*grbx
-!
-!  vhh**2*wspec(2)/(qspec(2)*B) curl_(b x dB/dx)
-!   ach=  qw*epara -(mue(l)/wspec(2))*grha  !<<- parallel of dB/dx
-      grh(i,j,k)=  rax*(bxa(ir,j,k) -bxa(il,j,k))/hx2  &
-                 + ray*(bya(i,j+1,k)-bya(i,j,k)) /hy   &
-                 + raz*(bza(i,j,kr) -bza(i,j,kl))/hz2
-!
-         grhx= grh(i,j,k)*rax
-         grhy= grh(i,j,k)*ray
-         grhz= grh(i,j,k)*raz
-!
-      crx(i,j,k)= ray*grhz -raz*grhy
-      cry(i,j,k)= raz*grhx -rax*grhz
-      crz(i,j,k)= rax*grhy -ray*grhx
-      end do
-      end do
-      end do
-!
-      call outmesh3 (grx,gry,grz)
-      call outmesh3 (crx,cry,crz)
-      call outmesh1 (grh)
-!
-!
-!***********************************************************************
-!* 1. Accumulate moments for the e.m. field solver  (srimp1 - 2).      *
-!***********************************************************************
-!  Only the first time: kstart= 0 must be first 
-!
-      if(kstart.eq.0) then
-! 
-        do l= ipar,npr,size
-        vxj(l)= vxe(l)  !!<-- wce is included here !
-        vyj(l)= vye(l)
-        vzj(l)= vze(l)
-!
-        rxl(l)= x(l)
-        ryl(l)= y(l)
-        rzl(l)= z(l)        
-        end do
-!                              !! xyz partbc, rxl-vzj are defined
-        call partbc (rxl,ryl,rzl,vxj,vyj,vzj,npr,ipar,size)  !<-- estimated
-!
-        call srimp1 (rxl,ryl,rzl,vxj,vyj,vzj,qmult,qex,qey,qez,    &
-                                          npr,ipar,size)
-        call srimp2 (rxl,ryl,rzl,qmult,qe,npr,ipar,size)
-!
-        return  !! +++ only once
-      end if
-!
-!
-!  For move: ipc= 0
-      if(ipc.eq.0) then
-! 
-        do l= ipar,npr,size
-        rxl(l) = x(l) +hdt*vxe(l) 
-        ryl(l) = y(l) +hdt*vye(l)
-        rzl(l) = z(l) +hdt*vze(l)
-        end do
-!                                                   ! for rxl-rzl
-        call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
-!
-!  For accumulate: ipc= 1
-      else if(ipc.ge.1) then
-! 
-        do l= ipar,npr,size
-        rxl(l)= x(l)
-        ryl(l)= y(l)
-        rzl(l)= z(l)        
-        end do
-!                                                   ! for rxl-rzl
-        call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
-!
-!
-        do l= ipar,npr,size
-        i= int(hxi*rxl(l) +0.500000001d0)   ! il, ip, ir
-        j= int(hyi*ryl(l) +0.000000001d0)   !  jp, jp+1
-        k= int(hzi*rzl(l) +0.500000001d0)   ! kl, kp, kr
-!
-!  The rxl-rzl positions are used, bx1()= bx0() +bxc !!!
-!   these are entended regions
-!
-        if(j.ge.my) then
-          j= my 
-        else if(j.lt.0) then  ! on 11/08
-          j=  0
-        end if
-!
-        bsq2= bx1(i,j,k)**2 +by1(i,j,k)**2 +bz1(i,j,k)**2
-        bsa = sqrt(bsq2)
-!                                       11/02
-        vxe(l)= vhe(l)*bx1(i,j,k)/bsa !+( ey0(i,j,k)*bz1(i,j,k) &
-                                      !  -ez0(i,j,k)*by1(i,j,k))/bsq2
-        vye(l)= vhe(l)*by1(i,j,k)/bsa !+( ez0(i,j,k)*bx1(i,j,k) &
-                                      !  -ex0(i,j,k)*bz1(i,j,k))/bsq2
-        vze(l)= vhe(l)*bz1(i,j,k)/bsa !+( ex0(i,j,k)*by1(i,j,k) &
-                                      !  -ey0(i,j,k)*bx1(i,j,k))/bsq2
-!
-        rxl(l) = x(l) +hdt*vxe(l)
-        ryl(l) = y(l) +hdt*vye(l)
-        rzl(l) = z(l) +hdt*vze(l)
-        end do
-!                                                   ! vxe(l) is above
-        call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
-      end if
-!
-!
-!***********************************************************************
-!* 2. Move particles:                                                  *
-!***********************************************************************
-!* For common procedures below
-!  ipc= 0, ipc= 1
-!
-      wkex= 0
-      wkeh= 0
-!
-      do l= ipar,npr,size
-      ip= int(hxi*rxl(l) +0.500000001d0)
-      jp= int(hyi*ryl(l) +0.000000001d0)
-      kp= int(hzi*rzl(l) +0.500000001d0)
-!
-      il= ip-1 
-      i = ip
-      ir= ip+1
-!
-      j = jp
-      jl= jp
-      jr= jp+1 
-!
-      fyl= hyi*ryl(l) -jp
-      fyr= 1.d0 -fyl
-!
-!# These are outside of the target regions ###
-!
-      if(jp.ge.my) then
-        jr= my+1  ! to be safe within labels
-        jl= my    ! on 11/06
-        fyr= 0
-        fyl= 1.d0
-      else if(jp.lt.0) then  ! on 11/08
-        jr=  0
-        jl= -1
-        fyr= 1.d0
-        fyl= 0
-      end if
-!
-      kl= kp-1 
-      k = kp
-      kr= kp+1
-!
-      xx = hxi*rxl(l) -ip
-      fxl= 0.5d0*(0.5d0-xx)*(0.5d0-xx)
-      fxc= 0.75d0-xx*xx
-      fxr= 0.5d0*(0.5d0+xx)*(0.5d0+xx)
-!
-      zz = hzi*rzl(l) -kp
-      fzl= 0.5d0*(0.5d0-zz)*(0.5d0-zz)
-      fzc= 0.75d0-zz*zz
-      fzr= 0.5d0*(0.5d0+zz)*(0.5d0+zz)
-!
-      aex = fyr*                                                       &
-           ((exa(ir,jr,kr)*fxr+exa(i,jr,kr)*fxc+exa(il,jr,kr)*fxl)*fzr &
-           +(exa(ir,jr,k )*fxr+exa(i,jr,k )*fxc+exa(il,jr,k )*fxl)*fzc &
-           +(exa(ir,jr,kl)*fxr+exa(i,jr,kl)*fxc+exa(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((exa(ir,jl,kr)*fxr+exa(i,jl,kr)*fxc+exa(il,jl,kr)*fxl)*fzr &
-           +(exa(ir,jl,k )*fxr+exa(i,jl,k )*fxc+exa(il,jl,k )*fxl)*fzc &
-           +(exa(ir,jl,kl)*fxr+exa(i,jl,kl)*fxc+exa(il,jl,kl)*fxl)*fzl)
-!
-      aey = fyr*                                                       &
-           ((eya(ir,jr,kr)*fxr+eya(i,jr,kr)*fxc+eya(il,jr,kr)*fxl)*fzr &
-           +(eya(ir,jr,k )*fxr+eya(i,jr,k )*fxc+eya(il,jr,k )*fxl)*fzc &
-           +(eya(ir,jr,kl)*fxr+eya(i,jr,kl)*fxc+eya(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((eya(ir,jl,kr)*fxr+eya(i,jl,kr)*fxc+eya(il,jl,kr)*fxl)*fzr &
-           +(eya(ir,jl,k )*fxr+eya(i,jl,k )*fxc+eya(il,jl,k )*fxl)*fzc &
-           +(eya(ir,jl,kl)*fxr+eya(i,jl,kl)*fxc+eya(il,jl,kl)*fxl)*fzl)
-!
-      aez = fyr*                                                       &
-           ((eza(ir,jr,kr)*fxr+eza(i,jr,kr)*fxc+eza(il,jr,kr)*fxl)*fzr &
-           +(eza(ir,jr,k )*fxr+eza(i,jr,k )*fxc+eza(il,jr,k )*fxl)*fzc &
-           +(eza(ir,jr,kl)*fxr+eza(i,jr,kl)*fxc+eza(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((eza(ir,jl,kr)*fxr+eza(i,jl,kr)*fxc+eza(il,jl,kr)*fxl)*fzr &
-           +(eza(ir,jl,k )*fxr+eza(i,jl,k )*fxc+eza(il,jl,k )*fxl)*fzc &
-           +(eza(ir,jl,kl)*fxr+eza(i,jl,kl)*fxc+eza(il,jl,kl)*fxl)*fzl)
-!
-      abx = fyr*                                                       &
-           ((bxa(ir,jr,kr)*fxr+bxa(i,jr,kr)*fxc+bxa(il,jr,kr)*fxl)*fzr &
-           +(bxa(ir,jr,k )*fxr+bxa(i,jr,k )*fxc+bxa(il,jr,k )*fxl)*fzc &
-           +(bxa(ir,jr,kl)*fxr+bxa(i,jr,kl)*fxc+bxa(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((bxa(ir,jl,kr)*fxr+bxa(i,jl,kr)*fxc+bxa(il,jl,kr)*fxl)*fzr &
-           +(bxa(ir,jl,k )*fxr+bxa(i,jl,k )*fxc+bxa(il,jl,k )*fxl)*fzc &
-           +(bxa(ir,jl,kl)*fxr+bxa(i,jl,kl)*fxc+bxa(il,jl,kl)*fxl)*fzl)
-!
-      aby = fyr*                                                       &
-           ((bya(ir,jr,kr)*fxr+bya(i,jr,kr)*fxc+bya(il,jr,kr)*fxl)*fzr &
-           +(bya(ir,jr,k )*fxr+bya(i,jr,k )*fxc+bya(il,jr,k )*fxl)*fzc &
-           +(bya(ir,jr,kl)*fxr+bya(i,jr,kl)*fxc+bya(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((bya(ir,jl,kr)*fxr+bya(i,jl,kr)*fxc+bya(il,jl,kr)*fxl)*fzr &
-           +(bya(ir,jl,k )*fxr+bya(i,jl,k )*fxc+bya(il,jl,k )*fxl)*fzc &
-           +(bya(ir,jl,kl)*fxr+bya(i,jl,kl)*fxc+bya(il,jl,kl)*fxl)*fzl)
-!
-      abz = fyr*                                                       &
-           ((bza(ir,jr,kr)*fxr+bza(i,jr,kr)*fxc+bza(il,jr,kr)*fxl)*fzr &
-           +(bza(ir,jr,k )*fxr+bza(i,jr,k )*fxc+bza(il,jr,k )*fxl)*fzc &
-           +(bza(ir,jr,kl)*fxr+bza(i,jr,kl)*fxc+bza(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((bza(ir,jl,kr)*fxr+bza(i,jl,kr)*fxc+bza(il,jl,kr)*fxl)*fzr &
-           +(bza(ir,jl,k )*fxr+bza(i,jl,k )*fxc+bza(il,jl,k )*fxl)*fzc &
-           +(bza(ir,jl,kl)*fxr+bza(i,jl,kl)*fxc+bza(il,jl,kl)*fxl)*fzl)
-!
-      bsq2= abx**2 +aby**2 +abz**2
-      bsa=  sqrt(bsq2)
-!
-!* For parallel field
-      grha= fyr*                                                       &
-           ((grh(ir,jr,kr)*fxr+grh(i,jr,kr)*fxc+grh(il,jr,kr)*fxl)*fzr &
-           +(grh(ir,jr,k )*fxr+grh(i,jr,k )*fxc+grh(il,jr,k )*fxl)*fzc &
-           +(grh(ir,jr,kl)*fxr+grh(i,jr,kl)*fxc+grh(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((grh(ir,jl,kr)*fxr+grh(i,jl,kr)*fxc+grh(il,jl,kr)*fxl)*fzr &
-           +(grh(ir,jl,k )*fxr+grh(i,jl,k )*fxc+grh(il,jl,k )*fxl)*fzc &
-           +(grh(ir,jl,kl)*fxr+grh(i,jl,kl)*fxc+grh(il,jl,kl)*fxl)*fzl)
-!
-!-----------------------------------------------------------------------
-!*    mue(l)= (magnetic moment)/me= 0.5*vtx**2/b(0).
-!-----------------------------------------------------------------------
-      epara= (aex*abx +aey*aby +aez*abz)/bsa
-!
-      ach=  qw*epara -mue(l)*grha
-      fric= gnu(ip,jp,kp)*hdt
-!
-      vhh = ( (1.d0-0.5d0*fric)*vhe(l) +hdt*ach )/(1.d0+0.5d0*fric)
-      if(ipc.eq.0) then
-        vhe(l)= ( (1.d0-fric)*vhe(l) +dt*ach )/(1.d0 +fric)
-      end if
-!        <-- vhe(l) must update !!!
-!
-!-----------------------------------------------------------------------
-!*    get x(n+1)= x(n) +dt*(vhe(n+aimpl) +fgp(n,x(n))).
-!-----------------------------------------------------------------------
-      grxa= fyr*                                                       &
-           ((grx(ir,jr,kr)*fxr+grx(i,jr,kr)*fxc+grx(il,jr,kr)*fxl)*fzr &
-           +(grx(ir,jr,k )*fxr+grx(i,jr,k )*fxc+grx(il,jr,k )*fxl)*fzc &
-           +(grx(ir,jr,kl)*fxr+grx(i,jr,kl)*fxc+grx(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((grx(ir,jl,kr)*fxr+grx(i,jl,kr)*fxc+grx(il,jl,kr)*fxl)*fzr &
-           +(grx(ir,jl,k )*fxr+grx(i,jl,k )*fxc+grx(il,jl,k )*fxl)*fzc &
-           +(grx(ir,jl,kl)*fxr+grx(i,jl,kl)*fxc+grx(il,jl,kl)*fxl)*fzl)
-!
-      grya= fyr*                                                       &
-           ((gry(ir,jr,kr)*fxr+gry(i,jr,kr)*fxc+gry(il,jr,kr)*fxl)*fzr &
-           +(gry(ir,jr,k )*fxr+gry(i,jr,k )*fxc+gry(il,jr,k )*fxl)*fzc &
-           +(gry(ir,jr,kl)*fxr+gry(i,jr,kl)*fxc+gry(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((gry(ir,jl,kr)*fxr+gry(i,jl,kr)*fxc+gry(il,jl,kr)*fxl)*fzr &
-           +(gry(ir,jl,k )*fxr+gry(i,jl,k )*fxc+gry(il,jl,k )*fxl)*fzc &
-           +(gry(ir,jl,kl)*fxr+gry(i,jl,kl)*fxc+gry(il,jl,kl)*fxl)*fzl)
-!
-      grza= fyr*                                                       &
-           ((grz(ir,jr,kr)*fxr+grz(i,jr,kr)*fxc+grz(il,jr,kr)*fxl)*fzr &
-           +(grz(ir,jr,k )*fxr+grz(i,jr,k )*fxc+grz(il,jr,k )*fxl)*fzc &
-           +(grz(ir,jr,kl)*fxr+grz(i,jr,kl)*fxc+grz(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((grz(ir,jl,kr)*fxr+grz(i,jl,kr)*fxc+grz(il,jl,kr)*fxl)*fzr &
-           +(grz(ir,jl,k )*fxr+grz(i,jl,k )*fxc+grz(il,jl,k )*fxl)*fzc &
-           +(grz(ir,jl,kl)*fxr+grz(i,jl,kl)*fxc+grz(il,jl,kl)*fxl)*fzl)
-!
-!
-!  fmue = mue(l)  !<-- L.3495, 3686 it was charm(l)= 1. 
-      crxa= fyr*                                                       &
-           ((crx(ir,jr,kr)*fxr+crx(i,jr,kr)*fxc+crx(il,jr,kr)*fxl)*fzr &
-           +(crx(ir,jr,k )*fxr+crx(i,jr,k )*fxc+crx(il,jr,k )*fxl)*fzc &
-           +(crx(ir,jr,kl)*fxr+crx(i,jr,kl)*fxc+crx(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((crx(ir,jl,kr)*fxr+crx(i,jl,kr)*fxc+crx(il,jl,kr)*fxl)*fzr &
-           +(crx(ir,jl,k )*fxr+crx(i,jl,k )*fxc+crx(il,jl,k )*fxl)*fzc &
-           +(crx(ir,jl,kl)*fxr+crx(i,jl,kl)*fxc+crx(il,jl,kl)*fxl)*fzl)
-!
-      crya= fyr*                                                       &
-           ((cry(ir,jr,kr)*fxr+cry(i,jr,kr)*fxc+cry(il,jr,kr)*fxl)*fzr &
-           +(cry(ir,jr,k )*fxr+cry(i,jr,k )*fxc+cry(il,jr,k )*fxl)*fzc &
-           +(cry(ir,jr,kl)*fxr+cry(i,jr,kl)*fxc+cry(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((cry(ir,jl,kr)*fxr+cry(i,jl,kr)*fxc+cry(il,jl,kr)*fxl)*fzr &
-           +(cry(ir,jl,k )*fxr+cry(i,jl,k )*fxc+cry(il,jl,k )*fxl)*fzc &
-           +(cry(ir,jl,kl)*fxr+cry(i,jl,kl)*fxc+cry(il,jl,kl)*fxl)*fzl) 
-!
-      crza= fyr*                                                       &
-           ((crz(ir,jr,kr)*fxr+crz(i,jr,kr)*fxc+crz(il,jr,kr)*fxl)*fzr &
-           +(crz(ir,jr,k )*fxr+crz(i,jr,k )*fxc+crz(il,jr,k )*fxl)*fzc &
-           +(crz(ir,jr,kl)*fxr+crz(i,jr,kl)*fxc+crz(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((crz(ir,jl,kr)*fxr+crz(i,jl,kr)*fxc+crz(il,jl,kr)*fxl)*fzr &
-           +(crz(ir,jl,k )*fxr+crz(i,jl,k )*fxc+crz(il,jl,k )*fxl)*fzc &
-           +(crz(ir,jl,kl)*fxr+crz(i,jl,kl)*fxc+crz(il,jl,kl)*fxl)*fzl)
-!
-      mue1= mue(l)/qspec(2)
-      vhh2= vhh**2*wspec(2)/qspec(2)
-!
-      bss1= bss(i,j,k)
-!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
-      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
-      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
-      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
-!     vxa= 0 !(aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-!     vya= 0 !(aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-!     vza= 0 !(aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!            11/02                  
-!     +++++++++++++++++++++++++++++++++
-!  For move: ipc= 0
-      if(ipc.eq.0) then
-!     ************            
-      x(l)= x(l) +dt*( vhh*abx/bsa + vxa )
-      y(l)= y(l) +dt*( vhh*aby/bsa + vya )
-      z(l)= z(l) +dt*( vhh*abz/bsa + vza )
-!                <-- vhe(l) is updated, see above !!
-      end if
-!
-!  For accumulate: ipc= 1
-      if(ipc.ge.1) then 
-!     ************
-!*    use vx(n+1/2).
-      vxj(l)= vhh*abx/bsa + vxa
-      vyj(l)= vhh*aby/bsa + vya
-      vzj(l)= vhh*abz/bsa + vza
-!
-      rxl(l)= x(l) +adt*vxj(l)
-      ryl(l)= y(l) +adt*vyj(l)
-      rzl(l)= z(l) +adt*vzj(l)
-!
-      wkex= wkex +wmult*(0.5d0*(vxa**2 +vya**2 +vza**2) +mue(l)*bsa)
-      wkeh= wkeh +wmult* 0.5d0* vhh**2
-      end if
-!     +++++++++++++++++++++++++++++++++
-      end do      
-!
-!
-!***********************************************************************
-! Synchronize
-      call mpi_allreduce (wkex,wxsq,1,mpi_real8,mpi_sum,  &
-                          mpi_comm_world,MPIerror)
-      call mpi_allreduce (wkeh,whsq,1,mpi_real8,mpi_sum,  &
-                          mpi_comm_world,MPIerror)
-      wkex= wxsq
-      wkeh= whsq
-!
-!        +++++++++++++++++
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
-      if(ksp.eq.1) then
-        edec(ldec,5)= wkex
-        edec(ldec,6)= wkeh
-      else if(ksp.eq.2) then
-        edec(ldec,7)= wkex
-        edec(ldec,8)= wkeh
-      end if
-      end if
-!
-!***********************************************************************
-!* 3. Accumulate the moments.                                          *
-!***********************************************************************
-!-----------------------------------------------------------------------
-!*  normal vx-vz are used for it= 0.
-!-----------------------------------------------------------------------
-!  ipc= 0
-      if(ipc.eq.0) then
-        call partdk (x,y,z,mue,vpe,vhe,npr,ipar,size)
-      end if
-!
-!  ipc= 1!
-      if(ipc.ge.1) then
-        call partbc (rxl,ryl,rzl,vxj,vyj,vzj,npr,ipar,size) !<-- estimated
-!
-        if(ksp.eq.1) then
-          write(06) 'not ready...'
-          stop 
-!    
-        else if(ksp.eq.2) then
-        call srimp1 (rxl,ryl,rzl,vxj,vyj,vzj,qmult,qex,qey,qez, &
-                                                  npr,ipar,size)
-        call srimp2 (rxl,ryl,rzl,qmult,qe,npr,ipar,size)
-        call srimp3 (rxl,ryl,rzl,mue, amu,npr,ipar,size)
-        call srimp3A(rxl,ryl,rzl,vhe,avhh,npr,ipar,size)
-        call srimp4 (rxl,ryl,rzl,mue, emx,emy,emz,npr,ipar,size)
-        end if
-      end if
-!
-      return
-      end subroutine drmove
 !
 !
 !-----------------------------------------------------------------------
@@ -2194,412 +1633,6 @@
 !
       return
       end subroutine fulmv2
-!
-!
-!-----------------------------------------------------------------------
-      subroutine drmov2 (x,y,z,mue,vpe,vhe,qmult,wmult,vxe,vye,vze,   &
-                         npr,ksp,ipar,size)
-!-----------------------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-      include 'param_A23A.h'
-!
-      real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
-      real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxe,vye,vze
-      real(C_DOUBLE) qmult,wmult
-      integer(C_INT) npr,ksp,ipar,size
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                              ex,ey,ez,bx,by,bz,       &
-                                              ex0,ey0,ez0,bx0,by0,bz0, &
-                                              qix,qiy,qiz,qex,qey,qez, &
-                                              emx,emy,emz,qi,qe,amu,avhh
-      common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
-      common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
-      common/srimp8/ amu,avhh
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: gnu
-      common/dragcf/ gnu
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                                exa,eya,eza,bxa,bya,bza, &
-                                                grx,gry,grz,crx,cry,crz, &
-                                                grh,sbx,sby,sbz,bss
-!----------------------------------------------------------------
-!
-      integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
-!
-      real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
-                     dx,dy,dz
-      common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
-                     hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
-!
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-!
-      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec,wspec,veth,teti,wcewpe,thb,               &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec
-      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!
-      integer(C_INT) i,j,k,ir,il,jr,jl,kr,kl,l,ip,jp,kp,syme,symb
-      real(C_DOUBLE) bss1,mue1,vhh2,qw,grbx,grby,grbz,rax,ray,raz,    &
-                     grhx,grhy,grhz,bsq2,bsa,grha,epara,ach,fric,vhh, &
-                     crxa,crya,crza,grxa,grya,grza,                   &
-                     vxa,vya,vza,aex,aey,aez,abx,aby,abz
-      real(C_DOUBLE) xx,fxl,fxc,fxr,fyr,fyl,zz,fzl,fzc,fzr
-!
-      integer(C_INT) io_pe
-      common/iope66/ io_pe
-!
-!***********************************************************************
-!* 0. Before particles                                                 *
-!***********************************************************************
-!
-      do k= 0,mz-1
-      do j= 0,my   
-      do i= 0,mx-1
-      exa(i,j,k)= aimpl*ex(i,j,k) +(1.d0-aimpl)*ex0(i,j,k)
-      eya(i,j,k)= aimpl*ey(i,j,k) +(1.d0-aimpl)*ey0(i,j,k)
-      eza(i,j,k)= aimpl*ez(i,j,k) +(1.d0-aimpl)*ez0(i,j,k)
-!
-      bxa(i,j,k)= aimpl*bx(i,j,k) +(1.d0-aimpl)*bx0(i,j,k) +bxc
-      bya(i,j,k)= aimpl*by(i,j,k) +(1.d0-aimpl)*by0(i,j,k) +byc
-      bza(i,j,k)= aimpl*bz(i,j,k) +(1.d0-aimpl)*bz0(i,j,k) +bzc
-      end do                                   !!! for particles only
-      end do
-      end do
-!                                  !<-- extend regions
-      call outmesh3 (exa,eya,eza) 
-      call outmesh3 (bxa,bya,bza)
-!
-      syme= -1
-      call filt3e (exa,eya,eza,0.d0,0.d0,0.d0,ifilx,ifily,ifilz,syme)
-!
-      symb= +1
-      call filt3e (bxa,bya,bza,bxc,byc,bzc,ifilx,ifily,ifilz,symb)
-!
-      qw = qmult/wmult
-!
-!
-!-----------------------------------------------------------------------
-!*    for electrons - all the diamagnetic terms.
-!-----------------------------------------------------------------------
-!*       grh.....  (b/|b|)*grad.b       (scalar)
-!*       grx...... (b/|b|)^grad.b       (vector)
-!*       crx...... (b/|b|)^((b/|b|)*grad.(b/|b|))
-!-----------------------------------------------------------------------
-!
-      do k= 0,mz-1
-      do j= 0,my 
-      do i= 0,mx-1
-      bss(i,j,k)= sqrt(bxa(i,j,k)**2 +bya(i,j,k)**2 +bza(i,j,k)**2)
-      sbx(i,j,k)=  bxa(i,j,k)/bss(i,j,k)
-      sby(i,j,k)=  bya(i,j,k)/bss(i,j,k)
-      sbz(i,j,k)=  bza(i,j,k)/bss(i,j,k)
-      end do
-      end do
-      end do
-!                                  !<-- extend regions
-      call outmesh1 (bss)
-      call outmesh3 (sbx,sby,sbz)
-!
-!-----------------------------------------------------------------------
-!*    Cross products used to calculate the diamagnetic terms.
-!-----------------------------------------------------------------------
-!
-      do k= 0,mz-1
-      do j= 0,my 
-      do i= 0,mx-1
-      ir= pxr(i)
-      il= pxl(i)
-!
-      kr= pzr(k)
-      kl= pzl(k)
-!
-      rax= sbx(i,j,k)  !<-- bxa/bss
-      ray= sby(i,j,k)
-      raz= sbz(i,j,k)
-!
-      if(j.lt.0 .or. j.ge.my) then  ! 11/08
-        grbx= 0
-        grby= 0
-        grbz= 0
-      else
-        grbx= (bss(ir,j,k) -bss(il,j,k))/hx2
-        grby= (bss(i,j+1,k) -bss(i,j,k))/hy  ! j=0    -> bss.L 0
-        grbz= (bss(i,j,kr) -bss(i,j,kl))/hz2 ! j=my-1 -> bss.R m
-      end if 
-!
-!  mue/(qspec(2)*B) (b x dB/dx) ...grx(i,j,k)
-      grx(i,j,k)= ray*grbz -raz*grby
-      gry(i,j,k)= raz*grbx -rax*grbz
-      grz(i,j,k)= rax*grby -ray*grbx
-!
-!  vhh**2*wspec(2)/(qspec(2)*B) curl_(b x dB/dx)
-!   ach=  qw*epara -(mue(l)/wspec(2))*grha  !<<- parallel of dB/dx
-      grh(i,j,k)=  rax*(bxa(ir,j,k) -bxa(il,j,k))/hx2  &
-                 + ray*(bya(i,j+1,k)-bya(i,j,k)) /hy   &
-                 + raz*(bza(i,j,kr) -bza(i,j,kl))/hz2
-!
-         grhx= grh(i,j,k)*rax
-         grhy= grh(i,j,k)*ray
-         grhz= grh(i,j,k)*raz
-!
-      crx(i,j,k)= ray*grhz -raz*grhy
-      cry(i,j,k)= raz*grhx -rax*grhz
-      crz(i,j,k)= rax*grhy -ray*grhx
-      end do
-      end do
-      end do
-!
-      call outmesh1 (grh)
-      call outmesh3 (grx,gry,grz)
-      call outmesh3 (crx,cry,crz)
-!
-!-----------------------------------------------------------------------
-!* 1. Move particles:
-!-----------------------------------------------------------------------
-!
-      do l= ipar,npr,size
-      rxl(l) = x(l) +hdt*vxe(l)  !<-- wce is included via bxa(,,)
-      ryl(l) = y(l) +hdt*vye(l)
-      rzl(l) = z(l) +hdt*vze(l)
-      end do
-!
-!  Use xyz coordinate
-      call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
-!
-!
-      do l= ipar,npr,size
-      ip= int(hxi*rxl(l) +0.500000001d0)
-      jp= int(hyi*ryl(l) +0.000000001d0)
-      kp= int(hzi*rzl(l) +0.500000001d0)
-!
-      il= ip-1 
-      i = ip
-      ir= ip+1
-!
-      j = jp
-      jl= jp
-      jr= jp+1 
-!
-      fyl= hyi*ryl(l) -jp
-      fyr= 1.d0 -fyl
-!
-!# these are outside the target regions ###
-!
-      if(jp.ge.my) then
-        jr= my+1  ! to be safe within labels
-        jl= my    ! 11/06
-        fyr= 0
-        fyl= 1.d0
-      else if(jp.lt.0) then  ! on 11/08
-        jr=  0
-        jl= -1
-        fyr= 1.d0
-        fyl= 0
-      end if
-!
-      kl= kp-1 
-      k = kp
-      kr= kp+1
-!
-      xx = hxi*rxl(l) -ip
-      fxl= 0.5d0*(0.5d0-xx)*(0.5d0-xx)
-      fxc= 0.75d0-xx*xx
-      fxr= 0.5d0*(0.5d0+xx)*(0.5d0+xx)
-!
-      zz = hzi*rzl(l) -kp
-      fzl= 0.5d0*(0.5d0-zz)*(0.5d0-zz)
-      fzc= 0.75d0-zz*zz
-      fzr= 0.5d0*(0.5d0+zz)*(0.5d0+zz)
-!
-!
-      aex = fyr* &
-           ((exa(ir,jr,kr)*fxr+exa(i,jr,kr)*fxc+exa(il,jr,kr)*fxl)*fzr  &
-           +(exa(ir,jr,k )*fxr+exa(i,jr,k )*fxc+exa(il,jr,k )*fxl)*fzc  &
-           +(exa(ir,jr,kl)*fxr+exa(i,jr,kl)*fxc+exa(il,jr,kl)*fxl)*fzl) &
-          + fyl*                                                        &
-           ((exa(ir,jl,kr)*fxr+exa(i,jl,kr)*fxc+exa(il,jl,kr)*fxl)*fzr  &
-           +(exa(ir,jl,k )*fxr+exa(i,jl,k )*fxc+exa(il,jl,k )*fxl)*fzc  &
-           +(exa(ir,jl,kl)*fxr+exa(i,jl,kl)*fxc+exa(il,jl,kl)*fxl)*fzl)
-!
-      aey = fyr* &
-           ((eya(ir,jr,kr)*fxr+eya(i,jr,kr)*fxc+eya(il,jr,kr)*fxl)*fzr  &
-           +(eya(ir,jr,k )*fxr+eya(i,jr,k )*fxc+eya(il,jr,k )*fxl)*fzc  &
-           +(eya(ir,jr,kl)*fxr+eya(i,jr,kl)*fxc+eya(il,jr,kl)*fxl)*fzl) &
-          + fyl*                                                        &
-           ((eya(ir,jl,kr)*fxr+eya(i,jl,kr)*fxc+eya(il,jl,kr)*fxl)*fzr  &
-           +(eya(ir,jl,k )*fxr+eya(i,jl,k )*fxc+eya(il,jl,k )*fxl)*fzc  &
-           +(eya(ir,jl,kl)*fxr+eya(i,jl,kl)*fxc+eya(il,jl,kl)*fxl)*fzl)
-!
-      aez = fyr*                                                        &
-           ((eza(ir,jr,kr)*fxr+eza(i,jr,kr)*fxc+eza(il,jr,kr)*fxl)*fzr  &
-           +(eza(ir,jr,k )*fxr+eza(i,jr,k )*fxc+eza(il,jr,k )*fxl)*fzc  &
-           +(eza(ir,jr,kl)*fxr+eza(i,jr,kl)*fxc+eza(il,jr,kl)*fxl)*fzl) &
-          + fyl*                                                        &
-           ((eza(ir,jl,kr)*fxr+eza(i,jl,kr)*fxc+eza(il,jl,kr)*fxl)*fzr  &
-           +(eza(ir,jl,k )*fxr+eza(i,jl,k )*fxc+eza(il,jl,k )*fxl)*fzc  &
-           +(eza(ir,jl,kl)*fxr+eza(i,jl,kl)*fxc+eza(il,jl,kl)*fxl)*fzl)
-!
-!                             bxa()= bx() +bxc !!!
-      abx = fyr* &
-           ((bxa(ir,jr,kr)*fxr+bxa(i,jr,kr)*fxc+bxa(il,jr,kr)*fxl)*fzr  &
-           +(bxa(ir,jr,k )*fxr+bxa(i,jr,k )*fxc+bxa(il,jr,k )*fxl)*fzc  &
-           +(bxa(ir,jr,kl)*fxr+bxa(i,jr,kl)*fxc+bxa(il,jr,kl)*fxl)*fzl) &
-          + fyl*                                                        &
-           ((bxa(ir,jl,kr)*fxr+bxa(i,jl,kr)*fxc+bxa(il,jl,kr)*fxl)*fzr  &
-           +(bxa(ir,jl,k )*fxr+bxa(i,jl,k )*fxc+bxa(il,jl,k )*fxl)*fzc  &
-           +(bxa(ir,jl,kl)*fxr+bxa(i,jl,kl)*fxc+bxa(il,jl,kl)*fxl)*fzl)
-!
-      aby = fyr*                                                        &
-           ((bya(ir,jr,kr)*fxr+bya(i,jr,kr)*fxc+bya(il,jr,kr)*fxl)*fzr  &
-           +(bya(ir,jr,k )*fxr+bya(i,jr,k )*fxc+bya(il,jr,k )*fxl)*fzc  &
-           +(bya(ir,jr,kl)*fxr+bya(i,jr,kl)*fxc+bya(il,jr,kl)*fxl)*fzl) &
-          + fyl*                                                        &
-           ((bya(ir,jl,kr)*fxr+bya(i,jl,kr)*fxc+bya(il,jl,kr)*fxl)*fzr  &
-           +(bya(ir,jl,k )*fxr+bya(i,jl,k )*fxc+bya(il,jl,k )*fxl)*fzc  &
-           +(bya(ir,jl,kl)*fxr+bya(i,jl,kl)*fxc+bya(il,jl,kl)*fxl)*fzl)
-!
-      abz = fyr* &
-           ((bza(ir,jr,kr)*fxr+bza(i,jr,kr)*fxc+bza(il,jr,kr)*fxl)*fzr  &
-           +(bza(ir,jr,k )*fxr+bza(i,jr,k )*fxc+bza(il,jr,k )*fxl)*fzc  &
-           +(bza(ir,jr,kl)*fxr+bza(i,jr,kl)*fxc+bza(il,jr,kl)*fxl)*fzl) &
-          + fyl*                                                        &
-           ((bza(ir,jl,kr)*fxr+bza(i,jl,kr)*fxc+bza(il,jl,kr)*fxl)*fzr  &
-           +(bza(ir,jl,k )*fxr+bza(i,jl,k )*fxc+bza(il,jl,k )*fxl)*fzc  &
-           +(bza(ir,jl,kl)*fxr+bza(i,jl,kl)*fxc+bza(il,jl,kl)*fxl)*fzl)
-!
-      bsq2= abx**2 +aby**2 +abz**2
-      bsa=  sqrt(bsq2)
-!
-      grha= fyr*                                                        &
-           ((grh(ir,jr,kr)*fxr+grh(i,jr,kr)*fxc+grh(il,jr,kr)*fxl)*fzr  &
-           +(grh(ir,jr,k )*fxr+grh(i,jr,k )*fxc+grh(il,jr,k )*fxl)*fzc  &
-           +(grh(ir,jr,kl)*fxr+grh(i,jr,kl)*fxc+grh(il,jr,kl)*fxl)*fzl) &
-          + fyl*                                                        &
-           ((grh(ir,jl,kr)*fxr+grh(i,jl,kr)*fxc+grh(il,jl,kr)*fxl)*fzr  &
-           +(grh(ir,jl,k )*fxr+grh(i,jl,k )*fxc+grh(il,jl,k )*fxl)*fzc  &
-           +(grh(ir,jl,kl)*fxr+grh(i,jl,kl)*fxc+grh(il,jl,kl)*fxl)*fzl)
-!
-!-----------------------------------------------------------------------
-!*    mue(l)= (magnetic moment)/me= 0.5*vtx**2/b(0).
-!-----------------------------------------------------------------------
-!
-      epara= (aex*abx +aey*aby +aez*abz)/bsa
-      ach=  qw*epara -mue(l)*grha
-!
-      fric= gnu(i,j,k)*hdt
-      vhh= ((1.d0-0.5d0*fric)*vhe(l) +hdt*ach)/(1.d0+0.5d0*fric)
-!
-!-----------------------------------------------------------------------
-!*    get x(n+1)= x(n) +dt*(vhe(n+aimpl) +fgp(n,x(n))).
-!-----------------------------------------------------------------------
-!
-      grxa= fyr*                                                       &
-           ((grx(ir,jr,kr)*fxr+grx(i,jr,kr)*fxc+grx(il,jr,kr)*fxl)*fzr &
-           +(grx(ir,jr,k )*fxr+grx(i,jr,k )*fxc+grx(il,jr,k )*fxl)*fzc &
-           +(grx(ir,jr,kl)*fxr+grx(i,jr,kl)*fxc+grx(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((grx(ir,jl,kr)*fxr+grx(i,jl,kr)*fxc+grx(il,jl,kr)*fxl)*fzr &
-           +(grx(ir,jl,k )*fxr+grx(i,jl,k )*fxc+grx(il,jl,k )*fxl)*fzc &
-           +(grx(ir,jl,kl)*fxr+grx(i,jl,kl)*fxc+grx(il,jl,kl)*fxl)*fzl)
-!
-      grya= fyr*                                                       &
-           ((gry(ir,jr,kr)*fxr+gry(i,jr,kr)*fxc+gry(il,jr,kr)*fxl)*fzr &
-           +(gry(ir,jr,k )*fxr+gry(i,jr,k )*fxc+gry(il,jr,k )*fxl)*fzc &
-           +(gry(ir,jr,kl)*fxr+gry(i,jr,kl)*fxc+gry(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((gry(ir,jl,kr)*fxr+gry(i,jl,kr)*fxc+gry(il,jl,kr)*fxl)*fzr &
-           +(gry(ir,jl,k )*fxr+gry(i,jl,k )*fxc+gry(il,jl,k )*fxl)*fzc &
-           +(gry(ir,jl,kl)*fxr+gry(i,jl,kl)*fxc+gry(il,jl,kl)*fxl)*fzl)
-!
-      grza= fyr*                                                       &
-           ((grz(ir,jr,kr)*fxr+grz(i,jr,kr)*fxc+grz(il,jr,kr)*fxl)*fzr &
-           +(grz(ir,jr,k )*fxr+grz(i,jr,k )*fxc+grz(il,jr,k )*fxl)*fzc &
-           +(grz(ir,jr,kl)*fxr+grz(i,jr,kl)*fxc+grz(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((grz(ir,jl,kr)*fxr+grz(i,jl,kr)*fxc+grz(il,jl,kr)*fxl)*fzr &
-           +(grz(ir,jl,k )*fxr+grz(i,jl,k )*fxc+grz(il,jl,k )*fxl)*fzc &
-           +(grz(ir,jl,kl)*fxr+grz(i,jl,kl)*fxc+grz(il,jl,kl)*fxl)*fzl)
-!
-!
-      crxa= fyr*                                                       &
-           ((crx(ir,jr,kr)*fxr+crx(i,jr,kr)*fxc+crx(il,jr,kr)*fxl)*fzr &
-           +(crx(ir,jr,k )*fxr+crx(i,jr,k )*fxc+crx(il,jr,k )*fxl)*fzc &
-           +(crx(ir,jr,kl)*fxr+crx(i,jr,kl)*fxc+crx(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((crx(ir,jl,kr)*fxr+crx(i,jl,kr)*fxc+crx(il,jl,kr)*fxl)*fzr &
-           +(crx(ir,jl,k )*fxr+crx(i,jl,k )*fxc+crx(il,jl,k )*fxl)*fzc &
-           +(crx(ir,jl,kl)*fxr+crx(i,jl,kl)*fxc+crx(il,jl,kl)*fxl)*fzl)
-!
-      crya= fyr*                                                       &
-           ((cry(ir,jr,kr)*fxr+cry(i,jr,kr)*fxc+cry(il,jr,kr)*fxl)*fzr &
-           +(cry(ir,jr,k )*fxr+cry(i,jr,k )*fxc+cry(il,jr,k )*fxl)*fzc &
-           +(cry(ir,jr,kl)*fxr+cry(i,jr,kl)*fxc+cry(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((cry(ir,jl,kr)*fxr+cry(i,jl,kr)*fxc+cry(il,jl,kr)*fxl)*fzr &
-           +(cry(ir,jl,k )*fxr+cry(i,jl,k )*fxc+cry(il,jl,k )*fxl)*fzc &
-           +(cry(ir,jl,kl)*fxr+cry(i,jl,kl)*fxc+cry(il,jl,kl)*fxl)*fzl) 
-!
-      crza= fyr*                                                       &
-           ((crz(ir,jr,kr)*fxr+crz(i,jr,kr)*fxc+crz(il,jr,kr)*fxl)*fzr &
-           +(crz(ir,jr,k )*fxr+crz(i,jr,k )*fxc+crz(il,jr,k )*fxl)*fzc &
-           +(crz(ir,jr,kl)*fxr+crz(i,jr,kl)*fxc+crz(il,jr,kl)*fxl)*fzl)&
-          + fyl*                                                       &
-           ((crz(ir,jl,kr)*fxr+crz(i,jl,kr)*fxc+crz(il,jl,kr)*fxl)*fzr &
-           +(crz(ir,jl,k )*fxr+crz(i,jl,k )*fxc+crz(il,jl,k )*fxl)*fzc &
-           +(crz(ir,jl,kl)*fxr+crz(i,jl,kl)*fxc+crz(il,jl,kl)*fxl)*fzl)
-!
-      mue1= mue(l)/qspec(2)
-      vhh2= vhh**2*wspec(2)/qspec(2)
-!
-      bss1= bss(i,j,k)
-!          bxgrad.B/B      bxgrad.b/B       ExB  Eq.(9)
-      vxa= mue1*grxa/bss1 +vhh2*crxa/bsq2 !+(aey*abz-aez*aby)/bsq2 
-      vya= mue1*grya/bss1 +vhh2*crya/bsq2 !+(aez*abx-aex*abz)/bsq2
-      vza= mue1*grza/bss1 +vhh2*crza/bsq2 !+(aex*aby-aey*abx)/bsq2
-!     vxa= 0 !(aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-!     vya= 0 !(aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-!     vza= 0 !(aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!             11/02
-      rxl(l)=  x(l) +dt*(vhh*abx/bsa +vxa) ! /bsa
-      ryl(l)=  y(l) +dt*(vhh*aby/bsa +vya)
-      rzl(l)=  z(l) +dt*(vhh*abz/bsa +vza)
-      end do
-!
-!  Use xyz coordinate
-      call partbcEST (rxl,ryl,rzl,npr,ipar,size)  !<-- estimated
-!
-      if(ksp.eq.1) then
-        write(06) 'not ready...'
-        stop 
-!    
-      else if(ksp.eq.2) then
-      call srimp2 (rxl,ryl,rzl,qmult,qe,npr,ipar,size)
-      end if
-!
-      return
-      end subroutine drmov2
 !
 !
 !-----------------------------------------------------------------------
@@ -4862,7 +3895,7 @@
 !-------------------
 !
 !***********************************************************************
-!* 1. Accumulate the source moments in fulmov, drmove (ipc).           *
+!* 1. Accumulate the source moments in fulmov (ipc).                   *
 !***********************************************************************
 !-----------------------------------------------------------------------
 !*  Define rhsx-rhsz for points of the inner domain.  
@@ -5068,15 +4101,6 @@
       cry(i,j,k)= raz*grhx -rax*grhz
       crz(i,j,k)= rax*grhy -ray*grhx
 !
-!   mue1= mue(l)/qspec(2)          <- drmove
-!   vhh2= vhh**2*wspec(2)/qspec(2)
-!   vxa= (aey*abz-aez*aby)/bsq2 +mue1*grxa/bss1 +vhh2*crxa/bsq2
-!   vya= (aez*abx-aex*abz)/bsq2 +mue1*grya/bss1 +vhh2*crya/bsq2
-!   vza= (aex*aby-aey*abx)/bsq2 +mue1*grza/bss1 +vhh2*crza/bsq2
-!   vxj(l)= vhh*abx/bsa + vxa
-!   vyj(l)= vhh*aby/bsa + vya
-!   vzj(l)= vhh*abz/bsa + vza
-!
       mue1= amu(i,j,k)/qspec(2)
       vhh2= avhh(i,j,k)**2*wspec(2)/qspec(2)
 !
@@ -5127,7 +4151,6 @@
       end do
       end do
       end do
-!
 !
 !***********************************************************************
 !* 3. The RHS of the field-particle coupled equation.                  *
@@ -6420,7 +5443,8 @@
       rpr(2) = eps
       rpr(3) = t5 - t1
 !
-      if(io_pe.eq.1) then
+!     if(io_pe.eq.1) then
+      if(.false.) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
@@ -6479,6 +5503,13 @@
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
+!
+      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
+                     nha,nplot,nhist
+      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
+                     nha,nplot,nhist
 !*---------------------------------------------------------
 !
       do i= 1,mxyz3
@@ -6685,8 +5716,8 @@
  2000 itrm = itr
       eps  = rsdl
 !
-!     if(mod(it,100).eq.1) then
-      if(io_pe.eq.1) then
+      if(mod(it,100).eq.1) then
+!     if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
@@ -8064,7 +7095,8 @@
 !
          wsq= sqrt(wsq/mxyz)
 !
-         if(io_pe.eq.1) then
+!        if(io_pe.eq.1) then
+         if(.false.) then
           open (unit=11,file=praefixc//'.11'//suffix2,             & 
                 status='unknown',position='append',form='formatted')
 !
@@ -9029,7 +8061,8 @@
       bb= bb/mxyz
       ss= ss/mxyz
 !
-      if(io_pe.eq.1) then
+!     if(io_pe.eq.1) then
+      if(.false.) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !

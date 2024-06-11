@@ -1,12 +1,12 @@
 !  param_A23A.h
 !
-      integer        npc,mx,my,mz,mxyz0,np0,myA,kd,   &
+      integer(C_INT) npc,mx,my,mz,mxyz0,np0,myA,kd,   &
                      mxyz,mxyz3,mxyzA,                &
                      nob,nob2,nob3,iblk,iblk2,iblk3,  &
                      nhistm
 !
-      character ::   suffix2*2,suffix1*2,praefixs*29,praefixc*23
-!     character ::   suffix2*2,suffix1*2,praefixs*29,praefixc*25
+      character ::   praefixs*29,praefixc*23,suffix2*2,suffix1*2
+!     character ::   praefixs*29,praefixc*25,suffix2*2,suffix1*2
 !
       parameter  (npc=8)
       parameter  (mx=72,my=144,mz=72)
@@ -15,10 +15,10 @@
       parameter  (suffix2='0a',suffix1='0a') 
 !     parameter  (suffix2='0b',suffix1='0a')
 !
-      parameter (praefixs='/home/tanakam/mrg37/rec_3d23A',  &
-                 praefixc='/data/sht/tanakam/forta')
-!     parameter (praefixs='/lv01/mtanaka/mrg37/rec_3d23A',  &
-!                praefixc='/lv01/mtanaka/mrg37/forta')
+!     parameter (praefixs='/home/tanakam/mrg37/rec_3d23A',  &
+!                praefixc='/data/sht/tanakam/forta')
+      parameter (praefixs='/home/mtanaka/mrg37/rec_3d23A',  &
+                 praefixc='/home/mtanaka/mrg37/forta')
 !
 !            {ptx,pty,ptz} = (-2:mx+1,-2:my+2,-2:mz+1)
 !                     {ex} = (-2:mx+1,-2:my+2,-2:mz+1)
