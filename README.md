@@ -1,17 +1,21 @@
 ## Macro-Particle Simulation for Magnetic Reconnection ## 
 
-This page is discussed on the largescale electromagnetic particle simulation 
-(J. Comp. Physics, Tanaka, 1993), and magnetic reconnection 
-(Phys. Plasmas, Tanaka, 1995). 
-This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
-Shimazu, 1996)
-
+This page is discussed on the largescale electromagnetic particle simulation code  
+(J. Comp. Physics, Tanaka, 1993), magnetic reconnection (Phys. Plasmas, Tanaka, 1995)
+and the solar wind and planetary plasma interactions in collisionless parallel shocks (J.Geophys.Res., 1996).
+. 
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
 
-Why is a large amount of the solar-eartth energy released in the distant magnetotail ?
-This energy release is suddenly and typically observed as magnetic reconnection. 
+Why is a large amount of the solar-eartth energy released intermittently 
+in the distant magnetotail ? This energy release is suddenly and typically observed 
+as magnetic reconnection. 
 
-There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as 'hypothesis' of inertia resistivity of thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly shown and proved that 'inertia of ions and electrons' is the key of input and output flows for magnetic reconnection, then resulting in large energy release of earth's magnetotail (Ref.1).
+There were many theories for magnetic reconnection including from classical Dungey's 
+theory to nuclear-fusion oriented anomalous resistivity. To our view, it was noted 
+that Dr. Speicer said as 'hypothesis' inertia resistivity of thinning the current sheet,
+which was not paid attention because of popularity of anomalous resistivity. 
+
+Much later by a particle-in-cell simulation, it was clearly shown and proved that 'inertia of ions and electrons' is the key of input and output flows for magnetic reconnection, then resulting in large energy release of earth's magnetotail (Ref.1).
 
 ### Implicit Particle-in-Cell Simulation Code ###
 
