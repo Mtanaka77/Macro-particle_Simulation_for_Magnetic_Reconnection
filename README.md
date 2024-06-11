@@ -35,6 +35,8 @@ In the simulation, one utilizes the time-decentered scheme that is typically \ai
 while the time-centered scheme in the explicit code (\aimpl=0.5) is used 
 only in other directories of molecular dynamics simulations of \omega Dt <<1.
 
+### Physical Constants and Necessary Files ###
+
 Four physical units in the sumulation are, i) time: 1/wpe, ii) length: c/wpe 
  (where c/wpe is the electron inertia length), iii) mass: electron mass, and 
 iv) charge: electron charge. 
