@@ -55,7 +55,12 @@ Important these subroutines are precisely explained as comments.
 Two additional files are necessary with the code number  '23', 
 as the parameter file param_A23A.h and the configure file rec_3d23A.
 
-By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe in order to dump out plasma oscillations at plasma frequency omega_e= wpe - small noises. But, dt*wce > 1 is necessary for electron tracking.
+By the implicit scheme, it is free from the Courant condition, that is, 
+Dx(length)/Dt(time step) is not bound by the speed of light c. 
+For the backward differential scheme in \aimpl > 0.5, a time step may be 
+Dt~ 1.2/wpe in order to dump out plasma oscillations at plasma frequency 
+\omega_e= wpe - for killing small noises. 
+Note that Dt*wce > 1 is necessary for proper electron tracking.
 
 
 ### Execution Scripts ###
