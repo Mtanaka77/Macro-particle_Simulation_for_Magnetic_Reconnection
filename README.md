@@ -23,9 +23,9 @@ magnetic reconnection resulting in the large energy release of earth's magnetota
 
 An electromagnetic particle simulation code is utilized in solar and magnetospheric 
 space physics (Ref. 1, 4-5). 
-Both electric and magnetic fields are solved at low frequencies by a slightly 
-backward time decentering technique (Ref. 2,3). 
-The backward de-centering code does not affect low-frequency phenomena, 
+Both electric and magnetic fields are solved by the implicit low-frequency scheme,   
+a backward time decentering technique (Ref. 2,3). 
+The backward decentering code does not affect low-frequency phenomena, 
 \omega*Dt << 1 with Dt the time step and \omega the inverse of electron plasma 
 frequency (JCP, 1993).
 Magnetic reconnection and the solar wind-earth's magnetic field coupling 
