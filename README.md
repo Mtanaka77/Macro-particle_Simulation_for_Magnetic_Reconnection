@@ -42,15 +42,18 @@ The program is written in Fortran 2003/2008 and it is coded for parallelization
 by MPI version 3 or 4.
 The title, major references and remarks of this simulation code are written 
 in the top part of the @mrg37_023A.f03 file.
-The major subroutines are called as /fulmov/, /emfild/ and /cfpsol/, which are used 
+The major subroutines are named as /fulmov/, /emfild/ and /cfpsol/, which are used 
 in every time steps, while /escorr/ and /fulmv2/ are called in 5 time steps interval. 
 
-The correction to the longitudinal part of the electric field is made in /escorr/. Although 
-the Poisson equation for the electric field is to be solved only initially, it is actually 
-not true in the Maxwell equation since numerical errors accumulate in time (see Ref. 2,3).
-Supporting subroutines are /partpc/ and /srimp1/-/srimp4/. 
-Important blocks of these subroutines are explained as comments.
-Two additional files are necessary, the parameter file param_A23A.h and the configure file rec_3d23A.
+The correction to the longitudinal part of the electric field is made in /escorr/. 
+Although the Poisson's equation for the electric field is to be solved only initially, 
+it is actually not quite true in the Maxwell equation since numerical errors 
+do accumulate in time steps (see Ref. 2,3).
+
+Supporting subroutines used are /partpc/ and /srimp1/ - /srimp4/. 
+Important these subroutines are precisely explained as comments.
+Two additional files are necessary with the code number  '23', 
+as the parameter file param_A23A.h and the configure file rec_3d23A.
 
 By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe in order to dump out plasma oscillations at plasma frequency omega_e= wpe - small noises. But, dt*wce > 1 is necessary for electron tracking.
 
