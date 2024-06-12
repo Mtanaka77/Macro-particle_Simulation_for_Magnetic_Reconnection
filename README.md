@@ -21,7 +21,7 @@ Dx/Dt < c where Dx is the cell length, Dt is the time step, and c is the speed o
 On the other hand for the implicit code, it is free from this condition, that is Dx/Dt > c. 
 
 In the implicit case, both electric and magnetic fields are solved by the implicit condition 
-of low-frequency slightly backward time decentering technique. 
+where the low-frequency slightly backward time decentering technique is used. 
 The backward decentering does not affect low frequency phenomena, \omega*Dt << 1 with
 \omega = c/Dx (JCP, 1993).
 Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable 
