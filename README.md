@@ -13,12 +13,21 @@ This energy release is suddenly and typically observed as magnetic reconnection.
 
 There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as 'hypothesis' of inertia resistivity of thinning the current sheet. Much later by a particle-in-cell simulation, it was clearly shown and proved that 'inertia of ions and electrons' is the key of input and output flows for magnetic reconnection, then resulting in large energy release of earth's magnetotail (Ref.1).
 
-### Implicit Particle-in-Cell Simulation Code ###
+### Implicit and Explicit Particle-in-Cell Simulation Codes ###
 
 An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics (Ref. 1,4-5). 
-Both electric and magnetic fields are solved by the implicit low-frequency scheme of slightly backward time decentering technique. 
-The backward decentering does not affect low frequency phenomena, \omega*Dt << 1 (JCP, 1993).
-Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable for applying this simulation code.
+For an explicit particle code, it is strictly bound by the Courant condition,  
+Dx/Dt < c where Dx is the cell length, Dt is the time step, and c is the speed of light. 
+On the other hand for the implicit code, it is free from this condition, that is Dx/Dt > c. 
+
+In the implicit case, both electric and magnetic fields are solved by the implicit condition 
+of low-frequency slightly backward time decentering technique. 
+The backward decentering does not affect low frequency phenomena, \omega*Dt << 1 with
+\omega = c/Dx (JCP, 1993).
+Magnetic reconnection and the solar wind-earth magnetic field coupling are quite suitable 
+for applying this simulation code.
+
+### Implicit Particle Simulation ###
 
 One utilizes the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
 The title, major references, and remarks of this simulation code are written in the top of the @mrg37_023A.f03 file.
@@ -32,7 +41,6 @@ Important blocks of these subroutines are explained as comments.
 Two additional files are necessary, the parameter file param_A23A.h and the configure file rec_3d23A.
 
 By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in aimpl > 0.5, a time step may be dt~1.2/wpe in order to dump out plasma oscillations at plasma frequency omega_e= wpe - small noises. But, dt*wce > 1 is necessary for electron tracking.
-
 
 ### Execution Scripts ###
 
