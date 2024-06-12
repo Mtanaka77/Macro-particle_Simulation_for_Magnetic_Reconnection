@@ -55,7 +55,7 @@ mpif90 @mrg37-023A.f03 needs the parameter files param_A23A.h and rec_3d23A
 
  > $ mpif90 -mcmodel=medium -fast @mrg37-023A.f03 -I/opt/fftw3/include -L/opt/fftw3/lib -lfftw3
 
-Execution by mpiexec (may need some tens of co-processors)
+Execution by mpiexec (may need some hundreds of processors)
 
  > $ mpiexec -n number_of_cpu a.out &
 
