@@ -41,7 +41,7 @@ Supporting subroutines are /partpc/ and /srimp1/-/srimp4/.
 Important blocks of these subroutines are explained as comments.
 Two additional files are necessary, the parameter file param_A23A.h and the configure file rec_3d23A.
 
-By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in \aimpl > 0.5, a time step may be Dt~ 1.2/ \wpe in order to dump out plasma oscillations at plasma frequency \omega_e= \wpe - small noises. But, Dt*\wce > 1 is necessary for electron tracking.
+By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in \aimpl > 0.5, a time step may be Dt~ 1.2/ \wpe in order to dump out plasma oscillations at plasma frequency \omega_e= \wpe - small noises. But, actually Dt*\wce > 10 is required for electron tracking.
 
 ### Execution Scripts ###
 
