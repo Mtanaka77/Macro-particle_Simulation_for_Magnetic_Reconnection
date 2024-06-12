@@ -16,9 +16,10 @@ There were many theories for the reconnection including from classical Dungey's 
 ### Implicit and Explicit Particle-in-Cell Simulation Codes ###
 
 An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics (Ref. 1,4-5). 
-For an explicit particle code, it is strictly bound by the Courant condition,  
+The difference of the codes is that, for an explicit particle code, it is strictly bound by the Courant condition,  
 Dx/Dt < c where Dx is the cell length, Dt is the time step, and c is the speed of light. 
-On the other hand for the implicit code, it is free from this condition, that is Dx/Dt > c. 
+On the other hand for the implicit particle code, it is free from this condition, that is Dx/Dt > c and is possible
+to make research of solar physics environment. 
 
 In the implicit case, both electric and magnetic fields are solved by the implicit condition 
 where the low-frequency slightly backward time decentering technique is used. 
