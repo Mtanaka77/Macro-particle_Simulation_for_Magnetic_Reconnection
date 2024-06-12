@@ -29,7 +29,7 @@ for applying this simulation code.
 
 ### Implicit Particle Simulation ###
 
-One utilizes the time decentered scheme in aimpl=0.6, while the time centered scheme in the explicit code (aimpl=0.5) is used in other directory of molecular dynamics simulations. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
+One utilizes the time decentered scheme in \aimpl=0.6, while the time centered scheme in the explicit code (\aimpl=0.5) is used in other directory of molecular dynamics simulations. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
 The title, major references, and remarks of this simulation code are written in the top of the @mrg37_023A.f03 file.
 Major subroutines are named /fulmov/, /emfild/, /cfpsol/, which are used in every time step, while /escorr/ and /fulmv2/ are called in 5 time steps interval. 
 
