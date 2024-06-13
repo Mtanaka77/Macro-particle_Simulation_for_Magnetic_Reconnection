@@ -5,8 +5,8 @@
                      nob,nob2,nob3,iblk,iblk2,iblk3,  &
                      nhistm
 !
-      character ::   praefixs*29,praefixc*23,suffix2*2,suffix1*2
-!     character ::   praefixs*29,praefixc*25,suffix2*2,suffix1*2
+!     character ::   praefixs*29,praefixc*23,suffix2*2,suffix1*2
+      character ::   praefixs*29,praefixc*25,suffix2*2,suffix1*2
 !
       parameter  (npc=8)
       parameter  (mx=72,my=144,mz=72)

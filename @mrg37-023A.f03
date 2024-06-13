@@ -12,9 +12,9 @@
 !*             6) M.Tanaka, Bulletin of Chubu University (Mar,2022).   *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_023A.f03: simulation code, job number serial '23'      *
-!*    2. param_A23A.h   : parameter file                               *
-!*    3. rec_3d23A      : Simulation time, box size, parameters of     *
+!*    1. @mrg37_023AG.f03: simulation code, job serial number '23'     *
+!*    2. param_A23A.h   : parameter file                              *
+!*    3. rec_3d23AG     : Simulation time, box size, parameters of     *
 !*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
@@ -532,57 +532,20 @@
 !-----------------------------------------------------------------------
 !*    the seed of random numbers must be odd integers.
 !
-      use, intrinsic :: iso_c_binding
-!
+!     use, intrinsic :: iso_c_binding
+!        not for gfortran
       implicit none
-      include 'param_A23A.h'
-!
-      integer*4      it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-!
-      real*8         xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec,wspec,veth,teti,wcewpe,thb,               &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx,vthz,vdr,vbeam,      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec
-      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec(4),wspec(4),veth,teti,wcewpe,thb,         &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
 !
       real*4  plodx
       integer*4   kploy,kploz,ir1,ir2
-      common/plotiv/ plodx,kploy,kploz
 !
-      real*8  arb,zcent,ycent1,ycent2,Ez00,vrg1
-      common/profl/  arb,zcent,ycent1,ycent2,Ez00
+      common/plotiv/ plodx,kploy,kploz
       common/ranfa/  ir1  !! integer for ir1
       common/ranfb/  ir2
 !
       integer*4      ir,iq
       common/ranfff/ ir,iq
 !***
-!  rec_3d: in param_A23A.h...    
-!     data   dt/5.0d0/,xmax/300.0d0/,ymax/300.d0/,zmax/600.0d0/,  &
-!            wspec/100.d0, 1.0d0, 2*0.d0/,qspec/1.0d0, -1.0d0, 2*0.d0/, &
-!            vdr/ 4*0.d0 /,vbeam/ 1.0d-2,0.d0, 2*0.d0 /,                &
-!            vrg1/ 0.d0/,                                         &
-!            veth/0.20d0/,teti/1.0d0/,wcewpe/1.0d0/,thb/0.d0/,    &
-!            rwd/50.0d0/,ifilx/1/,ifily/1/,ifilz/1/,              &
-!            aimpl/0.60d0/,itermx/1/,iterfx/150/,itersx/250/,     &
-!            epsln1/1.0d-5/,pi/3.141592653589d0/,                 &
-!            vlima/0.06d0/,vlimb/0.6d0/,bmin/1.0d-7/,emin/1.0d-7/,&
-!            nha/5/,nplot/10/,nhist/10/,npwrt/9999/,nfwrt/9999/
-!
       data   ir1/3021/,ir2/7331/,                                 &
              plodx/3.99d0/,kploy/2/,kploz/3/
       end block data
