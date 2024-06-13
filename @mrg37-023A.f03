@@ -12,9 +12,9 @@
 !*             6) M.Tanaka, Bulletin of Chubu University (Mar,2022).   *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_023AG.f03: simulation code, job serial number '23'     *
+!*    1. @mrg37_023A.f03: simulation code, job serial number '23'      *
 !*    2. param_A23A.h   : parameter file                              *
-!*    3. rec_3d23AG     : Simulation time, box size, parameters of     *
+!*    3. rec_3d23A     : Simulation time, box size, parameters of      *
 !*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
