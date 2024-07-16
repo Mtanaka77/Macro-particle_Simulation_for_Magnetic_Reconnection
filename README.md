@@ -1,8 +1,8 @@
 ## Macro-Particle Simulation for Magnetic Reconnection ## 
 
 This page is discussed on the largescale electromagnetic particle simulation 
-(J. Comp. Physics, Tanaka, 1993), and magnetic reconnection 
-(Phys. Plasmas, Tanaka, 1995). 
+(J. Comp. Physics, Tanaka, 1993), which had a striking result of magnetic reconnection 
+(Phys. Plasmas, Tanaka, 1995, 1996). 
 This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
 Shimazu, 1996)
 
