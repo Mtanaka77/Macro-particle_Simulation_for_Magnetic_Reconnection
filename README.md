@@ -11,7 +11,8 @@ Shimazu, 1996)
 Why is a large amount of the solar-eartth energy released in the distant magnetotail ?
 This energy release is suddenly and typically observed as magnetic reconnection. 
 
-There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as 'hypothesis' of inertia resistivity which was forgotten as unrealistic idea since then. Much later by a particle simulation, it was clearly shown that 'inertia of ions and electrons' has the key role of input and output flows for magnetic reconnection, then resulting in large energy release of earth's magnetotail (Ref.1).
+There were many theories for the reconnection including from classical Dungey's theory to nuclear-fusion oriented anomalous resistivity. It is noted that Dr. Speicer paid attention as 'hypothesis' of inertia resistivity which was forgotten as unrealistic idea since then. 
+Much later by a particle simulation as theory tools, it was clearly shown that 'inertia of ions and electrons' has the key role of input and output flows for magnetic reconnection, resulting in large energy release of earth's magnetotail (Ref.1).
 
 ### Implicit and Explicit Particle-in-Cell Simulation Codes ###
 
