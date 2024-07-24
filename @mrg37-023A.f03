@@ -1350,7 +1350,7 @@
           kp= int(hzi*z(l) +0.500000001d0)
 !**
 !         if(ranfp(0.d0).gt.0.99d0) then
-          if(ranfp(0.d0).gt.0.995d0) then
+          if(ranfp(0.d0).gt.0.999d0) then
           vy0= Ez00/bxa(ip,jp,kp)
 !
           if(abs(y(l)-ycent2).lt.0.05d0*ymax) then
