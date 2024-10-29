@@ -38,7 +38,7 @@ Major subroutines are the following: /fulmov/ (particles are accumulated for the
 /emfild/ ans /cfpsol/ (electromagnetic fields are solved using large matrix equations), 
 and /fulmov/(2) (particles are advanced), which are used in every time step. 
 
-By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in \aimpl > 0.5, a time step may be Dt~ 1.2/ \wpe in order to dump out plasma oscillations at plasma frequency \omega_e= \wpe - small noises. But, actually Dt*\wce > 10 is required for electron tracking.
+By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in \aimpl > 0.5, a time step may be Dt~ 1.2/ \wpe in order to dump out plasma oscillations at plasma frequency \omega_e= \wpe - small noises. 
 
 ### Execution Scripts ###
 
