@@ -13,7 +13,7 @@
 !*                                                                     *
 !*    Simulation files                                                 *
 !*    1. @mrg37_023A.f03: simulation code, job serial number '23'      *
-!*    2. param_A23A.h   : parameter file                               *
+!*    2. param_080A.h   : parameter file                               *
 !*    3. rec_3d23A      : Simulation time, box size, parameters of     *
 !*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
@@ -114,7 +114,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) rank,size,ipar,ierror,cl_first
@@ -131,10 +131,10 @@
       character(len=10) :: date_now
       character(len=8)  :: time_now
 !*
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -180,7 +180,7 @@
       integer(C_INT) ifilxs,ifilys,ifilzs
       common/damper/ ifilxs,ifilys,ifilzs
 !
-!*  kstart..... used in /init/, /trans/, /fulmov/, in param_A23A.h.
+!*  kstart..... used in /init/, /trans/, /fulmov/, in param_080A.h.
 !   Ez00   .... Ez00 x Ba
 !
       namelist/datum0/  kstart,tfinal,cptot,istop
@@ -290,7 +290,7 @@
 !   escorr: nps1(1)= 1, nps2(1)= mx*(my+1)*kd
 !   poissn:
 !  ++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     kd= mz/npc is defined in param_A23A.h
+!     kd= mz/npc is defined in param_080A.h
 !
 !             number_of_cpu's
       do k= 1,npc         
@@ -563,7 +563,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
       integer(C_INT) it,interv
 !
 !  Hit is true if mod(it,..)= 0 
@@ -596,7 +596,7 @@
       implicit none
 ! 
       include 'mpif.h'
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) npr,kstart,ipar,size
@@ -623,10 +623,10 @@
       real(C_DOUBLE) tdec(3000)  !<-- DOUBLE
       common/ehist/  tdec
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -723,8 +723,29 @@
  1000 cl_first= 2
       call clocki (walltime1,size,cl_first)
 !
-      if(mod(it,5).eq.1 .and. t.ge.tfinal) return
-      if((walltime1/60.d0).gt.cptot) return  !<-- in minutes
+      if(mod(it,5).eq.1 .and. t.ge.tfinal) then
+!
+        if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+        write(11,*) '# t.ge.tfinal'
+        close(11)
+        end if
+!
+        return
+      end if
+!
+      if((walltime1/60.d0).gt.cptot) then
+!
+        if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+        write(11,*) '# walltime1/60.d0).gt.cptot'
+        close(11)
+        end if
+!
+        return  !<-- in minutes
+      end if
 !     +++++++++++++++++++++++++++++++++++++++++++
 !
       it= it +1 
@@ -755,28 +776,9 @@
 !***********************************************************************
 !*  3.  Update particles : x(n) to x(n+1)  (ipc=0).                    *
 !***********************************************************************
-!  For correction
 !
         cl_first= 2
         call clocki (walltime3,size,cl_first)
-!
-!   Correction is made once in five steps
-! 
-      if(mod(it,5).eq.0) then
-! 
-        call fulmv2 (xi,yi,zi,vxi,vyi,vzi,qspec(1),wspec(1),  &
-                     npr,1,ipar,size)
-!
-        call fulmv2 (xe,ye,ze,vxe,vye,vze,qspec(2),wspec(2),  &
-                     npr,2,ipar,size)
-!
-!   ex()= ex() +d.pot()
-!
-        call escorr 
-      end if
-!
-        cl_first= 2
-        call clocki (walltime4,size,cl_first)
 !
 !  For move
       ipc= 0 
@@ -799,7 +801,7 @@
       ex0(i,j,k)= ex(i,j,k)
       ey0(i,j,k)= ey(i,j,k)
       ez0(i,j,k)= ez(i,j,k)
-      bx0(i,j,k)= bx(i,j,k)  !<-- wce is not included
+      bx0(i,j,k)= bx(i,j,k)  !<-- wce_by_wpe is not included
       by0(i,j,k)= by(i,j,k)
       bz0(i,j,k)= bz(i,j,k)
       end do
@@ -807,7 +809,7 @@
       end do
 !
         cl_first= 2
-        call clocki (walltime5,size,cl_first)
+        call clocki (walltime4,size,cl_first)
 !
 !     if(io_pe.eq.1) then
       if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
@@ -815,11 +817,11 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("# timing: it,t=",i6,f10.3," total, this step &
-              (sec)=",2f10.3,/,"  ful(1),em,es,ful(0)=",4f10.3,/)') &
-                      it,t,walltime5,walltime5-walltime1,        &
+        write(11,'("# it,t=",i6,f10.3,"  total, this step(sec)=", &
+                   2f10.3,/,"  ful(1),em,ful(0)=",3f10.3,/)')     &
+                      it,t,walltime4,walltime4-walltime1,        &
                       walltime2-walltime1,walltime3-walltime2,   &
-                      walltime4-walltime3,walltime5-walltime4
+                      walltime4-walltime3
         close(11)
       end if
 !
@@ -834,7 +836,7 @@
         if(io_pe.eq.1) then
           open (unit=11,file=praefixc//'.11'//suffix2,             & 
                 status='unknown',position='append',form='formatted')
-          write(11,*) 'Write L.879 it=',it
+          write(11,*) 'Write L.840 it=',it
           close(11)
         end if
 !
@@ -884,7 +886,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) iaver,nav
       real(C_DOUBLE),dimension(mxyzA) :: ex,ey,ez,bx,by,bz,        &
@@ -958,7 +960,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !          +++++++            +++++ 
       real(C_float),dimension(mxyzA) :: cix,ciy,ciz,cex,cey,cez,       &
                                         avex,avey,avez,avbx,avby,avbz, &
@@ -996,7 +998,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: gnu
       common/dragcf/ gnu
@@ -1051,7 +1053,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
@@ -1082,10 +1084,10 @@
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !----------------------------------------------------------------------
 ! 
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -1343,13 +1345,13 @@
         if((abs(z(l)-zcent ).lt.0.15d0*zmax) .and.  &
           ((abs(y(l)-ycent2).lt.0.025d0*ymax) .or.  &
            (abs(y(l)-ycent1).lt.0.025d0*ymax)) ) then
-!
 !**
           ip= int(hxi*x(l) +0.500000001d0)
           jp= int(hyi*y(l) +0.000000001d0)
           kp= int(hzi*z(l) +0.500000001d0)
 !**
-!         if(ranfp(0.d0).gt.0.99d0) then
+!           if(ranfp(0.d0).gt.0.99d0) then
+!         if(ranfp(0.d0).gt.0.995d0) then
           if(ranfp(0.d0).gt.0.999d0) then
           vy0= Ez00/bxa(ip,jp,kp)
 !
@@ -1364,7 +1366,11 @@
         end do
       end if
 !
+!
+!---------------------------
 !  For accumulating
+!---------------------------
+!
       if(ipc.ge.1) then
 !                    <-- rxl-rzl and vyj
 !
@@ -1392,7 +1398,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl
@@ -1420,10 +1426,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !----------------------------------------------------------------------
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -1633,7 +1639,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe,vxe,vye,vze
       real(C_DOUBLE) wmult 
@@ -1656,10 +1662,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -1811,16 +1817,16 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr,ipar,size
 !------------------------------------------------------
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -1886,16 +1892,16 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z
       integer(C_INT) npr,ipar,size
 !------------------------------------------------------
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -1956,7 +1962,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr,ipar,size
@@ -1967,10 +1973,10 @@
 !                                             bxa,bya,bza
 !     common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -2043,16 +2049,16 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr
 !------------------------------------------------------
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -2118,16 +2124,16 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr
 !------------------------------------------------------
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -2198,7 +2204,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vxj,vyj,vzj
       real(C_DOUBLE) qmult
@@ -2404,7 +2410,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !---------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm
@@ -2550,7 +2556,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
@@ -2694,7 +2700,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vhe
@@ -2841,7 +2847,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
 !                              ++++++++++++++++++++
@@ -3073,7 +3079,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -3157,7 +3163,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -3227,7 +3233,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -3311,7 +3317,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -3387,7 +3393,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !*
       integer(C_INT) nobx
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -3416,10 +3422,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),            &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -3722,7 +3728,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) ipar
@@ -3765,10 +3771,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),            &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -4431,7 +4437,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
       include 'mpif.h'
 !
 !     parameter  (nob=15,iblk=3)
@@ -4457,10 +4463,10 @@
       common/array1d/ arrayx,arrayy,arrayz
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -4611,7 +4617,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !***********************************************************************
 !*    Define the whole CFP matrix.                                     *
@@ -4655,10 +4661,10 @@
       real(C_DOUBLE),dimension(0:my) :: filt 
       common/bpfilt/ filt
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -5319,7 +5325,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -5339,10 +5345,10 @@
       integer(C_INT) ierr,itrm,iflg,i,iwrt
       real(C_DOUBLE) eps,bb
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -5391,7 +5397,7 @@
 !       Parallel version in /wwstbs3/ and /wwstbm/
 !
         call wwstbs3 (aa,ja,na,iw,np1,np2,ipar,ierr)
-      end if                         ! iblk in param_A23A.h
+      end if                         ! iblk in param_080A.h
       
       call cpu_time (t2)
 !                                      preconditioning
@@ -5480,7 +5486,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob=15)
@@ -5505,10 +5511,10 @@
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !*---------------------------------------------------------
@@ -5737,7 +5743,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ipr(10),ierr,n
       real(C_DOUBLE) rpr(10)
@@ -5781,7 +5787,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar
@@ -5845,7 +5851,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'  !<-- mx,myA,mz,iblk in param_A23A.h
+      include 'param_080A.h'  !<-- mx,myA,mz,iblk in param_080A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -5927,8 +5933,9 @@
       end do     
 !***
 !
-      if(io_pe.eq.1 .and. first) then
-!         first= .false.
+      if(.false.) then
+!     if(io_pe.eq.1 .and. first) then
+!!        first= .false.
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
@@ -5965,7 +5972,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'  !<-- mx,myA,mz,iblk in param_A23A.h
+      include 'param_080A.h'  !<-- mx,myA,mz,iblk in param_080A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -6047,7 +6054,8 @@
       end do     
 !***
 !
-      if(io_pe.eq.1 .and. first) then
+      if(.false.) then
+!     if(io_pe.eq.1 .and. first) then
         first= .false.
 !
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -6086,7 +6094,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !                                     
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa
       integer(C_INT),dimension(1:mxyz3,nob) :: ja
@@ -6184,7 +6192,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3) :: v,w
 !
@@ -6225,7 +6233,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !     parameter  (nob=15)
 !----------------------------------------------------------------------
@@ -6243,10 +6251,10 @@
       integer(C_INT) io_pe,ijm
       common/iope66/ io_pe
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -6480,7 +6488,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_A23A.h'
+      include   'param_080A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -6527,7 +6535,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_A23A.h'
+      include   'param_080A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -6570,7 +6578,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar,i0,ierr
@@ -6625,7 +6633,7 @@
       use, intrinsic :: iso_c_binding
       implicit real(C_DOUBLE) (a-h,o-z)
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
       dimension w0(iblk,iblk),w1(iblk,iblk),w2(iblk,iblk)
 !*                         <-- papam_A13X.h
 !*vdir novector
@@ -6652,969 +6660,6 @@
       end subroutine wwstba
 !
 !
-!********** << subroutines >> ******************************************
-!*    escsol ..... for the longitudinal correction.                    *
-!*    Electrostatic correction                                         *
-!***********************************************************************
-!-----------------------------------------------------------------------
-      subroutine escorr
-!-----------------------------------------------------------------------
-!***********************************************************************
-!*    A correction to the longitudinal part of the electric field.     *
-!***********************************************************************
-!------------------------------------------------------ spring 1992 ----
-!     Full-implicit solution by direct method (C.R. method)
-!-----------------------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-!     include 'fftw3.f03'
-      include 'aslfftw3.f03'
-      include 'param_A23A.h' 
-!
-      complex(C_DOUBLE_COMPLEX),dimension((mx/2+1),myA,mz) :: &
-                                                      qi_c,qe_c
-      real(C_DOUBLE),dimension(mx,myA,mz) :: qi_cc,qe_cc
-!
-      type(C_PTR),save :: planf,planb,planfs,planbs
-      logical,save :: if_fftw= .true.
-!
-      real(C_DOUBLE) gam,gax,gay,gaz,fnml,fff
-      integer(C_INT) l,m,n
-!
-      real(C_DOUBLE),dimension(mxyz) :: ss,xx
-      integer(C_INT) i,j,k,ijk,symp,syme,symb,iwrt
-      real(C_DOUBLE) sel
-!*----------------------------------------------------------------------
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                           ex,ey,ez,bx,by,bz,       &
-                                           ex0,ey0,ez0,bx0,by0,bz0, &
-                                           qix,qiy,qiz,qex,qey,qez, &
-                                           emx,emy,emz,qi,qe,amu,avhh, &
-                                           pot
-      common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
-      common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
-      common/srimp8/ amu,avhh
-      common/sclpot/ pot
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: rho
-      real(C_float)  ppot(0:mx-1,0:my,0:mz-1)
-!*----------------------------------------------------------------------
-!
-      integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
-!
-      real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
-                     dx,dy,dz
-      common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
-                     hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
-!
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      integer(C_INT) ifilxs,ifilys,ifilzs
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-      common/damper/ ifilxs,ifilys,ifilzs
-!
-      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec
-      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!
-      integer(C_INT) iterm,itrf0,iters,iperio,itag
-      real(C_float)  xmax4,ymax4,zmax4
-      real(C_DOUBLE) ase,asb,asl,we,wb,wl
-      common/emiter/ ase,asb,asl,we,wb,wl,iterm,itrf0,iters
-!
-      real(C_DOUBLE),dimension(0:my) :: filt
-      common/bpfilt/ filt
-!
-      integer(C_INT) io_pe
-      common/iope66/ io_pe
-!
-!***********************************************************************
-!* 1. Calculate the rhs of the equation.                               *
-!***********************************************************************
-!    full potential is contained in pot in it= 0; only correction is
-!    contained for it > 0.
-!*********************
-!     ifilxs= 3  !! in &datum1 and save in /damper/
-!     ifilys= 3  !!
-!     ifilzs= 3  !!
-!*********************
-!  escorr is made at L.770 
-!     if(mod(it,5).eq.1) then
-!***         ++++
-! 
-      do k= 0,mz-1 
-      do j= 0,my
-      do i= 0,mx-1
-      qi(i,j,k)= dmin1(qi(i,j,k), 1.2d0*q0) !<<- cutoff
-      qe(i,j,k)= dmax1(qe(i,j,k),-1.2d0*q0) 
-!     qi(i,j,k)= dmax1(qi(i,j,k), 1.2d0*q0) !<<- max and min cutoff
-!     qe(i,j,k)= dmin1(qe(i,j,k),-1.2d0*q0) 
-      end do
-      end do
-      end do
-!
-!
-      if(if_fftw) then
-      if_fftw= .false.
-!
-      planf = fftw_plan_dft_r2c_3d (mz,myA,mx,qi,qi_c,FFTW_ESTIMATE)
-      planb = fftw_plan_dft_c2r_3d (mz,myA,mx,qi_c,qi,FFTW_ESTIMATE)
-!
-      planfs= fftw_plan_r2r_3d (mz,myA,mx,qi,qi_cc, &
-                   FFTW_RODFT10,FFTW_RODFT10,FFTW_RODFT10,FFTW_ESTIMATE)
-      planbs= fftw_plan_r2r_3d (mz,myA,mx,qi_cc,qi, &
-                   FFTW_RODFT01,FFTW_RODFT01,FFTW_RODFT01,FFTW_ESTIMATE)
-      end if
-
-! FFT Execution (forward)
-      call fftw_execute_dft_r2c (planf,qi,qi_c)
-      call fftw_execute_dft_r2c (planf,qe,qe_c)
-!
-      fnml= 1.d0/(mx*myA*mz) 
-      gam = 1.25d0 ! 1.5d0
-!
-      do n= 1,mz
-      do m= 1,myA
-      do l= 1,mx/2+1
-!
-      if((l.eq.1 .or. l.eq.mx/2+1) .or. n.eq.1) then
-!     if(l.eq.1 .and. n.eq.1) then
-        qi_c(l,m,n)= 0
-        qe_c(l,m,n)= 0
-      else
-        gax= gam*(l-1)
-        gaz= gam*(n-1)
-        fff= fnml*exp(-(gax**2 +gaz**2))
-!       fff= fnml*exp(-(gax**2 +gay**2 +gaz**2))
-!
-        qi_c(l,m,n)= fff*qi_c(l,m,n)
-        qe_c(l,m,n)= fff*qe_c(l,m,n)
-      end if
-      end do
-      end do
-      end do
-!
-!  FFT Execution (backward)
-      call fftw_execute_dft_c2r (planb, qi_c, qi)
-      call fftw_execute_dft_c2r (planb, qe_c, qe)
-!
-!
-!* The sine transform in y
-!
-      call fftw_execute_r2r(planfs, qi,qi_cc)
-      call fftw_execute_r2r(planfs, qe,qe_cc)
-!
-      fnml= 1.d0/(8*mx*myA*mz)
-      gam = 1.25d0 ! 1.5d0
-!
-      do n= 1,mz
-      do m= 1,myA
-      do l= 1,mx
-!
-      if(m.eq.1 .or. m.eq.myA) then
-        qi_cc(l,m,n)= 0
-        qe_cc(l,m,n)= 0
-      else
-        gay= gam*(m-1)
-        fff= fnml*exp(-gay**2)
-!
-        qi_cc(l,m,n)= fff*qi_cc(l,m,n)
-        qe_cc(l,m,n)= fff*qe_cc(l,m,n)
-      end if
-      end do
-      end do
-      end do
-!
-      call fftw_execute_r2r (planbs, qi_cc,qi)
-      call fftw_execute_r2r (planbs, qe_cc,qe)
-!
-!     call fftw_destroy_plan(planf)
-!     deallocate(rin, zout)
-!
-!***********************************************************************
-!* 2. Solve the full implicit equation for delta.phi.                  *
-!***********************************************************************
-!-----------------------------------------------------------------------
-!   // remark //  loop 200 may help convergence of bcgsts  (3/21/93).
-!-----------------------------------------------------------------------
-!
-      do k= 0,mz-1
-      do j= 0,my
-      do i= 0,mx-1
-      if(j.eq.0 .or. j.eq.my) then  ! bound at j=0 or j=my
-        rho(i,j,k)= 0
-      else
-      rho(i,j,k)=  -(qi(i,j,k) +qe(i,j,k))/q0            &
-                 + (ex(pxr(i),j,k) -ex(pxl(i),j,k))/hx2  &
-                 + (ey(i,j+1,k)    -ey(i,j-1,k))/hy2     & 
-                 + (ez(i,j,pzr(k)) -ez(i,j,pzl(k)))/hz2  
-      end if
-      end do
-      end do
-      end do
-!
-!     symp= -1 
-!     call outmesh1 (rho)  !<-- ex, rho 
-!     call filt1p (rho,ifilxs,ifilys,ifilzs,symp)  !<-- ifilxs
-!
-      do k= 0,mz-1
-      do j= 0,my
-      do i= 0,mx-1
-      ijk= i +mx*(j +myA*k)   !<-- ijk=0
-! 
-      ss(ijk+1)= rho(i,j,k)  
-      xx(ijk+1)= 0 
-      end do
-      end do
-      end do
-!
-!***
-!  Bound in y: escorr
-!
-      do k= 0,mz-1
-      do j= 0,my
-      do i= 0,mx-1
-      if(j.eq.0 .or. j.eq.my) then
-        ijk= i +mx*(j +myA*k)
-!
-        ss(ijk+1)= 0
-      end if
-      end do
-      end do
-      end do
-!***
-!                  ++ R
-!     ++++++++++++++++++++++++++++
-      call escsol (ss,xx,wl,iters)
-!     ++++++++++++++++++++++++++++
-!    
-      do k= 0,mz-1
-      do j= 0,my
-      do i= 0,mx-1
-      ijk= i +mx*(j +myA*k)
-!
-      if(j.eq.0 .or. j.eq.my) then
-        pot(i,j,k)= 0
-      else
-        pot(i,j,k)= xx(ijk+1) 
-      end if
-      end do
-      end do
-      end do
-!
-!  Smoothing
-      symp= -1 
-      call outmesh1 (pot) 
-      call filt1p (pot,ifilxs,ifilys,ifilzs,symp)  !<-- ifilxs
-!
-! 
-      if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
-!                +++++
-        call lblbot (t)
-!
-        do k= 0,mz-1
-        do j= 0,my   
-        do i= 0,mx-1
-        ppot(i,j,k)= pot(i,j,k)
-        end do
-        end do
-        end do
-!
-!   (ex,ey,ez) real*4
-        open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
-              status='unknown',position='append',form='formatted')
-!
-        iperio= 0
-        itag= 6
-        xmax4= xmax
-        ymax4= ymax
-        zmax4= zmax
-!
-        call cplot3 (ppot,xmax4,ymax4,zmax4,'d.potent',8)
-        close(77)
-      end if
-!***
-!     end if
-!
-!***********************************************************************
-!* 3. Redefine the electric field.                                     *
-!***********************************************************************
-!   The future d.pot field is filtered at y boundaries.
-!
-      do k= 0,mz-1
-      do j= 1,my-1
-      do i= 0,mx-1
-      ex(i,j,k)= ex(i,j,k)  &
-                  - (pot(pxr(i),j,k) -pot(pxl(i),j,k))/hx2
-!
-      ey(i,j,k)= ey(i,j,k)  &
-                  - (pot(i,j+1,k) -pot(i,j-1,k))/hy2
-!
-      ez(i,j,k)= ez(i,j,k)  &
-                  - (pot(i,j,pzr(k)) -pot(i,j,pzl(k)))/hz2
-      end do
-      end do
-      end do
-!
-      do k= 0,mz-1   ! 8/01
-      do i= 0,mx-1
-      ex(i,0,k)= 0
-      ey(i,0,k)= -ey(i,1,k)
-      ez(i,0,k)= 0
-!
-      ex(i,my,k)= 0
-      ey(i,my,k)= -ey(i,my-1,k)
-      ez(i,my,k)= 0
-      end do
-      end do
-!
-!***
-!
-      sel= 0
-!
-      do k= 0,mz-1
-      do j= 0,my
-      do i= 0,mx-1
-      sel= sel +ex(i,j,k)**2 +ey(i,j,k)**2 +ez(i,j,k)**2
-      end do
-      end do
-      end do
-!
-      asl= sqrt(sel/float(3*mxyz))
-!
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
-!*
-        open (unit=11,file=praefixc//'.11'//suffix2,             & 
-              status='unknown',position='append',form='formatted')
-!
-        write(11,'("----- it=",i5," ---------------------------")') it 
-        write(11,'("*iterm, iterf, iters=",i4,i5,i4,  &
-                /,"      <e2>=",1pd12.3,         &
-                  "  >>> we,wb,wl=",3d12.3," <<<",/)') &
-                      iterm,itrf0,iters,asl,we,wb,wl
-        close(11)
-      end if
-!
-      return
-      end subroutine escorr
-!
-!
-!-----------------------------------------------------------------------
-      subroutine escsol (ss,xx,rsdl,iters)
-!------------------------**-R-------------------------------------------
-!   call cresmd is called
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-      include 'param_A23A.h' 
-!     parameter  (nob2=19,iblk2=1)
-!*----------------------------------------------------------------------
-      real(C_DOUBLE),dimension(mxyz) :: ss,xx
-      real(C_DOUBLE) rsdl
-      integer(C_INT) iters
-!***                                      ! escsol routine
-      real(C_DOUBLE),dimension(mxyz,nob2) :: aa       !!<--first defined
-      integer(C_INT),dimension(mxyz,nob2) :: na 
-      integer(C_INT) nobx
-!
-      integer(C_INT) ipr(10)
-      real(C_DOUBLE) rpr(10),eps
-!*----------------------------------------------------------------------
-      integer(C_INT) ijk,itrm,ierr,iwrt
-      real(C_DOUBLE) wsq
-!
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-!
-      integer(C_INT) io_pe
-      common/iope66/ io_pe
-!
-!***********************************************************************
-!  the initial guess (xx) and the source (ss).
-!***********************************************************************
-!     ++++++++++
-      nobx= nob2  !!<--used in /escoef/, /cresmd/
-!     ++++++++++
-!                 define the cfp matrix
-!-------------------------------------------------------------------
-      call escoef (aa,na) 
-!-------------------------------------------------------------------
-!
-      if(it.le.1) then
-         itrm = 300
-      else
-         itrm = 150  ! itersx
-      end if
-      eps  = 1.0d-3
-!
-      ipr(1) = itrm
-      rpr(1) = eps
-!                                       solve the equation
-!
-      call cresmd (ss,xx,aa,na,nobx,ipr,rpr,ierr)
-!                  ++ out           +++ +++
-!
-      iters = ipr(2)
-      rsdl  = rpr(2)
-!
-!     if(ierr.ne.0) then
-      if(iwrt(it,nha).eq.0) then
-        wsq= 0
-!
-        do ijk= 1,mxyz 
-        wsq= wsq +xx(ijk)**2 
-        end do
-!
-        wsq= sqrt(wsq/mxyz)
-!
-        if(io_pe.eq.1) then
-!       if(.false.) then
-          open (unit=11,file=praefixc//'.11'//suffix2,             & 
-                status='unknown',position='append',form='formatted')
-!
-!     ipr(1) = itrm
-!     rpr(1) = eps = 1.0d-3
-          write(11,'("#(cresmd-esc)  it=",i5,";  iters,ierr=",i3,i5,    &
-                   " (in ",f6.3," sec); rsdl=",1pd13.5,"; <p>=",d13.5)') &
-                                           it,iters,ierr,rpr(3),rsdl,wsq
-        end if
-      end if
-!
-      return
-      end subroutine escsol
-!
-!
-!-----------------------------------------------------------------------
-      subroutine escoef (aa,na) 
-!-----------------------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-      include 'param_A23A.h'
-!
-!     parameter  (nob2=19,iblk2=1)
-!*----------------------------------------------------------------
-      real(C_DOUBLE),dimension(mxyz,nob2) :: aa
-      integer(C_INT),dimension(mxyz,nob2) :: na 
-! 
-      real(C_DOUBLE),dimension(nob2) :: ca
-      integer(C_INT),dimension(nob2) :: lai,laj,lak
-      integer(C_INT) lxyz
-!*------------------------------------------------------------------
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                          ex,ey,ez,bx,by,bz,       &
-                                          ex0,ey0,ez0,bx0,by0,bz0, &
-                                          qix,qiy,qiz,qex,qey,qez, &
-                                          emx,emy,emz,qi,qe,amu,avhh, &
-                                          gnu
-      common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
-      common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
-      common/srimp8/ amu,avhh
-      common/dragcf/ gnu
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: bxa,bya,bza
-!
-      integer(C_INT) ifilxs,ifilys,ifilzs
-      common/damper/ ifilxs,ifilys,ifilzs
-!
-      real(C_DOUBLE),dimension(0:my) :: filt
-      common/bpfilt/ filt
-!------------------------------------------------------------------
-!
-      integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
-!
-      real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,   &
-                     dx,dy,dz
-      common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),            &
-                     hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
-!
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
-                     nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
-                     itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
-                     nha,nplot,nhist
-!
-      real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec
-      common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
-                     qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
-                     q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
-                     qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
-                     efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
-                     edec(3000,12)
-!
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ni,ne
-!
-      integer(C_INT) i,j,k,ii,jj,kk,m,symb,symn,symp
-      real(C_DOUBLE) bss1,bss2,dtic,dtic2,rax,ray,raz,dtice,dtice2,  &
-                     hxhy4,hxhz4,hyhz4,                              &
-                     aele3,agam2,akap1,akap2,akap3,akga2,akae1,      &
-                     bss2a,bss2b,bss2c,bss2d
-!
-!*----------------------------------------------------------------------
-!****************************************
-!*  Define the whole cfp matrix.        *
-!****************************************
-!  only interior points
-!
-      do k= 0,mz-1
-      do j= 0,my
-      do i= 0,mx-1
-      bxa(i,j,k)= aimpl*bx(i,j,k) +(1.d0-aimpl)*bx0(i,j,k) +bxc
-      bya(i,j,k)= aimpl*by(i,j,k) +(1.d0-aimpl)*by0(i,j,k) +byc
-      bza(i,j,k)= aimpl*bz(i,j,k) +(1.d0-aimpl)*bz0(i,j,k) +bzc
-      end do                            !<-- bxc-bzc is added
-      end do
-      end do
-!
-      call outmesh3 (bxa,bya,bza)
-!     call outmesh1 (qi)
-!     call outmesh1 (qe)
-!
-      symb= +1 
-      call filt3e (bxa,bya,bza,bxc,byc,bzc,ifilx,ifily,ifilz,symb)
-!
-      symn= -1                            !<-- qi, qe are filtered
-!     call filt1p (qi, ifilxs,ifilys,ifilzs,symn)  !<<- ifilxs=3 ??
-!     call filt1p (qe, ifilxs,ifilys,ifilzs,symn)
-      call filt1p (gnu,ifilxs,ifilys,ifilzs,symp)
-!
-!
-!-------------------------------------------------
-!*  Coefficients  (divided by /dx, /dx2...) 
-!-------------------------------------------------
-!
-      do k= 0,mz-1
-      do j= 0,my
-      do i= 0,mx-1 
-      ni(i,j,k)= abs(qi(i,j,k))
-      ne(i,j,k)= abs(qe(i,j,k))
-      end do
-      end do
-      end do
-!
-!                               <-- escorr
-      do k= 0,mz-1 
-      do j= 0,my 
-!
-! ------- boundary points ------------
-!*    absolute position used.
-!        call escbnd (lai,laj,lak,loc,ca)
-!***
-      if(j.eq.0) then
-!*
-        do i= 0,mx-1 
-!* side 1:               for phi(i,0,k): to the left
-!
-        ca(1) =  1.d0   !  nob2 
-        ca(2) =  1.d0
-!*
-        lxyz= i +mx*(0 +myA*k)
-!
-        aa(lxyz+1,1) = ca(1)  ! aa( ,m=1)
-        na(lxyz+1,1) = i +mx*(0 +myA*k) +1
-!
-        aa(lxyz+1,2) = ca(2)  ! aa( ,m=2)
-        na(lxyz+1,2) = i +mx*(1 +myA*k) +1 
-!                           
-        do m= 3,nob2
-        aa(lxyz+1,m)= 0
-        na(lxyz+1,m)= lxyz +1 
-        end do
-        end do
-!***
-!
-      else if(j.gt.0 .and. j.lt.my) then 
-!
-      hxhy4= hx2*hy2
-      hxhz4= hx2*hz2
-      hyhz4= hy2*hz2
-!
-      do i= 0,mx-1 
-      bss2= bxa(i,j,k)**2 +bya(i,j,k)**2 +bza(i,j,k)**2
-      bss1= sqrt(bss2)
-!
-      dtic  = hdt*qwi*bss1   !<-- dtic= (1/2)dt*(q/m)_i*B(x)
-      dtic2 = dtic**2
-!
-      dtice = hdt*qwe*bss1
-      dtice2= dtice**2
-!
-      rax= bxa(i,j,k)/bss1
-      ray= bya(i,j,k)/bss1
-      raz= bza(i,j,k)/bss1
-!
-!  there are twice the b*b off diagonal terms for akap2+agam2
-!  here, akap3 and aele3 have vector cross products
-!     cjx(i,j,k)= qix(i,j,k) +qex(i,j,k) &
-!           +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)   &
-!                                                /(1.d0+dtic2)  &
-!           +qe(i,j,k)*adt*qwe*(aex +dtice2*ehh*rax +dtice*ebx) &
-!                                                /(1.d0+dtice2) &
-!     cjx(i,j,k)= qix(i,j,k) +qex(i,j,k) &
-!           +qi(i,j,k)*adt*qwi*(aex +dtic2*ehh*rax +dtic*ebx)  &
-!                                                /(1.d0+dtic2) &
-!           +qe(i,j,k)*(adt*qwe*ehh*rax/drag + ebx/bsa1)
-!
-      akap1 = qqwi*ahdt2        /((1 +dtic2)*q0)
-      akae1 = qqwe*ahdt2      /((1 +dtice2)*q0)
-!
-      akap2 = qqwi*ahdt2*dtic2/((1 +dtic2)*q0)
-      agam2 = qqwe*ahdt2*dtice2/((1 +dtice2)*q0)
-      akga2 = akap2*ni(i,j,k) +agam2*ne(i,j,k)
-!
-      akap3 = qqwi*ahdt2*dtic /((1 +dtic2)*q0) 
-      aele3 = qqwe*ahdt2*dtice/((1 +dtice2)*q0)
-!
-!* (i-1,j-1,k) 
-!
-      lai(1)= i-1
-      laj(1)= j-1
-      lak(1)= k
-       ca(1)=  2*akga2*rax*ray/hxhy4
-!
-!* (i-1,j,k-1) 
-!
-      lai(2)= i-1
-      laj(2)= j
-      lak(2)= k-1
-       ca(2)= 2*akga2*rax*raz/hxhz4
-!
-!* (i-1,j,k) 
-!
-      lai(3)= i-1 
-      laj(3)= j
-      lak(3)= k
-       bss2a= bxa(i,j,k+1)**2 +bya(i,j,k+1)**2 +bza(i,j,k+1)**2
-       bss2b= bxa(i,j,k-1)**2 +bya(i,j,k-1)**2 +bza(i,j,k-1)**2
-       bss2c= bxa(i,j+1,k)**2 +bya(i,j+1,k)**2 +bza(i,j+1,k)**2
-       bss2d= bxa(i,j-1,k)**2 +bya(i,j-1,k)**2 +bza(i,j-1,k)**2
-!             ...... 
-       ca(3)= 1/hxsq                    &
-                 +akap1*ni(i,j,k)/hxsq  &
-                 -akap1*(ni(i+1,j,k)-ni(i-1,j,k))/hx2**2  &
-                 +akae1*ne(i,j,k)/hxsq  &
-                 -akae1*(ne(i+1,j,k)-ne(i-1,j,k))/hx2**2  &
-!                                   ! akga2= ni()*dtic2/() +ne()
-                 +akga2*rax**2/hxsq     &
-!                                          
-                 -akap3/hx2   &
-                    *(( bya(i,j,k+1)*ni(i,j,k+1)/bss2a       &
-                       -bya(i,j,k-1)*ni(i,j,k-1)/bss2b)/hz2  & 
-                      -(bza(i,j+1,k)*ni(i,j+1,k)/bss2c       &
-                       -bza(i,j-1,k)*ni(i,j-1,k)/bss2d)/hy2) &
-                 -aele3/hx2   &
-                    *(( bya(i,j,k+1)*ne(i,j,k+1)/bss2a       &
-                       -bya(i,j,k-1)*ne(i,j,k-1)/bss2b)/hz2  &
-                      -(bza(i,j+1,k)*ne(i,j+1,k)/bss2c       &
-                       -bza(i,j-1,k)*ne(i,j-1,k)/bss2d)/hy2) 
-!                                                1/B term
-!* (i-1,j,k+1) 
-!
-      lai(4)= i-1
-      laj(4)= j 
-      lak(4)= k+1
-       ca(4)= -2*akga2*rax*raz/hxhz4
-!
-!* (i-1,j+1,k)
-!
-      lai(5)= i-1
-      laj(5)= j+1
-      lak(5)= k 
-       ca(5)= -2*akga2*rax*ray/hxhy4 
-! 
-!* (i,j-1,k-1) 
-!
-      lai(6)= i
-      laj(6)= j-1
-      lak(6)= k-1
-       ca(6)=  2*akga2*ray*raz/hyhz4 
-!
-!* (i,j-1,k) 
-!
-      lai(7)= i
-      laj(7)= j-1 
-      lak(7)= k
-       bss2a= bxa(i+1,j,k)**2 +bya(i+1,j,k)**2 +bza(i+1,j,k)**2
-       bss2b= bxa(i-1,j,k)**2 +bya(i-1,j,k)**2 +bza(i-1,j,k)**2
-       bss2c= bxa(i,j,k+1)**2 +bya(i,j,k+1)**2 +bza(i,j,k+1)**2
-       bss2d= bxa(i,j,k-1)**2 +bya(i,j,k-1)**2 +bza(i,j,k-1)**2
-!
-!             ...... 
-       ca(7)= 1/hysq                    &
-                 +akap1*ni(i,j,k)/hysq  &
-                 -akap1*(ni(i,j+1,k)-ni(i,j-1,k))/hy2**2  &
-                 +akae1*ne(i,j,k)/hysq  &
-                 -akae1*(ne(i,j+1,k)-ne(i,j-1,k))/hy2**2  &
-!
-                 +akga2*ray**2/hysq     &
-!
-                 -akap3/hy2   & ! akap3
-                    *(( bza(i+1,j,k)*ni(i+1,j,k)/bss2a       &
-                       -bza(i-1,j,k)*ni(i-1,j,k)/bss2b)/hx2  & 
-                      -(bxa(i,j,k+1)*ni(i,j,k+1)/bss2c       &
-                       -bxa(i,j,k-1)*ni(i,j,k-1)/bss2d)/hz2) &
-                 -aele3/hy2   & ! aele3
-                    *(( bza(i+1,j,k)*ne(i+1,j,k)/bss2a       &
-                       -bza(i-1,j,k)*ne(i-1,j,k)/bss2b)/hx2  &
-                      -(bxa(i,j,k+1)*ne(i,j,k+1)/bss2c       &
-                       -bxa(i,j,k-1)*ne(i,j,k-1)/bss2d)/hz2) 
-!
-!* (i,j-1,k+1) 
-!
-      lai(8)= i
-      laj(8)= j-1
-      lak(8)= k+1
-       ca(8)= -2*akga2*ray*raz/hyhz4
-! 
-!* (i,j,k-1) 
-!
-      lai(9)= i
-      laj(9)= j
-      lak(9)= k-1 
-       bss2a= bxa(i,j+1,k)**2 +bya(i,j+1,k)**2 +bza(i,j+1,k)**2
-       bss2b= bxa(i,j-1,k)**2 +bya(i,j-1,k)**2 +bza(i,j-1,k)**2
-       bss2c= bxa(i+1,j,k)**2 +bya(i+1,j,k)**2 +bza(i+1,j,k)**2
-       bss2d= bxa(i-1,j,k)**2 +bya(i-1,j,k)**2 +bza(i-1,j,k)**2
-!
-!             ...... 
-       ca(9)= 1/hzsq                    &
-                 +akap1*ni(i,j,k)/hzsq  &
-                 -akap1*(ni(i,j,k+1)-ni(i,j,k-1))/hz2**2  &
-                 +akae1*ne(i,j,k)/hzsq  &
-                 -akae1*(ne(i,j,k+1)-ne(i,j,k-1))/hz2**2  &
-!
-                 +akga2*raz**2/hzsq     &
-!
-                 -akap3/hz2   &
-                    *(( bxa(i,j+1,k)*ni(i,j+1,k)/bss2a       &
-                       -bxa(i,j-1,k)*ni(i,j-1,k)/bss2b)/hy2  & 
-                      -(bya(i+1,j,k)*ni(i+1,j,k)/bss2c       &
-                       -bya(i-1,j,k)*ni(i-1,j,k)/bss2d)/hx2) &
-                 -aele3/hz2   &
-                    *(( bxa(i,j+1,k)*ne(i,j+1,k)/bss2a       &
-                       -bxa(i,j-1,k)*ne(i,j-1,k)/bss2b)/hy2  &
-                      -(bya(i+1,j,k)*ne(i+1,j,k)/bss2c       &
-                       -bya(i-1,j,k)*ne(i-1,j,k)/bss2d)/hx2)
-!
-!* (i,j,k) 
-!
-      lai(10)= i
-      laj(10)= j
-      lak(10)= k
-!
-       ca(10)= -2.d0/hxsq -2.d0/hysq -2.d0/hzsq               & ! phi
-               -2.d0*akap1*ni(i,j,k)*(1/hxsq +1/hysq +1/hzsq) & ! ni/(1+th^2)
-               -2.d0*akae1*ne(i,j,k)*(1/hxsq +1/hysq +1/hzsq) & ! ne/(1+th^2)
-               -2.d0*akga2*(rax**2/hxsq +ray**2/hysq +raz**2/hzsq)
-!   akap3, aele3 are diagonal but off-centered
-!
-!* (i,j,k+1) 
-!
-      lai(11)= i
-      laj(11)= j
-      lak(11)= k+1
-       bss2a= bxa(i,j+1,k)**2 +bya(i,j+1,k)**2 +bza(i,j+1,k)**2
-       bss2b= bxa(i,j-1,k)**2 +bya(i,j-1,k)**2 +bza(i,j-1,k)**2
-       bss2c= bxa(i+1,j,k)**2 +bya(i+1,j,k)**2 +bza(i+1,j,k)**2
-       bss2d= bxa(i-1,j,k)**2 +bya(i-1,j,k)**2 +bza(i-1,j,k)**2
-!              ...... 
-       ca(11)= 1/hzsq                   & ! 1
-                 +akap1*ni(i,j,k)/hzsq  &
-                 +akap1*(ni(i,j,k+1)-ni(i,j,k-1))/hz2**2  &
-                 +akae1*ne(i,j,k)/hzsq  &
-                 +akae1*(ne(i,j,k+1)-ne(i,j,k-1))/hz2**2  &
-!
-                 +akga2*raz**2/hzsq     & ! akap2+agam2
-!
-                 +akap3/hz2   & 
-                    *(( bxa(i,j+1,k)*ni(i,j+1,k)/bss2a       &
-                       -bxa(i,j-1,k)*ni(i,j-1,k)/bss2b)/hy2  & 
-                      -(bya(i+1,j,k)*ni(i+1,j,k)/bss2c       &
-                       -bya(i-1,j,k)*ni(i-1,j,k)/bss2d)/hx2) &
-                 +aele3/hz2   &
-                    *(( bxa(i,j+1,k)*ne(i,j+1,k)/bss2a       &
-                       -bxa(i,j-1,k)*ne(i,j-1,k)/bss2b)/hy2  &
-                      -(bya(i+1,j,k)*ne(i+1,j,k)/bss2c       &
-                       -bya(i-1,j,k)*ne(i-1,j,k)/bss2d)/hx2)
-!
-!* (i,j+1,k-1) 
-!
-      lai(12)= i
-      laj(12)= j+1
-      lak(12)= k-1
-       ca(12)= -2*akga2*ray*raz/hyhz4
-!                                               
-!* (i,j+1,k) 
-!
-      lai(13)= i
-      laj(13)= j+1 
-      lak(13)= k
-       bss2a= bxa(i+1,j,k)**2 +bya(i+1,j,k)**2 +bza(i+1,j,k)**2
-       bss2b= bxa(i-1,j,k)**2 +bya(i-1,j,k)**2 +bza(i-1,j,k)**2
-       bss2c= bxa(i,j,k+1)**2 +bya(i,j,k+1)**2 +bza(i,j,k+1)**2
-       bss2d= bxa(i,j,k-1)**2 +bya(i,j,k-1)**2 +bza(i,j,k-1)**2
-!
-       ca(13)= 1/hysq                   &
-                 +akap1*ni(i,j,k)/hysq  &
-                 +akap1*(ni(i,j+1,k)-ni(i,j-1,k))/hy2**2  &
-                 +akae1*ne(i,j,k)/hysq  &
-                 +akae1*(ne(i,j+1,k)-ne(i,j-1,k))/hy2**2  &
-!
-                 +akga2*ray**2/hysq     &
-!
-                 +akap3/hy2   &
-                    *(( bza(i+1,j,k)*ni(i+1,j,k)/bss2a       &
-                       -bza(i-1,j,k)*ni(i-1,j,k)/bss2b)/hx2  & 
-                      -(bxa(i,j,k+1)*ni(i,j,k+1)/bss2c       &
-                       -bxa(i,j,k-1)*ni(i,j,k-1)/bss2d)/hz2) &
-                 +aele3/hy2   &
-                    *(( bza(i+1,j,k)*ne(i+1,j,k)/bss2a       &
-                       -bza(i-1,j,k)*ne(i-1,j,k)/bss2b)/hx2  &
-                      -(bxa(i,j,k+1)*ne(i,j,k+1)/bss2c       &
-                       -bxa(i,j,k-1)*ne(i,j,k-1)/bss2d)/hz2) 
-!
-!* (i,j+1,k+1) 
-!
-      lai(14)= i 
-      laj(14)= j+1
-      lak(14)= k+1
-       ca(14)=  2*akga2*ray*raz/hyhz4
-!
-!* (i+1,j-1,k)  
-!
-      lai(15)= i+1
-      laj(15)= j-1
-      lak(15)= k
-       ca(15)= -2*akga2*rax*ray/hxhy4
-! 
-!* (i+1,j,k-1) 
-!
-      lai(16)= i+1
-      laj(16)= j
-      lak(16)= k-1
-       ca(16)= -2*akga2*rax*raz/hxhz4
-! 
-!* (i+1,j,k) 
-!
-      lai(17)= i+1 
-      laj(17)= j 
-      lak(17)= k
-       bss2a= bxa(i,j,k+1)**2 +bya(i,j,k+1)**2 +bza(i,j,k+1)**2
-       bss2b= bxa(i,j,k-1)**2 +bya(i,j,k-1)**2 +bza(i,j,k-1)**2
-       bss2c= bxa(i,j+1,k)**2 +bya(i,j+1,k)**2 +bza(i,j+1,k)**2
-       bss2d= bxa(i,j-1,k)**2 +bya(i,j-1,k)**2 +bza(i,j-1,k)**2
-!              ...... 
-       ca(17)= 1/hxsq                   &        
-                 +akap1*ni(i,j,k)/hxsq  &
-                 +akap1*(ni(i+1,j,k)-ni(i-1,j,k))/hx2**2  &
-                 +akae1*ne(i,j,k)/hxsq  &
-                 +akae1*(ne(i+1,j,k)-ne(i-1,j,k))/hx2**2  &
-!
-                 +akga2*rax**2/hxsq     &
-!
-                 +akap3/hx2   &
-                    *(( bya(i,j,k+1)*ni(i,j,k+1)/bss2a       &
-                       -bya(i,j,k-1)*ni(i,j,k-1)/bss2b)/hz2  & 
-                      -(bza(i,j+1,k)*ni(i,j+1,k)/bss2c       &
-                       -bza(i,j-1,k)*ni(i,j-1,k)/bss2d)/hy2) &
-                 +aele3/hx2   &
-                    *(( bya(i,j,k+1)*ne(i,j,k+1)/bss2a       &
-                       -bya(i,j,k-1)*ne(i,j,k-1)/bss2b)/hz2  &
-                      -(bza(i,j+1,k)*ne(i,j+1,k)/bss2c       &
-                       -bza(i,j-1,k)*ne(i,j-1,k)/bss2d)/hy2)
-!
-!* (i+1,j,k+1) 
-!
-      lai(18)= i+1
-      laj(18)= j
-      lak(18)= k+1
-       ca(18)=  2*akga2*rax*raz/hxhz4
-! 
-!* (i+1,j+1,k) 
-!
-      lai(19)= i+1
-      laj(19)= j+1
-      lak(19)= k
-       ca(19)=  2*akga2*rax*ray/hxhy4
-! 
-!*
-      lxyz= i +mx*(j +myA*k)
-!
-      do m= 1,nob2
-      ii= pxc(lai(m))
-      jj=     laj(m)              !!<-- bound, laj()=0-my
-      kk= pzc(lak(m))
-!
-      aa(lxyz+1,m) = ca(m)        !<-- i=0,j=0,k=0 lxyz+1= mx
-      na(lxyz+1,m) = ii +mx*(jj +myA*kk) +1
-      end do
-      end do
-!
-!***
-      else if(j.eq.my) then
-!
-        do i= 0,mx-1
-!
-!* side 2:            for phi(i,my,k): to the right
-!
-        ca(1) =  1.d0
-        ca(2) =  1.d0
-!*
-        lxyz= i +mx*(my +myA*k)  !<-- (i,my,k)
-!
-        aa(lxyz+1,1) = ca(1)  ! aa( ,m=1)
-        na(lxyz+1,1) = i +mx*(my-1 +myA*k) +1
-!
-        aa(lxyz+1,2) = ca(2)  ! aa( ,m=2)
-        na(lxyz+1,2) = i +mx*(my   +myA*k) +1
-!
-        do m= 3,nob2
-        aa(lxyz+1,m)= 0
-        na(lxyz+1,m)= lxyz +1 
-        end do
-        end do
-!***
-      end if
-      end do 
-      end do 
-!
-      return
-      end subroutine escoef
-!
-!
 !***********************************************************************
 !*    The Poisson solver which uses /bcgsts/ matrix solver.            *
 !***********************************************************************
@@ -7635,7 +6680,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------------
@@ -7736,7 +6781,7 @@
 !-----------------------------------*******-----------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------
@@ -7761,10 +6806,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -7971,7 +7016,7 @@
 !----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !     parameter  (nob2=19) or (nob3=7)
 ! -----------------------------------------------------------------
@@ -7990,10 +7035,10 @@
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !***
@@ -8078,7 +7123,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -8146,7 +7191,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -8223,8 +7268,8 @@
       conv= sres/(srhs +1.d-15)  ! residue /rhs(b)
 !
 !     write(11,900) itr,sres,conv,avex
-! 900 format(1h ,'#(crm)  itr=',i3,'  res=',1pe12.5,', res/rhs=',
-!    *       e12.5,', <x>=',e12.5)
+! 900 format(1h ,'#(crm)  itr=',i3,'  res=',1pd12.5,', res/rhs=',
+!    *       d12.5,', <x>=',d12.5)
 !
 !                                 ** successfully converged **
       if(conv.lt.eps) then
@@ -8303,7 +7348,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
 !     parameter  (nob2=19)(nob3=7)
 !***                           one array mxyz
@@ -8346,7 +7391,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                                      ex,ey,ez,ax,ay,az
@@ -8547,7 +7592,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: q,a
       integer(C_INT) ifilx,ifily,ifilz,sym
@@ -8684,7 +7729,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
@@ -8716,10 +7761,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -9013,7 +8058,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
       common/diagp2/ fvx,fvy,fvz
@@ -9021,10 +8066,10 @@
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -9112,7 +8157,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -9136,10 +8181,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -9284,7 +8329,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
                                        xe,ye,ze,vxe,vye,vze
@@ -9319,10 +8364,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -9539,7 +8584,7 @@
 !
         write(11,293) (i,gx(i),gy(i),gz(i),i=-1,0) 
         write(11,293) (i,gx(i),gy(i),gz(i),i=1,mx+1) 
-        write(11,297) (i,gy(i),i=mx+2,my+2)
+        write(11,297) (i,gy(i),i=mx+2,my+1)
   293   format(i5,1p3d12.3)
   297   format(i5,12x,1pd12.3)
 !
@@ -9584,7 +8629,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'(/," hx=",1pd15.7,",  hy=",d15.7,",  hz=",d15.7,/)') &
+        write(11,'(" hx=",1pd15.7,",  hy=",d15.7,",  hz=",d15.7,/)') &
                                                           hx,hy,hz
       end if
 !
@@ -9772,7 +8817,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE) qmult,wmult
@@ -9792,10 +8837,10 @@
       common/ptable/ gx(-1:mx+2),gy(-1:my+1),gz(-1:mz+2),      &
                      hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,dx,dy,dz
 ! 
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -10119,7 +9164,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
@@ -10128,10 +9173,10 @@
       integer(C_INT) npr,MPIerror
 !
 !----------------------------------------------------------------------
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -10182,7 +9227,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !----------------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,xe,ye,ze
@@ -10204,7 +9249,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE) fun1,v
 !
@@ -10219,7 +9264,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE) fun2,v,vrg1
       common /vring/ vrg1
@@ -10235,17 +9280,17 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
 !  prof= max(1.d0 -arb*(r/rwd)**2, 0.d0) 
       real(C_DOUBLE) funr,r,prof
       real(C_DOUBLE) arb,zcent,ycent1,ycent2,Ez00,vrg1
       common/profl/  arb,zcent,ycent1,ycent2,Ez00
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -10278,7 +9323,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ir,iq
       common/ranfa/ ir
@@ -10296,7 +9341,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ir  ! iand is a generic function
       real(C_DOUBLE) ranf,x
@@ -10319,7 +9364,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ir
       real(C_DOUBLE) ranfp,x
@@ -10342,7 +9387,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
 !     parameter   (nhistm=54)
       integer(C_INT) io_pe
@@ -10353,10 +9398,10 @@
 !
       character(len=54) :: elab(nhistm)
 !*
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -10510,12 +9555,12 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -10558,7 +9603,7 @@
       use, intrinsic :: iso_c_binding
 !
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
 !--------------------------------------------
@@ -10587,10 +9632,10 @@
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
-      integer(C_INT) it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
                      nha,nplot,nhist
-      common/parm1/  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,     &
+      common/parm1/  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec(4),nfwrt,npwrt,      &
                      nha,nplot,nhist
 !
@@ -10725,19 +9770,22 @@
 !**
 ! Data dump for restart
 !
-        open (unit=12,file=praefixc//'.12'//suffix2,form='unformatted')
-!                                     ++++++++ new
+        open (unit=12,file=praefixc//'.12'//suffix2,           &
+                            status='replace',form='unformatted')
+!                            ++++++++ for write
 !
-        write(12)  it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,       &
-                   itermx,iterfx,itersx,nspec,            &
+        write(12)  it,ldec,iaver,ifilx,ifily,ifilz,iloadp,           &
+                   itermx,iterfx,itersx,(nspec(i),i=1,4),            &
                    nfwrt,npwrt,nha,nplot,nhist
         write(12)  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,     &
-                   qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,         &
+                   (qspec(i),i=1,4),(wspec(i),i=1,4),                &
+                   veth,te_by_ti,wce_by_wpe,thb,         &
                    rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,        &
                    q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,    &
-                   qqwi,qqwe,vthx,vthz,vdr,vbeam,&
+                   qqwi,qqwe,(vthx(i),i=1,4),(vthz(i),i=1,4),        &
+                   (vdr(i),i=1,4),(vbeam(i),i=1,4),&
                    efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,  &
-                   edec
+                   ((edec(i,j),i=1,3000),j=1,4)
         write(12)  tdec
 !
         write(12)  ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
@@ -10751,11 +9799,11 @@
         write(12)  qmulti,wmulti,qmulte,wmulte
         write(12)  npr 
 !
-        write(12)  xxi,yyi,zzi,vvxi,vvyi,vvzi
+        write(12)  xxi,yyi,zzi,vvxi,vvyi,vvzi   !<- complete if all PE
         write(12)  xxe,yye,zze,vvxe,vvye,vvze
 !
         close(12)
-!**
+!
         write(11,'("** Restrt file is created FT12...",/)') 
         close(11)
       end if
@@ -10772,17 +9820,19 @@
  1000 continue
       open (unit=12,file=praefixc//'.12'//suffix1,form='unformatted')
 !                                   ++++++++ old
-      read(12,end=700) &
-                it,it0,ldec,iaver,ifilx,ifily,ifilz,iloadp,       &
-                itermx,iterfx,itersx,nspec,            &
-                nfwrt,npwrt,nha,nplot,nhist
-      read(12)  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,     &
-                qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,         &
-                rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,        &
-                q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,    &
-                qqwi,qqwe,vthx,vthz,vdr,vbeam,&
-                efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,  &
-                edec
+!
+      read(12) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,           &
+               itermx,iterfx,itersx,(nspec(i),i=1,4),            &
+               nfwrt,npwrt,nha,nplot,nhist
+      read(12) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,     &
+               (qspec(i),i=1,4),(wspec(i),i=1,4),                &
+               veth,te_by_ti,wce_by_wpe,thb,         &
+               rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,        &
+               q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,    &
+               qqwi,qqwe,(vthx(i),i=1,4),(vthz(i),i=1,4),        &
+               (vdr(i),i=1,4),(vbeam(i),i=1,4),&
+               efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,  &
+               ((edec(i,j),i=1,3000),j=1,4)
       read(12)  tdec
 !
       read(12)  ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
@@ -10796,7 +9846,7 @@
       read(12)  qmulti,wmulti,qmulte,wmulte
       read(12)  npr
 !
-      read(12)  xi,yi,zi,vxi,vyi,vzi
+      read(12)  xi,yi,zi,vxi,vyi,vzi    !<- complete set
       read(12)  xe,ye,ze,vxe,vye,vze
 !
       close(12)
@@ -10842,6 +9892,8 @@
         end do
         end do
         end do
+!
+        close(11)
       end if
 !
 !  Only the ipar node must have real data, is null otherwise
@@ -10878,11 +9930,6 @@
       end if  
 !**
       return
-!
-  700 write(06,*) '% Stop at restart read(12)...' 
-      stop
-!
-      return
       end subroutine restrt
 !
 !
@@ -10891,7 +9938,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       character(len=8)  :: label(8),label1(8)
       character(len=10) :: date_now,date_now1
@@ -10916,7 +9963,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE) time1,ts
       common/headr2/ time1
@@ -10932,7 +9979,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       character(len=8) h
 !
@@ -10965,7 +10012,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -11001,7 +10048,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -11055,7 +10102,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
@@ -11295,7 +10342,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_float),dimension(100000) :: x,y,z
 !          +++++++    
@@ -11332,7 +10379,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
 !          +++++++
@@ -11537,7 +10584,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !*
       integer  n1
       real(C_DOUBLE)   time1
@@ -11731,7 +10778,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_float)  ex(mx,myA,mz),ey(mx,myA,mz),ez(mx,myA,mz),  &
                      exc,eyc,ezc,xmax,ymax,zmax
@@ -11932,7 +10979,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_A23A.h' 
+      include 'param_080A.h' 
 !
       real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
       real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
