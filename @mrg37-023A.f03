@@ -1,28 +1,24 @@
-!***********************************************************************
+!*** Late Version: 10/28/2024 ******************* Fortran 2003/2008 ****
 !*                                                                     *
-!*    ## Macro-particle Simulation Code for Magnetic Reconnection ##   *
-!*      << Fully-implicit scheme with kinetic ions and electrons >>    *
+!*   ## Macro-particle Kinetic Simulation for Solar EM Simulation ##   *
+!*     << Fully-implicit scheme with kinetic ions and electrons >>     *
 !*                                                                     *
-!*      Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).       *
-!*             2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).       *
-!*             3) M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).     *
-!*             4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).     *
-!*             5) H.Shimazu, M.Tanaka, S.Machida, J.Geophys.Res.,      *
-!*                  101, 27565 (1996).                                 *
-!*             6) M.Tanaka, Bulletin of Chubu University (Mar,2022).   *
+!*    Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).         *
+!*           2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).         *
+!*           3) M.Tanaka, Comput.Phys.Comm., vol.87, 117 (1995).       *
+!*           4) M.Tanaka, Comput.Phys.Comm., vol.241, 56 (2019).       *
+!*           5) H.Shimazu, M.Tanaka, S.Machida, J.Geophys.Res.,        *
+!*               101, 27565 (1996).                                    *
+!*           6) M.Tanaka, Bulletin of Chubu University (Mar,2022).     *
 !*                                                                     *
 !*    Simulation files                                                 *
 !*    1. @mrg37_023A.f03: simulation code, job serial number '23'      *
-!*    2. param_080A.h   : parameter file                               *
+!*    2. param_023A.h   : parameter file                               *
 !*    3. rec_3d23A      : Simulation time, box size, parameters of     *
 !*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
 !*    may be used. One should read the reference Ref.2 JCP (1993).     *
-!*                                                                     *
-!*  * Gauss's law must be corrected as errors since divergence term    *
-!*    do accumulate in time steps. This is quite true if a finite      *
-!*    difference scheme of any kind is utilized.                       *
 !*                                                                     *
 !*     The author and maintainer of these simulation codes are by      *
 !*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
@@ -31,7 +27,6 @@
 !*  https://github.com/Mtanaka77/Macro-Particle_Simulation_of_Magnetic_Reconnection *
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
-!**** Late Version:  9/01/2022 ****************** Fortran 2003/2008 ****
 !
 !    @mrg3-A023.f03: Non-periodic in y direction (two-points) and 
 !    periodic (three-points) in x and z directions.
@@ -43,29 +38,28 @@
 !    by using mpi_sendrecv with PE's mx*myA*mz/npc overlaps.
 !
 !    Change in 2022
-!    1) The mpi routines isend and irecv are used for the bounded case,
-!        call isend(sendbuf), call irecv(recvbuf) 
+!    1) The mpi routines isend and irecv are used, i.e., call isend(sendbuf),
+!       call irecv(recvbuf), /wwstbm/ -> /sendrev1/,/semdrev2/.
+!
 !    2) The nearest integer: ip= hxi*rxl(l) +0.5 -> 0.001 - 0.999 -> 0
 !      The sharing is, xx = hxi*rxl(l) -ip  L.1200. 
 !    3) Graphical plots are used in real*4
 !
-!    4) The MPI routine mpi_allgather is with npc parallel processors.
+!    4) The MPI routine mpi_allgather is with parallel processors.
 !    5) Arrays are:
 !     real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ex,ey,ez,...
 !     real(C_DOUBLE),dimension(3,mx,my+1,mz) :: xx in cfpsol routines.
+!
 !    6) The first term of an array starts at 1, np1(1)=1, nz1(1)=1
 !     in the /cfpsol/. The code starts with 0, as np1(1)-1 for particles.
 !
-!    7) 
-!      /cfpsol/, /emcoef/, /wwstbi/j/k/m are in parallel         
-!      /escorr/, /escoef/, /cresmd/, /cresin/, /cressl/, /avmult/
-!                in single execution due to a small exec time
-!      /poissn/, /emcof3/
+!    7) /fulmov/, /cfpsol/, /emcoef/, /wwstbi/j/k/m are in parallel         
+!      execution, /poissn/, /emcof3/ are non-parallel.
 !   
 !    8) The files is created by /fplot3/ and /cplot3/
 !       by this program. They are converted by 'pspdf fortr.77(.ps)' 
 !       on Linux, and is then output as fortr.77.pdf on Windows 10.
-!                                                    May 8, 2022
+!                                                         May 8, 2022
 !
 !    9) They become true if iwrt(it,5).eq.0 or mod(it,5).eq.0
 ! 
@@ -84,11 +78,10 @@
 !-----------------------------------------------------------------------
 !*                                                                     *
 !*     /main/ ------ /trans/                                           *
-!*                        /fulmov/,/fulmv2/                            *
+!*                        /fulmov/                                     *
 !*                              ---> partbc                            *
-!*                              ---> srimp1-srimp4                     *
-!*                        /cfpsol/,/poissn/,/escorr/                   *
-!*                        /diag1/                                      *
+!*                              ---> srimp1-srimp2                     *
+!*                        /cfpsol/,/poissn/,/diag1/                    *
 !*                              ---> fplot3, cplot3                    *
 !*                  /init/ ------ /loadpt/, /readpt/ initally          *
 !*                                                                     *
@@ -101,7 +94,7 @@
 !*  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
-!* $ mpif90 -mcmodel=medium -fPIC @mrg37-021A.f03 -I/opt/fftw3/include -L/opt/fftw3/lib -lfftw3
+!* $ mpif90 -mcmodel=medium -fPIC @mrg37-080A.f03 &> log
 !* $ mpiexec -n number_of_cpu's a.out &
 !-----------------------------------------------------------------------
 !*  Fortrtan 2003/Fortran 2008 by direct write outputs
@@ -114,7 +107,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) rank,size,ipar,ierror,cl_first
@@ -180,7 +173,7 @@
       integer(C_INT) ifilxs,ifilys,ifilzs
       common/damper/ ifilxs,ifilys,ifilzs
 !
-!*  kstart..... used in /init/, /trans/, /fulmov/, in param_080A.h.
+!*  kstart..... used in /init/, /trans/, /fulmov/, in param_023A.h.
 !   Ez00   .... Ez00 x Ba
 !
       namelist/datum0/  kstart,tfinal,cptot,istop
@@ -290,7 +283,7 @@
 !   escorr: nps1(1)= 1, nps2(1)= mx*(my+1)*kd
 !   poissn:
 !  ++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     kd= mz/npc is defined in param_080A.h
+!     kd= mz/npc is defined in param_023A.h
 !
 !             number_of_cpu's
       do k= 1,npc         
@@ -563,7 +556,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
       integer(C_INT) it,interv
 !
 !  Hit is true if mod(it,..)= 0 
@@ -596,7 +589,7 @@
       implicit none
 ! 
       include 'mpif.h'
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) npr,kstart,ipar,size
@@ -886,7 +879,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT) iaver,nav
       real(C_DOUBLE),dimension(mxyzA) :: ex,ey,ez,bx,by,bz,        &
@@ -960,7 +953,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !          +++++++            +++++ 
       real(C_float),dimension(mxyzA) :: cix,ciy,ciz,cex,cey,cez,       &
                                         avex,avey,avez,avbx,avby,avbz, &
@@ -998,7 +991,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: gnu
       common/dragcf/ gnu
@@ -1053,7 +1046,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
@@ -1398,7 +1391,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl
@@ -1639,7 +1632,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe,vxe,vye,vze
       real(C_DOUBLE) wmult 
@@ -1817,7 +1810,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr,ipar,size
@@ -1892,7 +1885,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z
       integer(C_INT) npr,ipar,size
@@ -1962,7 +1955,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr,ipar,size
@@ -2049,7 +2042,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr
@@ -2124,7 +2117,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr
@@ -2204,7 +2197,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vxj,vyj,vzj
       real(C_DOUBLE) qmult
@@ -2410,7 +2403,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !---------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm
@@ -2556,7 +2549,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
@@ -2700,7 +2693,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vhe
@@ -2847,7 +2840,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
 !                              ++++++++++++++++++++
@@ -3079,7 +3072,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -3163,7 +3156,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -3233,7 +3226,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -3317,7 +3310,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -3393,7 +3386,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !*
       integer(C_INT) nobx
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -3728,7 +3721,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) ipar
@@ -4437,7 +4430,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
       include 'mpif.h'
 !
 !     parameter  (nob=15,iblk=3)
@@ -4617,7 +4610,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !***********************************************************************
 !*    Define the whole CFP matrix.                                     *
@@ -5325,7 +5318,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -5397,7 +5390,7 @@
 !       Parallel version in /wwstbs3/ and /wwstbm/
 !
         call wwstbs3 (aa,ja,na,iw,np1,np2,ipar,ierr)
-      end if                         ! iblk in param_080A.h
+      end if                         ! iblk in param_023A.h
       
       call cpu_time (t2)
 !                                      preconditioning
@@ -5486,7 +5479,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob=15)
@@ -5743,7 +5736,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT) ipr(10),ierr,n
       real(C_DOUBLE) rpr(10)
@@ -5787,7 +5780,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar
@@ -5851,7 +5844,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'  !<-- mx,myA,mz,iblk in param_080A.h
+      include 'param_023A.h'  !<-- mx,myA,mz,iblk in param_023A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -5972,7 +5965,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'  !<-- mx,myA,mz,iblk in param_080A.h
+      include 'param_023A.h'  !<-- mx,myA,mz,iblk in param_023A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -6094,7 +6087,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
 !                                     
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa
       integer(C_INT),dimension(1:mxyz3,nob) :: ja
@@ -6192,7 +6185,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3) :: v,w
 !
@@ -6233,7 +6226,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !     parameter  (nob=15)
 !----------------------------------------------------------------------
@@ -6243,7 +6236,6 @@
       integer(C_INT),dimension(1:mxyz3,nob) :: ja
 ! 
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
-      integer(C_INT),dimension(0:npc+1) :: nnz1,nnz2
       integer(C_INT) ipar,rank,i,j,k,ij,ijk 
 !
       real(C_DOUBLE),dimension(mxyz/npc) :: vgx,vgy,vgz,vggx,vggy,vggz
@@ -6261,18 +6253,6 @@
       character(len=8) :: fortr51,fortr61
       common/fortr50/ fortr51(8),fortr61(8)
 !*---------------------------------------------------------------------
-!
-      do i= 1,npc
-      nnz1(i)= nz1(i)
-      nnz2(i)= nz2(i)
-      end do
-!
-      nnz1(1+npc)= nz1(1) 
-      nnz2(1+npc)= nz2(1) 
-!
-      nnz1(0)= nz1(npc) 
-      nnz2(0)= nz2(npc)
-!
 !* Copy an array to overlap the original.
 !
       do i= np1(ipar),np2(ipar)
@@ -6306,35 +6286,9 @@
       vgx(ij)= v(1+ijk) 
       vgy(ij)= v(2+ijk)
       vgz(ij)= v(3+ijk)
-!     vgx(ij)= ijk+1  ! for test only
-!     vgy(ij)= ijk+1
-!     vgz(ij)= ijk+1
       end do
       end do
       end do
-!
-!       open (unit=60+ipar,file=fortr61(ipar), &
-!             status='unknown',position='append',form='formatted')
-!       write(60+ipar,*) 
-!       write(60+ipar,*) '+step it=',it
-!       write(60+ipar,*) 'Original array'
-!       write(60+ipar,*) 'nz1(ipar),nz2(ipar)=',nz1(ipar),nz2(ipar)
-!
-!       ij= 0
-!       do k= nz1(ipar),nz2(ipar)
-!       do j= 1,my+1
-!       do i= 1,mx 
-!       ijk= 3*(i-1 +mx*(j-1 +myA*(k-1)))
-!       ij= ij+1
-!
-!       if(ij.le.10) then
-!       write(60+ipar,710) k,vgx(ij),vgy(ij),vgz(ij)
-! 710   format('k=',i8,'  vgx,vgy,vgz=',3d12.3)
-!       end if
-!       end do
-!       end do
-!       end do
-!       close(60+ipar)
 !
       call sendrev1 (vgx,vggx,rank,mxyz/npc) 
       call sendrev1 (vgy,vggy,rank,mxyz/npc) 
@@ -6342,13 +6296,12 @@
 !
       if(ipar.eq.1) then
         ij= 0
-        do k= nz1(npc),nnz2(npc)
+        do k= nz1(npc),nz2(npc)
         do j= 1,my+1
         do i= 1,mx
 !
         ij= ij +1
         ijk= 3*(i-1 +mx*(j-1 +myA*(k-1)))
-!       ijk= ijk+3*mxyz  ! Copy most right xxleft
 !
         vl(ijk+1)= vggx(ij) 
         vl(ijk+2)= vggy(ij) 
@@ -6365,7 +6318,6 @@
 !
         ij= ij +1
         ijk= 3*(i-1 +mx*(j-1 +myA*(k-1)))
-!       if(ipar.eq.1) ijk= ijk-3*mxyz  ! Copy most left
 !
         vl(ijk+1)= vggx(ij) 
         vl(ijk+2)= vggy(ij) 
@@ -6374,29 +6326,6 @@
         end do
         end do
       end if
-!
-!       open (unit=60+ipar,file=fortr61(ipar), &
-!             status='unknown',position='append',form='formatted')
-!       write(60+ipar,*) 'L -->'
-!       write(60+ipar,*) 'nnz1(ipar-1),nnz2(ipar-1)=',nnz1(ipar-1),nnz2(ipar-1)
-!
-!       ijm= ij
-!       ij= 0
-!       do k= nnz1(ipar-1),nnz2(ipar-1)
-!       do j= 1,my+1
-!       do i= 1,mx
-!       ijk= 3*(i-1 +mx*(j-1 +myA*(k-1)))
-!
-!       ij= ij +1
-!       if(ij.le.5 .or. ij.ge.ijm-4) then
-!         write(60+ipar,770) k,ijk+1,vl(ijk+1),ijk+2,vl(ijk+2), &
-!                            ijk+3,vl(ijk+3)
-! 770     format(i8,2x,i8,d12.3,2x,i8,d12.3,2x,i8,d12.3)
-!       end if
-!       end do
-!       end do
-!       end do
-!       close(60+ipar)
 !
 !*
 !  To the right boundary 
@@ -6412,9 +6341,6 @@
       vgx(ij)= v(1+ijk) 
       vgy(ij)= v(2+ijk)
       vgz(ij)= v(3+ijk)
-!     vgx(ij)= ijk+1   ! for test
-!     vgy(ij)= ijk+1
-!     vgz(ij)= ijk+1
       end do 
       end do
       end do
@@ -6425,13 +6351,12 @@
 !
       if(ipar.eq.npc) then
         ij= 0
-        do k= nnz1(1),nnz2(1) 
+        do k= nz1(1),nz2(1) 
         do j= 1,my+1
         do i= 1,mx
 !
         ij= ij +1
         ijk= 3*(i-1 +mx*(j-1 +myA*(k-1))) ! Can be left or right
-!       ijk= ijk -3*mxyz   ! Copy most left xxright
 ! 
         vl(ijk+1)= vggx(ij) 
         vl(ijk+2)= vggy(ij) 
@@ -6442,13 +6367,12 @@
 !
       else
         ij= 0
-        do k= nnz1(ipar+1),nnz2(ipar+1) 
+        do k= nz1(ipar+1),nz2(ipar+1) 
         do j= 1,my+1
         do i= 1,mx
 !
         ij= ij +1
         ijk= 3*(i-1 +mx*(j-1 +myA*(k-1))) ! Can be left or right
-!       if(ipar.eq.npc) ijk= ijk+3*mxyz   ! Copy most right
 ! 
         vl(ijk+1)= vggx(ij) 
         vl(ijk+2)= vggy(ij) 
@@ -6488,7 +6412,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_080A.h'
+      include   'param_023A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -6535,7 +6459,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_080A.h'
+      include   'param_023A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -6578,7 +6502,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar,i0,ierr
@@ -6633,7 +6557,7 @@
       use, intrinsic :: iso_c_binding
       implicit real(C_DOUBLE) (a-h,o-z)
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
       dimension w0(iblk,iblk),w1(iblk,iblk),w2(iblk,iblk)
 !*                         <-- papam_A13X.h
 !*vdir novector
@@ -6680,7 +6604,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------------
@@ -6781,7 +6705,7 @@
 !-----------------------------------*******-----------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------
@@ -7016,7 +6940,7 @@
 !----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !     parameter  (nob2=19) or (nob3=7)
 ! -----------------------------------------------------------------
@@ -7123,7 +7047,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -7191,7 +7115,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -7348,7 +7272,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
 !     parameter  (nob2=19)(nob3=7)
 !***                           one array mxyz
@@ -7391,7 +7315,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                                      ex,ey,ez,ax,ay,az
@@ -7592,7 +7516,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: q,a
       integer(C_INT) ifilx,ifily,ifilz,sym
@@ -7729,7 +7653,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
@@ -8058,7 +7982,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
       common/diagp2/ fvx,fvy,fvz
@@ -8157,7 +8081,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -8329,7 +8253,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
                                        xe,ye,ze,vxe,vye,vze
@@ -8817,7 +8741,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE) qmult,wmult
@@ -9164,7 +9088,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
@@ -9227,7 +9151,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !----------------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,xe,ye,ze
@@ -9249,7 +9173,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE) fun1,v
 !
@@ -9264,7 +9188,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       real(C_DOUBLE) fun2,v,vrg1
       common /vring/ vrg1
@@ -9280,7 +9204,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
 !  prof= max(1.d0 -arb*(r/rwd)**2, 0.d0) 
       real(C_DOUBLE) funr,r,prof
@@ -9323,7 +9247,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT) ir,iq
       common/ranfa/ ir
@@ -9341,7 +9265,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT) ir  ! iand is a generic function
       real(C_DOUBLE) ranf,x
@@ -9364,7 +9288,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h'
+      include 'param_023A.h'
 !
       integer(C_INT) ir
       real(C_DOUBLE) ranfp,x
@@ -9387,7 +9311,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
 !     parameter   (nhistm=54)
       integer(C_INT) io_pe
@@ -9555,7 +9479,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -9603,7 +9527,7 @@
       use, intrinsic :: iso_c_binding
 !
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
       include 'mpif.h'
 !
 !--------------------------------------------
@@ -9938,7 +9862,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       character(len=8)  :: label(8),label1(8)
       character(len=10) :: date_now,date_now1
@@ -9963,7 +9887,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE) time1,ts
       common/headr2/ time1
@@ -9979,7 +9903,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       character(len=8) h
 !
@@ -10012,7 +9936,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -10048,7 +9972,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -10102,7 +10026,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
@@ -10342,7 +10266,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_float),dimension(100000) :: x,y,z
 !          +++++++    
@@ -10379,7 +10303,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
 !          +++++++
@@ -10584,7 +10508,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !*
       integer  n1
       real(C_DOUBLE)   time1
@@ -10778,7 +10702,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_float)  ex(mx,myA,mz),ey(mx,myA,mz),ez(mx,myA,mz),  &
                      exc,eyc,ezc,xmax,ymax,zmax
@@ -10979,7 +10903,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_080A.h' 
+      include 'param_023A.h' 
 !
       real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
       real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
