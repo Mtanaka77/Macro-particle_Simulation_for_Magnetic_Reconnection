@@ -72,8 +72,9 @@
 !           4            1            4
 !           5            0            0
 !
-!   10) This implicit particle code is free from the Courant condition,
-!       while it is different by explicit codes, Delta_x/Delta_t > 1.
+!   10) The implicit particle code is free from the Courant condition.
+!      Rather it is bound by .not. dt*wce >> 0. It is different from
+!      explicit codes, which must satisfy Delta_x/Delta_t > 1.
 !
 !-----------------------------------------------------------------------
 !*                                                                     *
@@ -717,7 +718,6 @@
       call clocki (walltime1,size,cl_first)
 !
       if(mod(it,5).eq.1 .and. t.ge.tfinal) then
-!
         if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -729,7 +729,6 @@
       end if
 !
       if((walltime1/60.d0).gt.cptot) then
-!
         if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
