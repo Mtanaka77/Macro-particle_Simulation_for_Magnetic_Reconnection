@@ -72,8 +72,8 @@
 !           4            1            4
 !           5            0            0
 !
-!   10) The implicit particle code is free from the Courant condition.
-!      Rather it is bound by .not. dt*wce >> 0. It is different from
+!   10) This implicit particle code is free from the Courant condition.
+!      Rather it is bound by not dt*wce >> 0. It is different from
 !      explicit codes, which must satisfy Delta_x/Delta_t > 1.
 !
 !-----------------------------------------------------------------------
@@ -718,6 +718,7 @@
       call clocki (walltime1,size,cl_first)
 !
       if(mod(it,5).eq.1 .and. t.ge.tfinal) then
+!
         if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -729,6 +730,7 @@
       end if
 !
       if((walltime1/60.d0).gt.cptot) then
+!
         if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -7446,7 +7448,7 @@
 !                       sym= -1: (odd, even,odd)   -1 0 (1) 2 3
 !                       sym=  1: (even,odd,even)
 !***
-      do js= 1,2    ! a(-2) <-> e(2), a(-1) <-> e(1)
+      js= 1         ! a(-2) <-> e(2), a(-1) <-> e(1)
       do k= 0,mz-1  !  ex() to ax() of opposite sign
       do i= 0,mx-1
       ax(i,-js,k)=  sym* ex(i,js,k)
@@ -7454,9 +7456,8 @@
       az(i,-js,k)=  sym* ez(i,js,k)
       end do
       end do
-      end do
 !                       my-2 my-1 (my) my+1 my+2
-      do js= 1,2    ! a(my+2) <-> e(my-2), a(my+1) <-> e(my-1)
+      js= 1        ! a(my+2) <-> e(my-2), a(my+1) <-> e(my-1)
       do k= 0,mz-1 
       do i= 0,mx-1
       ax(i,my+js,k)=  sym* ex(i,my-js,k)
@@ -7464,11 +7465,10 @@
       az(i,my+js,k)=  sym* ez(i,my-js,k)
       end do
       end do
-      end do
 !***
 !
       do k= 0,mz-1
-      do j= 0,my
+      do j= 1,my-1
       do i= 0,mx-1
 !                 j-2 -> -1, j+2 -> my+3
       ex(i,j,k)= -0.0625d0*ax(i,j+2,k) +0.25d0*ax(i,j+1,k) &
@@ -7610,25 +7610,23 @@
 !***
 !                       sym= -1: odd   -1 0 (1) 2 3
 !                       sym=  1: even  
-      do js= -2,-1
+      js= -1
       do k= 0,mz-1
       do i= 0,mx-1
       a(i,js,k)= sym * q(i,2-js,k)
       end do
       end do
-      end do
 !                            my-2 my-1 (my) my+1 my+2
-      do js= 0,1
+      js= 0
       do k= 0,mz-1
       do i= 0,mx-1
       a(i,my+1+js,k)= sym * q(i,my+1-js,k)
       end do
       end do
-      end do
 !***
 !
       do k= 0,mz-1
-      do j= 0,my
+      do j= 1,my-1
       do i= 0,mx-1
 !                j-2 -> -1, j+2 -> my+3
       q(i,j,k)= -0.0625d0*a(i,j+2,k) +0.25d0*a(i,j+1,k) +0.625d0*a(i,j,k) &
