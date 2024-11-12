@@ -648,6 +648,9 @@
       common/irest/ iresrt
       real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4,walltime5
 !
+      real(C_DOUBLE) time1 
+      common/headr2/ time1
+!
 !*----------------------------------------------------------------------
 !***********************************************************************
 !*  1. Initial state only for it= 1                                    *
@@ -748,6 +751,8 @@
       if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
         ldec= ldec +1  ! only at this time
         tdec(ldec)= t
+!
+        time1= t
       end if
 !
 !   Accumulate the moments and do emfild    
@@ -7608,19 +7613,18 @@
       end do
       end do
 !***
-!                       sym= -1: odd   -1 0 (1) 2 3
-!                       sym=  1: even  
-      js= -1
-      do k= 0,mz-1
+!
+      js= 1         ! a(-2) <-> e(2), a(-1) <-> e(1)
+      do k= 0,mz-1  !  ex() to ax() of opposite sign
       do i= 0,mx-1
-      a(i,js,k)= sym * q(i,2-js,k)
+      a(i,-js,k)=  sym* q(i,js,k)
       end do
       end do
-!                            my-2 my-1 (my) my+1 my+2
-      js= 0
-      do k= 0,mz-1
+!                       my-2 my-1 (my) my+1 my+2
+      js= 1         ! a(my+2) <-> e(my-2), a(my+1) <-> e(my-1)
+      do k= 0,mz-1 
       do i= 0,mx-1
-      a(i,my+1+js,k)= sym * q(i,my+1-js,k)
+      a(i,my+js,k)=  sym* q(i,my-js,k)
       end do
       end do
 !***
@@ -9310,7 +9314,7 @@
       implicit none
       include 'param_023A.h' 
 !
-!     parameter   (nhistm=54)
+!     parameter   (nhistm=12)
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
@@ -9344,15 +9348,13 @@
       real(C_float)  emax1a,emin1a,emax2a,emin2a,emax1,emin1, &
                      emax3a,emin3a,emax4a,emin4a,emax3,emin3, &
                      emax5a,emin5a,emax6a,emin6a,emax5,emin5, &
-                     emax7a,emin7a,emax8a,emin8a,emax7,emin7
+                     emax7a,emin7a,emax8a,emin8a,emax7,emin7, &
+                     hh,time7
       integer(C_INT) ILN,ILG,i,k
 !
 !    +++++++++++++++++++++++
       if(io_pe.ne.1) return
 !    +++++++++++++++++++++++
-!
-      call lblbot(t)
-!     tdec(ldec)= t
 !
 !**
       open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -9417,6 +9419,12 @@
                  '        ',8,'        ',8)
       call lplot (2,5,ldec,tdec,edec(1,8),emax8a,0.,ILN,'eleh His',8,&
                  '        ',8,'        ',8)
+!
+!     hh= 0.7
+!     time7= tdec(ldec)
+!     call symbol (15.0,0.1,hh,'t=',0.,2)
+!     call number (999.0,999.0,hh,time7,0.,101)
+!
 !   ++++++++++++++
       call chart
 !   ++++++++++++++
@@ -10038,8 +10046,16 @@
       real(C_float) ymin,ymax
       real(C_float) xcm(6),ycm(6),pl(6),pr(6),ql(6),qr(6)
 !
+      real(C_DOUBLE) time1 
+      common/headr2/ time1
+!
       character(len=8) lab1,lab2,lab3
       character(len=8) label(8),date_now*10,cax*1
+      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0, &
+                    pl1,pr1,ql1,qr1,scx,scy,time,xp_leng,   &
+                    xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,    &
+                    y1,y2,y3,y4,xc,xd,xl,xu,yc,yl,yr
+!
       common/headr1/ label,date_now
       common/headr2/ time,xp_leng
       common/pplcom/ nfine,pl1(10),pr1(10),ql1(10),qr1(10),  &
@@ -10058,10 +10074,6 @@
             ql/2.3, 10.5,2.3, 12.9,7.6,2.3/
       logical  lab_skip
 !
-      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0, &
-                    pl1,pr1,ql1,qr1,scx,scy,time,xp_leng,   &
-                    xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,    &
-                    y1,y2,y3,y4,xc,xd,xl,xu,yc,yl,yr
 !***
       iplot= 1
       go to 1
@@ -10085,6 +10097,8 @@
       lab_skip= .false.
       if(il.eq.7) lab_skip= .true.
 !
+      time= time1  ! real*8 -> real*4
+!
 !                 ******************************************************
 !*                **  Make a copy before the top-left frame is drawn. **
 !                 ******************************************************
@@ -10099,9 +10113,10 @@
 !                                              ** label of the page. **
 !                                              ************************
       call symbol (0.1,18.0,hh,label(1),0.,8)
-!     call symbol (3.1,18.0,hh,date_now, 0.,10)
-      call symbol (15.9,0.1,hh,'t =',0.,3)
-      call number (999.0,999.0,hh,time,0.,5)
+      call symbol (3.1,18.0,hh,date_now, 0.,10)
+!
+!     call symbol (15.9,0.1,hh,'t=',0.,2)
+!     call number (999.0,999.0,hh,time,0.,101)
 !
    10 continue
 !
@@ -10211,11 +10226,11 @@
 !                                                     **************
 !
       if(.not.lab_skip) then
-        call number (pl(i1)-0.5,ql(j1)-0.45,hhs,xmin,0.,101)
-        call number (pr(i1)-1.5,ql(j1)-0.45,hhs,xmax,0.,101)
+        call number (pl(i1)-0.5,ql(j1)-0.45,hhs,xmin,0.,201)
+        call number (pr(i1)-1.5,ql(j1)-0.45,hhs,xmax,0.,201)
 !
-        call number (pl(i1)-2.0,ql(j1)     ,hhs,ymin,0.,101)
-        call number (pl(i1)-2.0,qr(j1)-0.30,hhs,ymax,0.,101)
+        call number (pl(i1)-2.0,ql(j1)     ,hhs,ymin,0.,201)
+        call number (pl(i1)-2.0,qr(j1)-0.30,hhs,ymax,0.,201)
       end if
 !
 !                                                     **************
@@ -10608,17 +10623,17 @@
       end do
 !
       call symbol (zl+1.0,yl-1.5,hh,'max=',0.,4)
-      call number (zl+2.7,yl-1.5,hh,am1,0.,101)
+      call number (zl+2.7,yl-1.5,hh,am1,0.,201)
       call symbol (zl+1.0,yl-2.0,hh,'min=',0.,4)
-      call number (zl+2.7,yl-2.0,hh,am2,0.,101)
+      call number (zl+2.7,yl-2.0,hh,am2,0.,201)
 !
       call setscl (0.,0.,zmax,ymax,zl,yl,zr,yr,gdz,gdy,  &
                    n1,char1, 8,' scalar ', hh,           &
                    1,'Z',0.4, 1,'X',0.4, 1)
 !
-      call number (zl-1.0,yl-0.6,hs,0.  ,0.,100)
-      call number (zl-2.0,yr-0.3,hs,ymax,0.,100)
-      call number (zr-1.0,yl-0.6,hs,zmax,0.,100)
+      call number (zl-1.0,yl-0.6,hs,0.  ,0.,200)
+      call number (zl-2.0,yr-0.3,hs,ymax,0.,200)
+      call number (zr-1.0,yl-0.6,hs,zmax,0.,200)
 !
 !
       jk= 0
@@ -10663,9 +10678,9 @@
       if(am12.lt.1.e-10) am12= 999.
 !
       call symbol (zls-1.9,yls-1.5,hh,'max=',0.,4)
-      call number (zls-0.3,yls-1.5,hh,am1,0.,101)
+      call number (zls-0.3,yls-1.5,hh,am1,0.,201)
       call symbol (zls-1.9,yls-2.0,hh,'min=',0.,4)
-      call number (zls-0.3,yls-2.0,hh,am2,0.,101)
+      call number (zls-0.3,yls-2.0,hh,am2,0.,201)
 !
       call plot (zls,yls,3)
       call plot (zls,yrs,2)
@@ -10828,9 +10843,9 @@
                    am11,am12,shfz,shfy,7000,isel)
 !
       call symbol (zc-3.7,0.6,hh,'Pol=',0.,4)
-      call number (zc-2.0,0.6,hh,am1,0.,101)
+      call number (zc-2.0,0.6,hh,am1,0.,201)
       call symbol (zc-3.7,0.1,hh,'Tor=',0.,4)
-      call number (zc-2.0,0.1,hh,am2,0.,101)
+      call number (zc-2.0,0.1,hh,am2,0.,201)
 !
 !
 !*  (2): Contour plot of the ax-component.
@@ -11022,9 +11037,9 @@
 !     if(ams.lt.1.d-10) ams=999.0
 !
       call symbol (2.0,0.80,hh,'max=',0.,4)
-      call number (5.0,0.80,hh,ams1,0.,101)
+      call number (5.0,0.80,hh,ams1,0.,201)
       call symbol (2.0,0.10,hh,'min=',0.,4)
-      call number (5.0,0.10,hh,ams2,0.,101)
+      call number (5.0,0.10,hh,ams2,0.,201)
 !
 !---------------------------------------------
 !*  (1): Contours in (x,z) plane.
@@ -11034,9 +11049,9 @@
                    n1,char1, 2,'YZ', 0.6,               &
                    1,'Z',0.6, 1,'Y',0.6, 1)
 !
-      call number (zl-1.3,yl-0.3, hh,zmin,0.,5)
-      call number (zl-1.3,yr-0.3, hh,zmax,0.,5)
-      call number (zr-1.3,yl-0.5, hh,ymax,0.,5)
+      call number (zl-1.3,yl-0.3, hh,zmin,0.,100)
+      call number (zl-1.3,yr-0.3, hh,zmax,0.,100)
+      call number (zr-1.3,yl-0.5, hh,ymax,0.,100)
 !
       nyz= npy*npz
       call daisho (a,nyz,wamin,wamax)
@@ -11061,9 +11076,9 @@
                    n1,char1, 2,'XZ', 0.6,                 &
                    1,'Z',0.6, 1,'X',0.6, 1)
 !                                           <-- ierr= 5
-      call number (zl-0.45,xl2-0.5,hh,zmin,0.,5)
-      call number (zl-1.3, xr2-0.3,hh,zmax,0.,5)
-      call number (zl-1.3, xl2-0.5,hh,xmax,0.,5)
+      call number (zl-0.45,xl2-0.5,hh,zmin,0.,100)
+      call number (zl-1.3, xr2-0.3,hh,zmax,0.,100)
+      call number (zl-1.3, xl2-0.5,hh,xmax,0.,100)
 !
       nxz= npx*npz2
       call daisho (b,nxz,wamin,wamax)
@@ -12464,12 +12479,12 @@
 !-----------------------------------------------
        subroutine number (x0,y0,h0,anu,ang,n0)
 !-----------------------------------------------
-       use, intrinsic :: iso_c_binding  ! <-
+       use, intrinsic :: iso_c_binding 
        implicit none
 !
-       real(C_float)  x0,y0,h0,anu,ang,x,y,h
-       integer(C_INT) n0,n
-       character      isymb*9
+       real(c_float) x0,y0,h0,anu,ang,x,y,h
+       integer(c_int) n0,n,i
+       character  isymb*9
 !
        x= x0
        y= y0
@@ -12487,34 +12502,48 @@
        write(77,30) ang
    30  format(f5.1,' ro')
 !
-       if(abs(anu).gt.1.e1 .or.  &
-          abs(anu).lt.1.e-1) then
-        write(isymb,'(1pe9.2)') anu    ! e9.2
-       else
-        write(isymb,'(f7.2)') anu      ! f7.2
+       if(n0.ge.200) then
+         write(isymb,200) anu
+  200    format(1pe9.2)
+!
+         go to 300
        end if
 !
-       if(.true.) go to 300
-       if(abs(anu).lt.10000.) then  !! 5 digits
+!      if(abs(anu).gt.1.e+1 .or.  &
+!         abs(anu).lt.1.e-1) then
+!       write(isymb,31) anu
+!  31   format(1pe9.2)
+!      else
+!       write(isymb,32) anu
+!  32   format(f7.2)
+!      end if
+!
+!      if(.true.) go to 300
+       if(abs(anu).lt.10000.) then  ! 5 digits
          if(abs(anu).gt.0.1) then
-           write(isymb,'(f6.1)') anu        ! f6.1
+           write(isymb,40) anu
+   40      format(f6.1)
          else
-           if(abs(anu).gt.0.001) then 
-             write(isymb,'(f6.3)') anu      ! f6.3
+           if(abs(anu).gt.0.001) then  ! f6.3
+             write(isymb,41) anu
+   41        format(f6.3)
            else
-             if(abs(anu).gt.0.001) then 
-               write(isymb,'(1pe9.2)') anu  ! e9.2
+             if(abs(anu).gt.0.001) then  ! f6.3
+               write(isymb,42) anu   ! e9.2
+   42          format(1pe9.2)
              else
-               write(isymb,'(f6.1)') anu    ! f6.1  0.0
+               write(isymb,40) anu   ! 0.0
              end if
            end if
          end if
 !
        else
          if(abs(anu).lt.100000.) then
-           write(isymb,'(f7.1)') anu       ! f7.1
+           write(isymb,51) anu     ! f7.1
+   51      format(f7.1)
          else
-           write(isymb,'(1pe9.2)') anu     ! e9.2
+           write(isymb,52) anu     ! e9.2
+   52      format(1pe9.2)
          end if
        end if
   300  continue
@@ -12522,7 +12551,7 @@
        write(77,*) '(',isymb,') s'
 !
        return
-       end subroutine number
+       end
 !
 !
 !-----------------------------------------------
