@@ -1,4 +1,4 @@
-!  param_A23A.h
+!  param_023A.h
 !
       integer(C_INT) npc,mx,my,mz,mxyz0,np0,myA,kd,   &
                      mxyz,mxyz3,mxyzA,                &
@@ -21,15 +21,16 @@
 !     parameter (praefixs='/home/mtanaka/mrg37/rec_3d23A',  &
 !                praefixc='/home/mtanaka/mrg37/forta')
 !
-!            {ptx,pty,ptz} = (-2:mx+1,-2:my+2,-2:mz+1)
-!                     {ex} = (-2:mx+1,-2:my+2,-2:mz+1)
+!            {ptx,pty,ptz} = (-2:mx+1,-1:my+1,-2:mz+1)
 !            myA: 0,1,...,my  start from 0
 !
-!  common/ptable/ gx(-2:mx+1),gy(-1:my+1),gz(-2:mz+1), 
-      parameter  (myA=my+1,kd=mz/npc)           ! mz/npc must be divided
+      parameter  (myA=my+1,kd=mz/npc)           ! mz/npc be divided
       parameter  (mxyz=mx*myA*mz,mxyz3=3*mx*myA*mz)
       parameter  (mxyzA=(mx+4)*(myA+2)*(mz+4))  ! -1,0,..,my,my+1
 ! 
       parameter  (nob=15,nob2=19,nob3=7) 
       parameter  (iblk=3,iblk2=1,iblk3=1)
       parameter  (nhistm=12)
+!
+!     parameter  (suffix2='0a',suffix1='0a')  ! 0a
+!     parameter  (suffix2='0b',suffix1='0a')  ! 0b

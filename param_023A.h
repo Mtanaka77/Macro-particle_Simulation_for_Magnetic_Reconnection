@@ -1,4 +1,4 @@
-!  param_080A.h
+!  param_023A.h
 !
       integer(C_INT) npc,mx,my,mz,mxyz0,np0,myA,kd,   &
                      mxyz,mxyz3,mxyzA,                &
@@ -16,7 +16,7 @@
 !     parameter  (suffix2='0b',suffix1='0a')
 !                 ++++++++++++
 !
-      parameter (praefixs='/home/tanakam/mrg37/rec_3d80A',  &
+      parameter (praefixs='/home/tanakam/mrg37/rec_3d23A',  &
                  praefixc='/data/sht/tanakam/forta')
 !     parameter (praefixs='/home/mtanaka/mrg37/rec_3d23A',  &
 !                praefixc='/home/mtanaka/mrg37/forta')
@@ -30,7 +30,7 @@
 ! 
       parameter  (nob=15,nob2=19,nob3=7) 
       parameter  (iblk=3,iblk2=1,iblk3=1)
-      parameter  (nhistm=54)
+      parameter  (nhistm=12)
 !
 !     parameter  (suffix2='0a',suffix1='0a')  ! 0a
 !     parameter  (suffix2='0b',suffix1='0a')  ! 0b
