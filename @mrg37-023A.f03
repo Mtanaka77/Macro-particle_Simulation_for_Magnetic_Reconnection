@@ -194,19 +194,9 @@
 !
 !*----------------------------------------------------------------------
 !***********************************************************************
-!*    Read-in control parameters.                                      *
+!*  Read-in control parameters                                         *
 !***********************************************************************
-!
-!     open (unit=05,file=praefixs,form='formatted')  !<- L.357
-!     open (unit=12,file=praefixc//'.12'//suffix1,form='unformatted') ! L.12155
-      open (unit=15,file=praefixc//'.15'//suffix2,form='unformatted')
-      open (unit=18,file=praefixc//'.18'//suffix2,form='unformatted')
-      close(15)
-      close(18)
-!
-!************************
-!*  Initial MPI setup.  *
-!************************
+!*  Initial MPI setup
 !
       call mpi_init (ierror)
       call mpi_comm_rank (mpi_comm_world,rank,ierror)
@@ -216,6 +206,17 @@
 !
       io_pe = 0
       if(ipar.eq.1) io_pe = 1
+!
+!     open (unit=05,file=praefixs,form='formatted')  !<- L.350
+!     open (unit=12,file=praefixc//'.12'//suffix1,form='unformatted')  !<-  L.9680
+!
+      if(io_pe.eq.1) then
+        open (unit=15,file=praefixc//'.15'//suffix2,form='unformatted')
+        open (unit=18,file=praefixc//'.18'//suffix2,form='unformatted')
+!       open (unit=77,file=praefixc//'.77'//suffix2//'.ps',form='formatted') !<- L.410
+        close(15)
+        close(18)
+      end if
 !
 ! Check results if it is necessary
       fortr51(1)='fortr.51'
@@ -646,7 +647,7 @@
 !***
       integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k
       common/irest/ iresrt
-      real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4,walltime5
+      real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4
 !
       real(C_DOUBLE) time1 
       common/headr2/ time1
@@ -3792,6 +3793,9 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(3000,12)
 !
+      real(C_DOUBLE) time1
+      common/headr2/ time1
+!
       real(C_DOUBLE) wkix,wkih,wkex,wkeh
       common/wkinel/ wkix,wkih,wkex,wkeh
 !
@@ -4355,11 +4359,9 @@
 !*  End of itermx loop
 !***
 !
-      if(io_pe.eq.1) then
-        if(iwrt(it,nplot).eq.0) then
+      if(iwrt(it,nplot).eq.0) then
+        if(io_pe.eq.1) then
 !                  +++++
-!       if(mod(it,10).eq.1) then
-!
         call lblbot (t)
 !
         do k= 0,mz-1
@@ -4368,6 +4370,10 @@
         eex(i,j,k)= ex(i,j,k)
         eey(i,j,k)= ey(i,j,k)
         eez(i,j,k)= ez(i,j,k)
+!
+        bbx(i,j,k)= bx(i,j,k)
+        bby(i,j,k)= by(i,j,k)
+        bbz(i,j,k)= bz(i,j,k)
         end do
         end do
         end do
@@ -4381,42 +4387,21 @@
         call fplot3 (eex,eey,eez,0.,0.,0.,real(xmax),real(ymax),real(zmax), &
                      iperio,itag,'E cfpsol',8)
 !
-!
-        do k= 0,mz-1
-        do j= 0,my  
-        do i= 0,mx-1
-!       bbx(i,j,k)= qix(i,j,k) +qex(i,j,k)
-!
-        bbx(i,j,k)= bx(i,j,k)
-        bby(i,j,k)= by(i,j,k)
-        bbz(i,j,k)= bz(i,j,k)
-        end do
-        end do
-        end do
-!
 !   (bx,by,bz) real*4
-        iperio= 0
         itag= 5
         call fplot3 (bbx,bby,bbz,0.,0.,0.,real(xmax),real(ymax),real(zmax), &
                      iperio,itag,'bx by bz',8)
         close(77)
 !
+        open (unit=15,file=praefixc//'.15'//suffix2,               &
+              status='unknown',position='append',form='unformatted')
+! 
+        write(15) t8
+        write(15) wb,we,wbp2,wep2,it,is,ldec
+        write(15) eex,eey,eez,bbx,bby,bbz
+        close(15)
+!
         end if
-      end if
-!
-      if(.false.) then
-!     if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
-        open (unit=11,file=praefixc//'.11'//suffix2,             & 
-              status='unknown',position='append',form='formatted')
-!
-        i= mx/2
-        j= my/2
-        do k= 0,mz-1
-        write(11,'(3i4,1p6d12.3)') i,j,k,ex(i,j,k),ey(i,j,k),ez(i,j,k), &
-                      bx(i,j,k),by(i,j,k),bz(i,j,k)
-        end do
-!
-        close(11)
       end if
 !
       return
@@ -8796,7 +8781,7 @@
                      ycnt1,ycnt2,rry,rrz,vdrift,        &
                      rwd2,anbar,                        &
                      ranfp,funr,fun2,ranf,vx1,vy1,vz1
-      integer(C_INT) ns,i,j,k,l,m,k2,nn,npr1,npr2
+      integer(C_INT) ns,i,j,k,l,m,k2,nn
 !
 !-----------------------------------------------------------------------
 !   Loading particle positions and velosities:
@@ -10051,13 +10036,12 @@
 !
       character(len=8) lab1,lab2,lab3
       character(len=8) label(8),date_now*10,cax*1
-      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0, &
-                    pl1,pr1,ql1,qr1,scx,scy,time,xp_leng,   &
-                    xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,    &
+      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0,         &
+                    pl1,pr1,ql1,qr1,scx,scy,time,         &
+                    xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,  &
                     y1,y2,y3,y4,xc,xd,xl,xu,yc,yl,yr
 !
       common/headr1/ label,date_now
-      common/headr2/ time,xp_leng
       common/pplcom/ nfine,pl1(10),pr1(10),ql1(10),qr1(10),  &
                      xmin1(10),xmax1(10),ymin1(10),ymax1(10)
 !
@@ -11637,21 +11621,21 @@
       call chart
       call symbol(1.0,11.0,0.2,' procedure = wdashl ',0.,20)
       call symbol(1.0,10.0,0.2,' abnormal world coordinate call',0.,31)
-      call symbol(1.0,09.0,0.2,' wmaxx =',0.,8)
+      call symbol(1.0, 9.0,0.2,' wmaxx =',0.,8)
       call number(999.0,999.0,0.2,wmaxx,0.,2)
-      call symbol(1.0,08.5,0.2,' wminx =',0.,8)
+      call symbol(1.0, 8.5,0.2,' wminx =',0.,8)
       call number(999.0,999.0,0.2,wminy,0.,2)
-      call symbol(1.0,08.0,0.2,' wmaxy =',0.,8)
+      call symbol(1.0, 8.0,0.2,' wmaxy =',0.,8)
       call number(999.0,999.0,0.2,wmaxy,0.,2)
-      call symbol(1.0,07.5,0.2,' wminy =',0.,8)
+      call symbol(1.0, 7.5,0.2,' wminy =',0.,8)
       call number(999.0,999.0,0.2,wminy,0.,2)
-      call symbol(1.0,06.5,0.2,' xleft =',0.,8)
+      call symbol(1.0, 6.5,0.2,' xleft =',0.,8)
       call number(999.0,999.0,0.2,xl,0.,2)
-      call symbol(1.0,06.0,0.2,' yleft =',0.,8)
+      call symbol(1.0, 6.0,0.2,' yleft =',0.,8)
       call number(999.0,999.0,0.2,yl,0.,2)
-      call symbol(1.0,05.5,0.2,' xright=',0.,8)
+      call symbol(1.0, 5.5,0.2,' xright=',0.,8)
       call number(999.0,999.0,0.2,xr,0.,2)
-      call symbol(1.0,05.0,0.2,' yright=',0.,8)
+      call symbol(1.0, 5.0,0.2,' yright=',0.,8)
       call number(999.0,999.0,0.2,yr,0.,2)
       write(6,*) '**********  abnormal world coordinate ********'
       write(6,*) '     procedure = wdashl'

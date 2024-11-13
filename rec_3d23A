@@ -1,4 +1,4 @@
- &datum0  kstart=0,tfinal=5000.d0,cptot=120.1d0,
+ &datum0  kstart=0,tfinal=5000.d0,cptot=200.1d0,
           istop=0,
  &end                  
  &datum1  dt=1.2d0,xmax=300.d0,ymax=600.d0,zmax=300.d0, 
@@ -28,8 +28,9 @@
  &end                             
 
 
- &datum0  kstart=0,tfinal=5000.d0,cptot=300.1d0,
+ &datum0  kstart=0,tfinal=5000.d0,cptot=200.1d0,
           istop=0,
+                                     3H20M
  &datum2  nhist=50,nplot=10,nfwrt=10,npwrt=777777,
  &datum2  nhist=1000,nplot=200,nfwrt=200,npwrt=777777,
  &end
