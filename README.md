@@ -52,7 +52,7 @@ mpif90 @mrg37-023A.f03 needs the parameter files param_A23A.h and rec_3d23A
 
  > $ mpif90 -mcmodel=medium -fast @mrg37-023A.f03 -I/opt/fftw3/include -L/opt/fftw3/lib -lfftw3
 
-Execution by mpiexec (may need some hundreds of processors)
+Execution by mpiexec (may need a hundred of processors)
 
  > $ mpiexec -n number_of_cpu a.out &
 
@@ -66,7 +66,7 @@ Fully kinetic ions and electrons are used in the rec_3d23A file.
 Then, let's start looking at a merging of two flux bundles. 
 
 In-house graphic subroutines are incorporated in "@mrg37-023A.f03" in order to check the current run in the simulation. 
-Figure 1 in the "EMfield.pdf" PDF plot and Figure 2 in the mrg23_forta.77a.pdf 
+Figure 1 in the "EMfield.pdf" PDF plot and Figure 2 in the mrg23_forta.770a.pdf 
 of Nov. 2024 demonstrate the electric and magnetic fields.
 The Y-Z (left) and X (right) components at the early and final times and  also 
 precise plots of t= 0-4080/\wpe show merging of two flux bundles.
