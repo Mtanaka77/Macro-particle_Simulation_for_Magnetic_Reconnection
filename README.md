@@ -59,15 +59,24 @@ Execution by mpiexec (may need some hundreds of processors)
 
 ### Simulation of Two Flux Bundles
 
-One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles separating the poloidal magnetic field (the y-z component) is first tested in three dimensions. Fully kinetic ions and electrons are used, for example, in the rec_3d23A file. Then, let's start looking at a merging of two flux bundles. 
+One can enjoy simulations by changing system sizes and boundary conditions. 
+For the present case, an equilibration of the pair of flux bundles separating 
+the poloidal magnetic field (the y-z component) is shown in three dimensions. 
+Fully kinetic ions and electrons are used in the rec_3d23A file. 
+Then, let's start looking at a merging of two flux bundles. 
 
-In-house graphic subroutines are incorporated in "@mrg37-023A.f03" in order to check the current run in the simulation. Figure 1 in the "EMfield.pdf" PDF plot shows the electric and magnetic fields in the YZ (left) and X (right) components at the early and late times. Two flux bundles at t= 4500/\wpe are seen touched and sqeezed at the y= Ly/2 plane. 
-(However, it goes quite mixed and a simulation should stop at the final time at t= 4800/\wpe.) 
+In-house graphic subroutines are incorporated in "@mrg37-023A.f03" in order to check the current run in the simulation. 
+Figure 1 in the "EMfield.pdf" PDF plot and Figure 2 in the mrg23_forta.77a.pdf 
+of Nov. 2024 demonstrate the electric and magnetic fields.
+The Y-Z (left) and X (right) components at the early and final times and  also 
+precise plots of t= 0-4080/\wpe show merging of two flux bundles.
+ Two flux bundles are seen touched and sqeezed at the y= Ly/2 plane. 
+(However, it goes quite mixed and a simulation should stop at the final time.) 
 
 Reading papers of this implicit particle simulation code (Ref. 2,3) and applications to magnetospheric space plasmas (Ref. 1,4,5) are highly recommended.
 
 
-### References: ###
+### References ###
 
 1. M. Tanaka, Macro-particle simulations of collisionless magnetic reconnection, Phys.Plasmas, 2, 2920-2930 (1995).
 
