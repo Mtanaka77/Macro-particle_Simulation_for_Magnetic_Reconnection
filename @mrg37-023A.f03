@@ -1,4 +1,4 @@
-!*** Late Version: 10/28/2024 ******************* Fortran 2003/2008 ****
+!*** Late Version: 2025/3/23 ******************** Fortran 2003/2008 ****
 !*                                                                     *
 !*   ## Macro-particle Kinetic Simulation for Solar EM Simulation ##   *
 !*     << Fully-implicit scheme with kinetic ions and electrons >>     *
@@ -12,19 +12,18 @@
 !*           6) M.Tanaka, Bulletin of Chubu University (Mar,2022).     *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_023A.f03: simulation code, job serial number '23'      *
-!*    2. param_023A.h   : parameter file                               *
-!*    3. rec_3d23A      : Simulation time, box size, parameters of     *
+!*    1. @mrg37_080A.f03: simulation code, job serial number '80'      *
+!*    2. param_080A.h   : parameter file                               *
+!*    3. rec_3d80A      : Simulation time, box size, parameters of     *
 !*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
 !*    may be used. One should read the reference Ref.2 JCP (1993).     *
 !*                                                                     *
-!*     The author and maintainer of these simulation codes are by      *
-!*   Motohiko Tanaka, Ph.D./Professor, Graduate School of Engineering, *
-!*   Chubu University, Kasugai 487-8501, Japan.   2022/09/01           *
+!*  * Author: Motohiko Tanaka, Ph.D., Chikusa, Nagoya 464, Japan.      *
 !*                                                                     *
-!*  https://github.com/Mtanaka77/Macro-Particle_Simulation_of_Magnetic_Reconnection *
+!*  https://github.com/Mtanaka77/                                      *
+!*  Macro-Particle_Simulation_of_Magnetic_Reconnection                 *
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
 !
@@ -76,6 +75,8 @@
 !      Rather it is bound by not dt*wce >> 0. It is different from
 !      explicit codes, which must satisfy Delta_x/Delta_t > 1.
 !
+!   > Generic function names are used as sqrt <- dsqrt, max <- amax1
+!
 !-----------------------------------------------------------------------
 !*                                                                     *
 !*     /main/ ------ /trans/                                           *
@@ -108,7 +109,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) rank,size,ipar,ierror,cl_first
@@ -174,7 +175,7 @@
       integer(C_INT) ifilxs,ifilys,ifilzs
       common/damper/ ifilxs,ifilys,ifilzs
 !
-!*  kstart..... used in /init/, /trans/, /fulmov/, in param_023A.h.
+!*  kstart..... used in /init/, /trans/, /fulmov/, in param_080A.h.
 !   Ez00   .... Ez00 x Ba
 !
       namelist/datum0/  kstart,tfinal,cptot,istop
@@ -194,9 +195,19 @@
 !
 !*----------------------------------------------------------------------
 !***********************************************************************
-!*  Read-in control parameters                                         *
+!*    Read-in control parameters.                                      *
 !***********************************************************************
-!*  Initial MPI setup
+!
+!     open (unit=05,file=praefixs,form='formatted')  !<- L.357
+!     open (unit=12,file=praefixc//'.12'//suffix1,form='unformatted') ! L.12155
+      open (unit=15,file=praefixc//'.15'//suffix2,form='unformatted')
+      open (unit=18,file=praefixc//'.18'//suffix2,form='unformatted')
+      close(15)
+      close(18)
+!
+!************************
+!*  Initial MPI setup.  *
+!************************
 !
       call mpi_init (ierror)
       call mpi_comm_rank (mpi_comm_world,rank,ierror)
@@ -206,17 +217,6 @@
 !
       io_pe = 0
       if(ipar.eq.1) io_pe = 1
-!
-!     open (unit=05,file=praefixs,form='formatted')  !<- L.350
-!     open (unit=12,file=praefixc//'.12'//suffix1,form='unformatted')  !<-  L.9680
-!
-      if(io_pe.eq.1) then
-        open (unit=15,file=praefixc//'.15'//suffix2,form='unformatted')
-        open (unit=18,file=praefixc//'.18'//suffix2,form='unformatted')
-!       open (unit=77,file=praefixc//'.77'//suffix2//'.ps',form='formatted') !<- L.410
-        close(15)
-        close(18)
-      end if
 !
 ! Check results if it is necessary
       fortr51(1)='fortr.51'
@@ -285,7 +285,7 @@
 !   escorr: nps1(1)= 1, nps2(1)= mx*(my+1)*kd
 !   poissn:
 !  ++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     kd= mz/npc is defined in param_023A.h
+!     kd= mz/npc is defined in param_080A.h
 !
 !             number_of_cpu's
       do k= 1,npc         
@@ -558,7 +558,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
       integer(C_INT) it,interv
 !
 !  Hit is true if mod(it,..)= 0 
@@ -591,7 +591,7 @@
       implicit none
 ! 
       include 'mpif.h'
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) npr,kstart,ipar,size
@@ -647,10 +647,7 @@
 !***
       integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k
       common/irest/ iresrt
-      real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4
-!
-      real(C_DOUBLE) time1 
-      common/headr2/ time1
+      real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4,walltime5
 !
 !*----------------------------------------------------------------------
 !***********************************************************************
@@ -752,8 +749,6 @@
       if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
         ldec= ldec +1  ! only at this time
         tdec(ldec)= t
-!
-        time1= t
       end if
 !
 !   Accumulate the moments and do emfild    
@@ -886,7 +881,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) iaver,nav
       real(C_DOUBLE),dimension(mxyzA) :: ex,ey,ez,bx,by,bz,        &
@@ -960,7 +955,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !          +++++++            +++++ 
       real(C_float),dimension(mxyzA) :: cix,ciy,ciz,cex,cey,cez,       &
                                         avex,avey,avez,avbx,avby,avbz, &
@@ -998,7 +993,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: gnu
       common/dragcf/ gnu
@@ -1053,7 +1048,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
@@ -1398,7 +1393,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl
@@ -1639,7 +1634,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe,vxe,vye,vze
       real(C_DOUBLE) wmult 
@@ -1817,7 +1812,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr,ipar,size
@@ -1892,7 +1887,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z
       integer(C_INT) npr,ipar,size
@@ -1962,7 +1957,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr,ipar,size
@@ -2049,7 +2044,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       integer(C_INT) npr
@@ -2124,7 +2119,7 @@
 !***********************************************************************
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,mue,vpe,vhe
       integer(C_INT) npr
@@ -2204,7 +2199,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vxj,vyj,vzj
       real(C_DOUBLE) qmult
@@ -2410,7 +2405,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !---------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm
@@ -2556,7 +2551,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
@@ -2700,7 +2695,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !--------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,vhe
@@ -2847,7 +2842,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm,mue
 !                              ++++++++++++++++++++
@@ -3079,7 +3074,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -3163,7 +3158,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++ important !!
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -3233,7 +3228,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax,ay,az
       integer(C_INT) i,j,k
@@ -3317,7 +3312,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
       integer(C_INT) i,j,k
@@ -3393,7 +3388,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !*
       integer(C_INT) nobx
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -3728,7 +3723,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) ipar
@@ -3792,9 +3787,6 @@
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(3000,12)
-!
-      real(C_DOUBLE) time1
-      common/headr2/ time1
 !
       real(C_DOUBLE) wkix,wkih,wkex,wkeh
       common/wkinel/ wkix,wkih,wkex,wkeh
@@ -4359,9 +4351,11 @@
 !*  End of itermx loop
 !***
 !
-      if(iwrt(it,nplot).eq.0) then
-        if(io_pe.eq.1) then
+      if(io_pe.eq.1) then
+        if(iwrt(it,nplot).eq.0) then
 !                  +++++
+!       if(mod(it,10).eq.1) then
+!
         call lblbot (t)
 !
         do k= 0,mz-1
@@ -4370,10 +4364,6 @@
         eex(i,j,k)= ex(i,j,k)
         eey(i,j,k)= ey(i,j,k)
         eez(i,j,k)= ez(i,j,k)
-!
-        bbx(i,j,k)= bx(i,j,k)
-        bby(i,j,k)= by(i,j,k)
-        bbz(i,j,k)= bz(i,j,k)
         end do
         end do
         end do
@@ -4387,21 +4377,42 @@
         call fplot3 (eex,eey,eez,0.,0.,0.,real(xmax),real(ymax),real(zmax), &
                      iperio,itag,'E cfpsol',8)
 !
+!
+        do k= 0,mz-1
+        do j= 0,my  
+        do i= 0,mx-1
+!       bbx(i,j,k)= qix(i,j,k) +qex(i,j,k)
+!
+        bbx(i,j,k)= bx(i,j,k)
+        bby(i,j,k)= by(i,j,k)
+        bbz(i,j,k)= bz(i,j,k)
+        end do
+        end do
+        end do
+!
 !   (bx,by,bz) real*4
+        iperio= 0
         itag= 5
         call fplot3 (bbx,bby,bbz,0.,0.,0.,real(xmax),real(ymax),real(zmax), &
                      iperio,itag,'bx by bz',8)
         close(77)
 !
-        open (unit=15,file=praefixc//'.15'//suffix2,               &
-              status='unknown',position='append',form='unformatted')
-! 
-        write(15) t8
-        write(15) wb,we,wbp2,wep2,it,is,ldec
-        write(15) eex,eey,eez,bbx,bby,bbz
-        close(15)
-!
         end if
+      end if
+!
+      if(.false.) then
+!     if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+!
+        i= mx/2
+        j= my/2
+        do k= 0,mz-1
+        write(11,'(3i4,1p6d12.3)') i,j,k,ex(i,j,k),ey(i,j,k),ez(i,j,k), &
+                      bx(i,j,k),by(i,j,k),bz(i,j,k)
+        end do
+!
+        close(11)
       end if
 !
       return
@@ -4421,7 +4432,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
       include 'mpif.h'
 !
 !     parameter  (nob=15,iblk=3)
@@ -4601,7 +4612,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !***********************************************************************
 !*    Define the whole CFP matrix.                                     *
@@ -5309,7 +5320,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -5381,7 +5392,7 @@
 !       Parallel version in /wwstbs3/ and /wwstbm/
 !
         call wwstbs3 (aa,ja,na,iw,np1,np2,ipar,ierr)
-      end if                         ! iblk in param_023A.h
+      end if                         ! iblk in param_080A.h
       
       call cpu_time (t2)
 !                                      preconditioning
@@ -5470,7 +5481,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob=15)
@@ -5727,7 +5738,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ipr(10),ierr,n
       real(C_DOUBLE) rpr(10)
@@ -5771,7 +5782,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar
@@ -5835,7 +5846,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'  !<-- mx,myA,mz,iblk in param_023A.h
+      include 'param_080A.h'  !<-- mx,myA,mz,iblk in param_080A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -5956,7 +5967,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'  !<-- mx,myA,mz,iblk in param_023A.h
+      include 'param_080A.h'  !<-- mx,myA,mz,iblk in param_080A.h
 !
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa,ax 
       integer(C_INT),dimension(1:mxyz3,nob) :: ja,na
@@ -6078,7 +6089,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
 !                                     
       real(C_DOUBLE),dimension(1:mxyz3,nob) :: aa
       integer(C_INT),dimension(1:mxyz3,nob) :: ja
@@ -6176,7 +6187,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(1:mxyz3) :: v,w
 !
@@ -6217,7 +6228,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !     parameter  (nob=15)
 !----------------------------------------------------------------------
@@ -6403,7 +6414,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_023A.h'
+      include   'param_080A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -6450,7 +6461,7 @@
       implicit none
 !
       include   'mpif.h'
-      include   'param_023A.h'
+      include   'param_080A.h'
 !
       real(C_DOUBLE),dimension(mxy) :: sendbuf,recvbuf
       integer(C_INT) rank,mxy,ierror
@@ -6493,7 +6504,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2
       integer(C_INT) ipar,i0,ierr
@@ -6548,7 +6559,7 @@
       use, intrinsic :: iso_c_binding
       implicit real(C_DOUBLE) (a-h,o-z)
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
       dimension w0(iblk,iblk),w1(iblk,iblk),w2(iblk,iblk)
 !*                         <-- papam_A13X.h
 !*vdir novector
@@ -6595,7 +6606,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------------
@@ -6696,7 +6707,7 @@
 !-----------------------------------*******-----------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
 !     parameter  (nob3=7)
 !*----------------------------------------------------------------
@@ -6931,7 +6942,7 @@
 !----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !     parameter  (nob2=19) or (nob3=7)
 ! -----------------------------------------------------------------
@@ -7038,7 +7049,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -7106,7 +7117,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
 !     parameter  (nob2=19) or (nob3=7)
@@ -7263,7 +7274,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
 !     parameter  (nob2=19)(nob3=7)
 !***                           one array mxyz
@@ -7306,7 +7317,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                                      ex,ey,ez,ax,ay,az
@@ -7505,7 +7516,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !                              +++++++++++++++++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: q,a
       integer(C_INT) ifilx,ifily,ifilz,sym
@@ -7598,18 +7609,17 @@
       end do
       end do
 !***
-!
       js= 1         ! a(-2) <-> e(2), a(-1) <-> e(1)
       do k= 0,mz-1  !  ex() to ax() of opposite sign
       do i= 0,mx-1
-      a(i,-js,k)=  sym* q(i,js,k)
+      ax(i,-js,k)=  sym* ex(i,js,k)
       end do
       end do
 !                       my-2 my-1 (my) my+1 my+2
-      js= 1         ! a(my+2) <-> e(my-2), a(my+1) <-> e(my-1)
+      js= 1        ! a(my+2) <-> e(my-2), a(my+1) <-> e(my-1)
       do k= 0,mz-1 
       do i= 0,mx-1
-      a(i,my+js,k)=  sym* q(i,my-js,k)
+      ax(i,my+js,k)=  sym* ex(i,my-js,k)
       end do
       end do
 !***
@@ -7639,7 +7649,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
@@ -7968,7 +7978,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
       common/diagp2/ fvx,fvy,fvz
@@ -8067,7 +8077,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
@@ -8239,7 +8249,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
                                        xe,ye,ze,vxe,vye,vze
@@ -8727,7 +8737,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
       real(C_DOUBLE) qmult,wmult
@@ -8781,7 +8791,7 @@
                      ycnt1,ycnt2,rry,rrz,vdrift,        &
                      rwd2,anbar,                        &
                      ranfp,funr,fun2,ranf,vx1,vy1,vz1
-      integer(C_INT) ns,i,j,k,l,m,k2,nn
+      integer(C_INT) ns,i,j,k,l,m,k2,nn,npr1,npr2
 !
 !-----------------------------------------------------------------------
 !   Loading particle positions and velosities:
@@ -9074,7 +9084,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi, &
@@ -9137,7 +9147,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
 !----------------------------------------------------------------------
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,xe,ye,ze
@@ -9159,7 +9169,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE) fun1,v
 !
@@ -9174,7 +9184,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       real(C_DOUBLE) fun2,v,vrg1
       common /vring/ vrg1
@@ -9190,7 +9200,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
 !  prof= max(1.d0 -arb*(r/rwd)**2, 0.d0) 
       real(C_DOUBLE) funr,r,prof
@@ -9233,7 +9243,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ir,iq
       common/ranfa/ ir
@@ -9251,7 +9261,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ir  ! iand is a generic function
       real(C_DOUBLE) ranf,x
@@ -9274,7 +9284,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h'
+      include 'param_080A.h'
 !
       integer(C_INT) ir
       real(C_DOUBLE) ranfp,x
@@ -9297,9 +9307,9 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
-!     parameter   (nhistm=12)
+!     parameter   (nhistm=54)
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
@@ -9333,13 +9343,15 @@
       real(C_float)  emax1a,emin1a,emax2a,emin2a,emax1,emin1, &
                      emax3a,emin3a,emax4a,emin4a,emax3,emin3, &
                      emax5a,emin5a,emax6a,emin6a,emax5,emin5, &
-                     emax7a,emin7a,emax8a,emin8a,emax7,emin7, &
-                     hh,time7
+                     emax7a,emin7a,emax8a,emin8a,emax7,emin7
       integer(C_INT) ILN,ILG,i,k
 !
 !    +++++++++++++++++++++++
       if(io_pe.ne.1) return
 !    +++++++++++++++++++++++
+!
+      call lblbot(t)
+!     tdec(ldec)= t
 !
 !**
       open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -9404,12 +9416,6 @@
                  '        ',8,'        ',8)
       call lplot (2,5,ldec,tdec,edec(1,8),emax8a,0.,ILN,'eleh His',8,&
                  '        ',8,'        ',8)
-!
-!     hh= 0.7
-!     time7= tdec(ldec)
-!     call symbol (15.0,0.1,hh,'t=',0.,2)
-!     call number (999.0,999.0,hh,time7,0.,101)
-!
 !   ++++++++++++++
       call chart
 !   ++++++++++++++
@@ -9469,7 +9475,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
                      itermx,iterfx,itersx,nspec,nfwrt,npwrt,         &
@@ -9517,7 +9523,7 @@
       use, intrinsic :: iso_c_binding
 !
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
       include 'mpif.h'
 !
 !--------------------------------------------
@@ -9852,7 +9858,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       character(len=8)  :: label(8),label1(8)
       character(len=10) :: date_now,date_now1
@@ -9877,7 +9883,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE) time1,ts
       common/headr2/ time1
@@ -9893,7 +9899,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       character(len=8) h
 !
@@ -9926,7 +9932,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -9962,7 +9968,7 @@
       implicit none
 !
       include 'mpif.h'
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT) size,cl_first,MPIerror
       real(C_DOUBLE) walltime,walltime0,buffer1,buffer2
@@ -10016,7 +10022,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
@@ -10031,17 +10037,10 @@
       real(C_float) ymin,ymax
       real(C_float) xcm(6),ycm(6),pl(6),pr(6),ql(6),qr(6)
 !
-      real(C_DOUBLE) time1 
-      common/headr2/ time1
-!
       character(len=8) lab1,lab2,lab3
       character(len=8) label(8),date_now*10,cax*1
-      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0,         &
-                    pl1,pr1,ql1,qr1,scx,scy,time,         &
-                    xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,  &
-                    y1,y2,y3,y4,xc,xd,xl,xu,yc,yl,yr
-!
       common/headr1/ label,date_now
+      common/headr2/ time,xp_leng
       common/pplcom/ nfine,pl1(10),pr1(10),ql1(10),qr1(10),  &
                      xmin1(10),xmax1(10),ymin1(10),ymax1(10)
 !
@@ -10058,6 +10057,10 @@
             ql/2.3, 10.5,2.3, 12.9,7.6,2.3/
       logical  lab_skip
 !
+      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0, &
+                    pl1,pr1,ql1,qr1,scx,scy,time,xp_leng,   &
+                    xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,    &
+                    y1,y2,y3,y4,xc,xd,xl,xu,yc,yl,yr
 !***
       iplot= 1
       go to 1
@@ -10081,26 +10084,23 @@
       lab_skip= .false.
       if(il.eq.7) lab_skip= .true.
 !
-      time= time1  ! real*8 -> real*4
-!
 !                 ******************************************************
 !*                **  Make a copy before the top-left frame is drawn. **
 !                 ******************************************************
       hh = 0.70
       hhs= 0.60
 !
-      i1= iabs(ix)
-      j1= iabs(iy)
+      i1= abs(ix)
+      j1= abs(iy)
       if(i1.ge.3) go to 10
       if(j1.eq.3.or.j1.ge.5) go to 10
 !                                              ************************
 !                                              ** label of the page. **
 !                                              ************************
       call symbol (0.1,18.0,hh,label(1),0.,8)
-      call symbol (3.1,18.0,hh,date_now, 0.,10)
-!
-!     call symbol (15.9,0.1,hh,'t=',0.,2)
-!     call number (999.0,999.0,hh,time,0.,101)
+!     call symbol (3.1,18.0,hh,date_now, 0.,10)
+      call symbol (15.9,0.1,hh,'t =',0.,3)
+      call number (999.0,999.0,hh,time,0.,5)
 !
    10 continue
 !
@@ -10126,7 +10126,7 @@
 !                                                *****************
 !                                                **  log. scale **
 !                                                *****************
-      if(iabs(IL).eq.2) then
+      if(abs(IL).eq.2) then
          do i= 1,npts
          if(v(i).gt.0.) then
             v(i)= alog10(v(i))
@@ -10210,11 +10210,11 @@
 !                                                     **************
 !
       if(.not.lab_skip) then
-        call number (pl(i1)-0.5,ql(j1)-0.45,hhs,xmin,0.,201)
-        call number (pr(i1)-1.5,ql(j1)-0.45,hhs,xmax,0.,201)
+        call number (pl(i1)-0.5,ql(j1)-0.45,hhs,xmin,0.,101)
+        call number (pr(i1)-1.5,ql(j1)-0.45,hhs,xmax,0.,101)
 !
-        call number (pl(i1)-2.0,ql(j1)     ,hhs,ymin,0.,201)
-        call number (pl(i1)-2.0,qr(j1)-0.30,hhs,ymax,0.,201)
+        call number (pl(i1)-2.0,ql(j1)     ,hhs,ymin,0.,101)
+        call number (pl(i1)-2.0,qr(j1)-0.30,hhs,ymax,0.,101)
       end if
 !
 !                                                     **************
@@ -10262,7 +10262,7 @@
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_float),dimension(100000) :: x,y,z
 !          +++++++    
@@ -10299,7 +10299,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
 !          +++++++
@@ -10504,7 +10504,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !*
       integer  n1
       real(C_DOUBLE)   time1
@@ -10602,22 +10602,22 @@
       am2=  1.e30
 !
       do jk= 1,nyz
-      am1= amax1(am1,a(jk))
-      am2= amin1(am2,a(jk))
+      am1= max(am1,a(jk))
+      am2= min(am2,a(jk))
       end do
 !
       call symbol (zl+1.0,yl-1.5,hh,'max=',0.,4)
-      call number (zl+2.7,yl-1.5,hh,am1,0.,201)
+      call number (zl+2.7,yl-1.5,hh,am1,0.,101)
       call symbol (zl+1.0,yl-2.0,hh,'min=',0.,4)
-      call number (zl+2.7,yl-2.0,hh,am2,0.,201)
+      call number (zl+2.7,yl-2.0,hh,am2,0.,101)
 !
       call setscl (0.,0.,zmax,ymax,zl,yl,zr,yr,gdz,gdy,  &
                    n1,char1, 8,' scalar ', hh,           &
                    1,'Z',0.4, 1,'X',0.4, 1)
 !
-      call number (zl-1.0,yl-0.6,hs,0.  ,0.,200)
-      call number (zl-2.0,yr-0.3,hs,ymax,0.,200)
-      call number (zr-1.0,yl-0.6,hs,zmax,0.,200)
+      call number (zl-1.0,yl-0.6,hs,0.  ,0.,100)
+      call number (zl-2.0,yr-0.3,hs,ymax,0.,100)
+      call number (zr-1.0,yl-0.6,hs,zmax,0.,100)
 !
 !
       jk= 0
@@ -10654,17 +10654,17 @@
       am2=  1.e30
 !
       do j= 1,ny
-      am1= amax1(am1,as(j))
-      am2= amin1(am2,as(j))
+      am1= max(am1,as(j))
+      am2= min(am2,as(j))
       end do
 !
       am12 = am1 -am2
       if(am12.lt.1.e-10) am12= 999.
 !
       call symbol (zls-1.9,yls-1.5,hh,'max=',0.,4)
-      call number (zls-0.3,yls-1.5,hh,am1,0.,201)
+      call number (zls-0.3,yls-1.5,hh,am1,0.,101)
       call symbol (zls-1.9,yls-2.0,hh,'min=',0.,4)
-      call number (zls-0.3,yls-2.0,hh,am2,0.,201)
+      call number (zls-0.3,yls-2.0,hh,am2,0.,101)
 !
       call plot (zls,yls,3)
       call plot (zls,yrs,2)
@@ -10698,7 +10698,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_float)  ex(mx,myA,mz),ey(mx,myA,mz),ez(mx,myA,mz),  &
                      exc,eyc,ezc,xmax,ymax,zmax
@@ -10803,8 +10803,8 @@
 !
       do jk= 1,nyz
       amy= sqrt(ax(jk)**2 +ay(jk)**2 +az(jk)**2) 
-      am1= amax1(am1,sqrt(abs(ay(jk)**2 +az(jk)**2))) !amy)
-      am2= amax1(am2,abs(ax(jk)))
+      am1= max(am1,sqrt(abs(ay(jk)**2 +az(jk)**2))) !amy)
+      am2= max(am2,abs(ax(jk)))
       end do
 !
       if(am1.lt.1.e-10) am1=999.0
@@ -10827,9 +10827,9 @@
                    am11,am12,shfz,shfy,7000,isel)
 !
       call symbol (zc-3.7,0.6,hh,'Pol=',0.,4)
-      call number (zc-2.0,0.6,hh,am1,0.,201)
+      call number (zc-2.0,0.6,hh,am1,0.,101)
       call symbol (zc-3.7,0.1,hh,'Tor=',0.,4)
-      call number (zc-2.0,0.1,hh,am2,0.,201)
+      call number (zc-2.0,0.1,hh,am2,0.,101)
 !
 !
 !*  (2): Contour plot of the ax-component.
@@ -10857,8 +10857,8 @@
       do j= 1,ny
       do k= 1,nz
       jk= jk +1
-      am1= amax1(am1,ax(jk)) !<- ok
-      am2= amin1(am2,ax(jk))
+      am1= max(am1,ax(jk)) !<- ok
+      am2= min(am2,ax(jk))
       end do
       end do
 !
@@ -10899,7 +10899,7 @@
 !
       use, intrinsic :: iso_c_binding
       implicit none
-      include 'param_023A.h' 
+      include 'param_080A.h' 
 !
       real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
       real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
@@ -11002,8 +11002,8 @@
       am22=  1.d+10
 !
       do jk= 1,npy*npz
-      am21= amax1(am21,a(jk))
-      am22= amin1(am22,a(jk))
+      am21= max(am21,a(jk))
+      am22= min(am22,a(jk))
       end do
 !
 !
@@ -11011,19 +11011,19 @@
       am42=  1.e+10
 !
       do ik= 1,npx*npz2
-      am41= amax1(am41,b(ik))
-      am42= amin1(am42,b(ik))
+      am41= max(am41,b(ik))
+      am42= min(am42,b(ik))
       end do
 !
-      ams1= amax1(am21,am41)
-      ams2= amin1(am22,am42)
-      ams = amax1(ams1,-ams2)
+      ams1= max(am21,am41)
+      ams2= min(am22,am42)
+      ams = max(ams1,-ams2)
 !     if(ams.lt.1.d-10) ams=999.0
 !
       call symbol (2.0,0.80,hh,'max=',0.,4)
-      call number (5.0,0.80,hh,ams1,0.,201)
+      call number (5.0,0.80,hh,ams1,0.,101)
       call symbol (2.0,0.10,hh,'min=',0.,4)
-      call number (5.0,0.10,hh,ams2,0.,201)
+      call number (5.0,0.10,hh,ams2,0.,101)
 !
 !---------------------------------------------
 !*  (1): Contours in (x,z) plane.
@@ -11033,9 +11033,9 @@
                    n1,char1, 2,'YZ', 0.6,               &
                    1,'Z',0.6, 1,'Y',0.6, 1)
 !
-      call number (zl-1.3,yl-0.3, hh,zmin,0.,100)
-      call number (zl-1.3,yr-0.3, hh,zmax,0.,100)
-      call number (zr-1.3,yl-0.5, hh,ymax,0.,100)
+      call number (zl-1.3,yl-0.3, hh,zmin,0.,5)
+      call number (zl-1.3,yr-0.3, hh,zmax,0.,5)
+      call number (zr-1.3,yl-0.5, hh,ymax,0.,5)
 !
       nyz= npy*npz
       call daisho (a,nyz,wamin,wamax)
@@ -11060,9 +11060,9 @@
                    n1,char1, 2,'XZ', 0.6,                 &
                    1,'Z',0.6, 1,'X',0.6, 1)
 !                                           <-- ierr= 5
-      call number (zl-0.45,xl2-0.5,hh,zmin,0.,100)
-      call number (zl-1.3, xr2-0.3,hh,zmax,0.,100)
-      call number (zl-1.3, xl2-0.5,hh,xmax,0.,100)
+      call number (zl-0.45,xl2-0.5,hh,zmin,0.,5)
+      call number (zl-1.3, xr2-0.3,hh,zmax,0.,5)
+      call number (zl-1.3, xl2-0.5,hh,xmax,0.,5)
 !
       nxz= npx*npz2
       call daisho (b,nxz,wamin,wamax)
@@ -11155,7 +11155,7 @@
  2000 continue
       ram = 0.
       eps = 1.e-10
-      anorm = amax1(anormx,anormy)
+      anorm = max(anormx,anormy)
       if (anorm.gt.eps) ram = 1./anorm
       do 2200 ij= 1,nxy
       iy= (ij-1)/nx+1
@@ -11279,9 +11279,9 @@
 !
 !*  used to judge possible intersection by contours.
 !
-      j1 = iabs(k2-k1)
-      j2 = iabs(k3-k2)
-      j3 = iabs(k4-k3)
+      j1 = abs(k2-k1)
+      j2 = abs(k3-k2)
+      j3 = abs(k4-k3)
 !
       u21= u2 -u1
       u32= u3 -u2
@@ -11621,21 +11621,21 @@
       call chart
       call symbol(1.0,11.0,0.2,' procedure = wdashl ',0.,20)
       call symbol(1.0,10.0,0.2,' abnormal world coordinate call',0.,31)
-      call symbol(1.0, 9.0,0.2,' wmaxx =',0.,8)
+      call symbol(1.0,09.0,0.2,' wmaxx =',0.,8)
       call number(999.0,999.0,0.2,wmaxx,0.,2)
-      call symbol(1.0, 8.5,0.2,' wminx =',0.,8)
+      call symbol(1.0,08.5,0.2,' wminx =',0.,8)
       call number(999.0,999.0,0.2,wminy,0.,2)
-      call symbol(1.0, 8.0,0.2,' wmaxy =',0.,8)
+      call symbol(1.0,08.0,0.2,' wmaxy =',0.,8)
       call number(999.0,999.0,0.2,wmaxy,0.,2)
-      call symbol(1.0, 7.5,0.2,' wminy =',0.,8)
+      call symbol(1.0,07.5,0.2,' wminy =',0.,8)
       call number(999.0,999.0,0.2,wminy,0.,2)
-      call symbol(1.0, 6.5,0.2,' xleft =',0.,8)
+      call symbol(1.0,06.5,0.2,' xleft =',0.,8)
       call number(999.0,999.0,0.2,xl,0.,2)
-      call symbol(1.0, 6.0,0.2,' yleft =',0.,8)
+      call symbol(1.0,06.0,0.2,' yleft =',0.,8)
       call number(999.0,999.0,0.2,yl,0.,2)
-      call symbol(1.0, 5.5,0.2,' xright=',0.,8)
+      call symbol(1.0,05.5,0.2,' xright=',0.,8)
       call number(999.0,999.0,0.2,xr,0.,2)
-      call symbol(1.0, 5.0,0.2,' yright=',0.,8)
+      call symbol(1.0,05.0,0.2,' yright=',0.,8)
       call number(999.0,999.0,0.2,yr,0.,2)
       write(6,*) '**********  abnormal world coordinate ********'
       write(6,*) '     procedure = wdashl'
@@ -12148,8 +12148,8 @@
       xmax1= x(1)
       xmin1= x(1)
       do 100 i=2,nx
-      xmax1= amax1(xmax1,x(i) )
-      xmin1= amin1(xmin1,x(i) )
+      xmax1= max(xmax1,x(i) )
+      xmin1= min(xmin1,x(i) )
   100 continue
       return
       end subroutine daisho
@@ -12463,12 +12463,12 @@
 !-----------------------------------------------
        subroutine number (x0,y0,h0,anu,ang,n0)
 !-----------------------------------------------
-       use, intrinsic :: iso_c_binding 
+       use, intrinsic :: iso_c_binding  ! <-
        implicit none
 !
-       real(c_float) x0,y0,h0,anu,ang,x,y,h
-       integer(c_int) n0,n,i
-       character  isymb*9
+       real(C_float)  x0,y0,h0,anu,ang,x,y,h
+       integer(C_INT) n0,n
+       character      isymb*9
 !
        x= x0
        y= y0
@@ -12486,48 +12486,34 @@
        write(77,30) ang
    30  format(f5.1,' ro')
 !
-       if(n0.ge.200) then
-         write(isymb,200) anu
-  200    format(1pe9.2)
-!
-         go to 300
+       if(abs(anu).gt.1.e1 .or.  &
+          abs(anu).lt.1.e-1) then
+        write(isymb,'(1pe9.2)') anu    ! e9.2
+       else
+        write(isymb,'(f7.2)') anu      ! f7.2
        end if
 !
-!      if(abs(anu).gt.1.e+1 .or.  &
-!         abs(anu).lt.1.e-1) then
-!       write(isymb,31) anu
-!  31   format(1pe9.2)
-!      else
-!       write(isymb,32) anu
-!  32   format(f7.2)
-!      end if
-!
-!      if(.true.) go to 300
-       if(abs(anu).lt.10000.) then  ! 5 digits
+       if(.true.) go to 300
+       if(abs(anu).lt.10000.) then  !! 5 digits
          if(abs(anu).gt.0.1) then
-           write(isymb,40) anu
-   40      format(f6.1)
+           write(isymb,'(f6.1)') anu        ! f6.1
          else
-           if(abs(anu).gt.0.001) then  ! f6.3
-             write(isymb,41) anu
-   41        format(f6.3)
+           if(abs(anu).gt.0.001) then 
+             write(isymb,'(f6.3)') anu      ! f6.3
            else
-             if(abs(anu).gt.0.001) then  ! f6.3
-               write(isymb,42) anu   ! e9.2
-   42          format(1pe9.2)
+             if(abs(anu).gt.0.001) then 
+               write(isymb,'(1pe9.2)') anu  ! e9.2
              else
-               write(isymb,40) anu   ! 0.0
+               write(isymb,'(f6.1)') anu    ! f6.1  0.0
              end if
            end if
          end if
 !
        else
          if(abs(anu).lt.100000.) then
-           write(isymb,51) anu     ! f7.1
-   51      format(f7.1)
+           write(isymb,'(f7.1)') anu       ! f7.1
          else
-           write(isymb,52) anu     ! e9.2
-   52      format(1pe9.2)
+           write(isymb,'(1pe9.2)') anu     ! e9.2
          end if
        end if
   300  continue
@@ -12535,7 +12521,7 @@
        write(77,*) '(',isymb,') s'
 !
        return
-       end
+       end subroutine number
 !
 !
 !-----------------------------------------------
@@ -12581,7 +12567,7 @@
        common/convsn/ fmag,x0,y0,h0,n0
 !
        if(x.eq.999.) then
-         x= x0 +iabs(n0)*h0
+         x= x0 +abs(n0)*h0
        else
          x= fmag*x
          x0= x
