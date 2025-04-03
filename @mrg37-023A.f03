@@ -20,10 +20,10 @@
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
 !*    may be used. One should read the reference Ref.2 JCP (1993).     *
 !*                                                                     *
-!*  * Author: Motohiko Tanaka, Ph.D., Chikusa, Nagoya 464, Japan.      *
+!*   Author: Motohiko Tanaka, Ph.D., Chikusa, Nagoya 464, Japan.       *
 !*                                                                     *
-!*  https://github.com/Mtanaka77/                                      *
-!*  Macro-Particle_Simulation_of_Magnetic_Reconnection                 *
+!*   GPL-3.0 License, at https://github.com/Mtanaka77/                 *
+!*   Macro-Particle_Simulation_of_Magnetic_Reconnection                *
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
 !

@@ -22,12 +22,12 @@
 !*                                                                     *
 !*  * Author: Motohiko Tanaka, Ph.D., Chikusa, Nagoya 464, Japan.      *
 !*                                                                     *
-!*  https://github.com/Mtanaka77/                                      *
-!*  Macro-Particle_Simulation_of_Magnetic_Reconnection                 *
+!*   GPL-3.0 License, at https://github.com/Mtanaka77/                 *
+!*   Macro-Particle_Simulation_of_Magnetic_Reconnection                *
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
 !
-!    @mrg3-A023.f03: Non-periodic in y direction (two-points) and 
+!    @mrg3-A080.f03: Non-periodic in y direction (two-points) and 
 !    periodic (three-points) in x and z directions.
 !
 !      The full-implicit plasma simulation code was created at 
