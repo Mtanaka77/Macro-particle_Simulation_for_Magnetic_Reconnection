@@ -66,8 +66,8 @@ Fully kinetic ions and electrons are used in the rec_3d23A file.
 Then, let's start looking at a merging of two flux bundles. 
 
 In-house graphic subroutines are incorporated in "@mrg37-023A.f03" in order to check the current run in the simulation. 
-Figure 1 in the first page "EMfield.pdf" PDF plot and Figure 2 in the following pages of Nov. 2024 demonstrate 
-the electric and magnetic fields.
+Figure 1 in the first page of "EMfield.pdf" plot and Figure 2 in the following pages made at Nov. 2024 demonstrate 
+the electric and magnetic fields of the macro-particle kinetic simulation.
 The Y-Z (left) and X (right) components at the early and final times and  also 
 precise plots of t= 0-4080/\wpe show merging of two flux bundles.
  Two flux bundles are seen touched and sqeezed at the y= Ly/2 plane. 
