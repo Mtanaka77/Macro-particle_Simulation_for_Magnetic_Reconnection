@@ -2,7 +2,7 @@
 
 This page is discussed on the largescale electromagnetic particle simulation 
 (J. Comp. Physics, Tanaka, 1993), which had a striking result of magnetic reconnection
-in earth and astrophysical spaces (Phys. Plasmas, Tanaka, 1995, 1996). 
+in earth and astrophysical physical spaces (Phys. Plasmas, Tanaka, 1995, 1996). 
 This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
 Shimazu, 1996)
 
@@ -19,8 +19,7 @@ Much later by a particle simulation as theory comptatinal tools, it was clearly 
 An electromagnetic particle simulation code is utilized for solar and magnetospheric space physics (Ref. 1,4-5). 
 The difference of the codes is that, for an explicit particle code, it is strictly bound by the Courant condition,  
 Dx/Dt < c where Dx is the cell length, Dt is the time step, and c is the speed of light. 
-On the other hand for the implicit particle code, it is free from this condition, that is Dx/Dt > c and is possible
-to make research of solar physics environment. 
+On the other hand for the implicit particle code, it is free from this condition, that is Dx/Dt > c and is possible to make research of solar physics environment. 
 
 In the implicit case, both electric and magnetic fields are solved by the implicit condition 
 where the low-frequency slightly backward time decentering technique is used. 
@@ -32,13 +31,10 @@ for applying this simulation code.
 ### Implicit Particle Simulation ###
 
 One utilizes the time decentered scheme in \aimpl=0.6, while the time centered scheme in the explicit code (\aimpl=0.5) is used in other directory of molecular dynamics simulations. Four physical units are, i) time: 1/wpe (c/wpe: electron inertia length), ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge. The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
+The title, major references, and remarks of this simulation code are written in the top of the @mrg37_080A.f03 file.
+Major subroutines are named /fulmov/, /emfild/ and /cfpsol/, which are used in every time step. 
 
-The title, major references, and remarks of this simulation code are written in the top of the @mrg37_023A.f03 file.
-Major subroutines are the following: /fulmov/ (particles are accumulated for their position and momentum), 
-/emfild/ ans /cfpsol/ (electromagnetic fields are solved using large matrix equations), 
-and /fulmov/(2) (particles are advanced), which are used in every time step. 
-
-By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in \aimpl > 0.5, a time step may be Dt~ 1.2/ \wpe in order to dump out plasma oscillations at plasma frequency \omega_e= \wpe - small noises. 
+By the implicit scheme it is free from the Courant condition, that is, Dx(length)/Dt(time step) >< c, the speed of light. For the backward differential scheme in \aimpl > 0.5, a time step may be Dt~ 1.2/ \wpe in order to dump out plasma oscillations at plasma frequency \omega_e= \wpe - small noises. But, actually Dt*\wce > 10 is required for electron tracking.
 
 ### Execution Scripts ###
 
@@ -59,24 +55,14 @@ Execution by mpiexec (may need some hundreds of processors)
 
 ### Simulation of Two Flux Bundles
 
-One can enjoy simulations by changing system sizes and boundary conditions. 
-For the present case, an equilibration of the pair of flux bundles separating 
-the poloidal magnetic field (the y-z component) is shown in three dimensions. 
-Fully kinetic ions and electrons are used in the rec_3d23A file. 
-Then, let's start looking at a merging of two flux bundles. 
+One can enjoy simulations by changing system sizes and boundary conditions. For the present case, an equilibration of the pair of flux bundles separating the poloidal magnetic field (the y-z component) is first tested in three dimensions. Fully kinetic ions and electrons are used, for example, in the rec_3d23A file. Then, let's start looking at a merging of two flux bundles. 
 
-In-house graphic subroutines are incorporated in "@mrg37-023A.f03" in order to check the current run in the simulation. 
-Figure 1 in the first page "EMfield.pdf" PDF plot and Figure 2 in the following pages of Nov. 2024 demonstrate 
-the electric and magnetic fields.
-The Y-Z (left) and X (right) components at the early and final times and  also 
-precise plots of t= 0-4080/\wpe show merging of two flux bundles.
- Two flux bundles are seen touched and sqeezed at the y= Ly/2 plane. 
-(However, it goes quite mixed and a simulation should stop at the final time.) 
+In-house graphic subroutines are incorporated in "@mrg37-023A.f03" in order to check the current run in the simulation. Figure 1 in the "EMfield.pdf" PDF plot shows the electric and magnetic fields in the YZ (left) and X (right) components at the early and final times. Two flux bundles at t= 5000/\wpe are seen touched and sqeezed at the y= Ly/2 plane. 
 
 Reading papers of this implicit particle simulation code (Ref. 2,3) and applications to magnetospheric space plasmas (Ref. 1,4,5) are highly recommended.
 
 
-### References ###
+### References: ###
 
 1. M. Tanaka, Macro-particle simulations of collisionless magnetic reconnection, Phys.Plasmas, 2, 2920-2930 (1995).
 
