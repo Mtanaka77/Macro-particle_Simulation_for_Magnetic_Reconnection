@@ -1,9 +1,9 @@
 ## Macro-Particle Simulation for Magnetic Reconnection ## 
 
-This page is discussed on the largescale electromagnetic particle simulation 
-(J. Comp. Physics, Tanaka, 1993), which had a striking result of magnetic reconnection
-in earth and astrophysical spaces (Phys. Plasmas, Tanaka, 1995, 1996). 
-This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
+This page is discussed on the large-scale electromagnetic particle simulation 
+(J. Comp. Physics, Tanaka, 1993), which has a striking result of magnetic reconnection
+in the earth and astrophysical physics spaces (Phys. Plasmas, Tanaka, 1995, 1996). 
+This is connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
 Shimazu, 1996)
 
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
