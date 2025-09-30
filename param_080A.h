@@ -1,4 +1,5 @@
-!  param_080A.h
+!  param_080A.h: 
+!*  Testing of 8 cpu, small particle sizes in /loadpt/
 !
       integer(C_INT) npc,mx,my,mz,mxyz0,np0,myA,kd,   &
                      mxyz,mxyz3,mxyzA,                &
@@ -8,10 +9,12 @@
 !     character :: praefixs*29,praefixc*23,suffix2*2,suffix1*2
       character :: praefixs*29,praefixc*25,suffix2*2,suffix1*2
 !
-!     parameter  (npc=8)
-      parameter  (npc=6)
-      parameter  (mx=72,my=144,mz=72)
-      parameter  (mxyz0=mx*my*mz,np0=32*mx*my*mz) 
+      parameter  (npc=8)
+!     parameter  (npc=6)
+      parameter  (mx=40,my=72,mz=40)  ! divided by mz of 8
+!     parameter  (mx=72,my=144,mz=72)
+      parameter  (mxyz0=mx*my*mz,np0=4*mx*my*mz) 
+!     parameter  (mxyz0=mx*my*mz,np0=32*mx*my*mz) 
 !
       parameter  (suffix2='0a',suffix1='0a') 
 !     parameter  (suffix2='0b',suffix1='0a')
@@ -31,7 +34,4 @@
 ! 
       parameter  (nob=15,nob2=19,nob3=7) 
       parameter  (iblk=3,iblk2=1,iblk3=1)
-      parameter  (nhistm=12)  !54)
-!
-!     parameter  (suffix2='0a',suffix1='0a')  ! 0a
-!     parameter  (suffix2='0b',suffix1='0a')  ! 0b
+      parameter  (nhistm=12)  !54

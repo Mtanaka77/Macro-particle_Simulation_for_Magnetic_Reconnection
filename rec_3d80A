@@ -13,10 +13,10 @@
           itermx=1,iterfx=150,itersx=150,
           iloadp=0,arb=0.4d0,nha=5,
  &end         
- &datum2  nhist=1000,nplot=250,nfwrt=250,npwrt=777777,
+ &datum2  nhist=100,nplot=10,nfwrt=10,npwrt=777777,
           vlima=0.06d0,vlimb=0.6d0,bmin=1.0d-8,emin=1.0d-8,
  &end
- &datum3  label(1)='MGR3:32 '
+ &datum3  label(1)='mrg37 '
           label(2)='aimp=0.6'
           label(3)=' dt=1.2 '
 	  label(4)='te/ti=1 '
@@ -27,7 +27,9 @@
  &end                                      
 
  &datum0  kstart=0,tfinal=5000.d0,cptot=200.1d0,
- &datum2  nhist=100,nplot=10,nfwrt=10,npwrt=777777,
+ &datum2  nhist=1000,nplot=250,nfwrt=250,npwrt=777777,
+          vlima=0.06d0,vlimb=0.6d0,bmin=1.0d-8,emin=1.0d-8,
+ &end
  &datum2  nhist=1000,nplot=250,nfwrt=250,npwrt=777777,
           wspec(1)=100.d0,qspec(1)=1.0d0,vbeam(1)= 0.25d-2,
           wspec(2)=1.d0, qspec(2)=-1.0d0,vbeam(2)=-0.25d-2,

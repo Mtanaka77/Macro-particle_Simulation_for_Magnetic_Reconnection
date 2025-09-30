@@ -1,7 +1,8 @@
 !*** Late Version: 2025/3/23 ******************** Fortran 2003/2008 ****
 !*                                                                     *
-!*   ## Macro-particle Kinetic Simulation for Solar EM Simulation ##   *
-!*     << Fully-implicit scheme with kinetic ions and electrons >>     *
+!*   ## Macro-particle Kinetic Simulation for Solar-Wind and           *
+!*      Magnetic Reconnction Plasmas                                   *
+!*   << Fully-implicit scheme with kinetic ions and electrons >>       *
 !*                                                                     *
 !*    Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).         *
 !*           2) M.Tanaka, J.Comput.Phys., vol.107, 124 (1993).         *
@@ -12,10 +13,10 @@
 !*           6) M.Tanaka, Bulletin of Chubu University (Mar,2022).     *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_080A.f03: simulation code, job serial number '80'      *
-!*    2. param_080A.h   : parameter file                               *
-!*    3. rec_3d80A      : Simulation time, box size, parameters of     *
-!*                  ions and electrons, decentering parameter, etc,    *
+!*    1. @mrg37_080A.f03: simulation code, job serial number '80a'     *
+!*    2. param_080A.h   : parameter file, (mx,my,mz),nob,iblk...       *
+!*    3. rec_3d80A      : Simulation time dt, sizes xmax-zmax, tfinal, *
+!*                        ions and electrons, decentering aimpl, etc.  *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
 !*    may be used. One should read the reference Ref.2 JCP (1993).     *
@@ -27,7 +28,7 @@
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
 !
-!    @mrg3-A080.f03: Non-periodic in y direction (two-points) and 
+!    @mrg37-080A.f03: Non-periodic in y direction (two-points) and 
 !    periodic (three-points) in x and z directions.
 !
 !      The full-implicit plasma simulation code was created at 
@@ -96,15 +97,43 @@
 !*  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
-!* $ mpif90 -mcmodel=medium -fPIC @mrg37-080A.f03 &> log
+!* $ mpif90 -mcmodel=medium -fPIC -fallow-argument-mismatch \
+!*   @mrg37-080A.f03 &> log
 !* $ mpiexec -n number_of_cpu's a.out &
+!*
+!*  Fortrtan 2003/2008 by direct write outputs
+!*        write(11,'(" arrayx,arrayy(i),arrayz=",3i6)')... 
+!*----------------------------------------------------------------------
+!*  Particles have small sizes about 3 GB for testing: 
+!*   4*mx*my*mz in L.8960 /loadpt/, mx=40,my=72,mz=40 in param_080A.h, 
+!*   nhist=100,nplot=10 in rec_3d80A
 !-----------------------------------------------------------------------
-!*  Fortrtan 2003/Fortran 2008 by direct write outputs
-!*               write(11,'(" arrayx,arrayy(i),arrayz=",3i6)')... 
-!-----------------------------------------------------------------------
-!
       program macro_particles_code
+!             
+      use, intrinsic :: iso_c_binding
+      implicit none
 !
+      include 'mpif.h'
+      integer(C_INT) rank,size,ierror
+!
+      call mpi_init (ierror)
+      call mpi_comm_rank (mpi_comm_world,rank,ierror)
+      call mpi_comm_size (mpi_comm_world,size,ierror)
+!
+      if(rank.eq.0) write(11,*) 'rank,size=',rank,size
+!  -----------------------------    
+      call RUN_MD (rank,size)
+!  -----------------------------    
+!      
+      call mpi_finalize (ierror)
+!
+      stop
+      end program macro_particles_code
+!
+!
+!---------------------------------------
+      subroutine RUN_MD (rank,size)
+!---------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
 !
@@ -208,10 +237,6 @@
 !************************
 !*  Initial MPI setup.  *
 !************************
-!
-      call mpi_init (ierror)
-      call mpi_comm_rank (mpi_comm_world,rank,ierror)
-      call mpi_comm_size (mpi_comm_world,size,ierror)
 !
       ipar = 1 + rank     !! pe #= 1,2,3...
 !
@@ -435,7 +460,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("**** it=",i5," *****")') it
+        write(11,'("## it=",i5," ##")') it
         close(11)
         end if
       end if
@@ -521,14 +546,13 @@
 !
         open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
               status='unknown',position='append',form='formatted')
+!
         call plote
         close(77)
       end if
 !
-      call mpi_finalize (ierror)
-!
-      stop
-      end program macro_particles_code
+      return
+      end subroutine RUN_MD
 !
 !
 !-----------------------------------------------------------------------
@@ -558,7 +582,7 @@
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      include 'param_080A.h'
+      include 'param_070A.h'
       integer(C_INT) it,interv
 !
 !  Hit is true if mod(it,..)= 0 
@@ -718,8 +742,10 @@
  1000 cl_first= 2
       call clocki (walltime1,size,cl_first)
 !
-      if(mod(it,5).eq.1 .and. t.ge.tfinal) then
+      it= it +1 
+      t = t +dt
 !
+      if(mod(it,5).eq.0 .and. t.ge.tfinal) then
         if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -731,7 +757,6 @@
       end if
 !
       if((walltime1/60.d0).gt.cptot) then
-!
         if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -742,10 +767,7 @@
         return  !<-- in minutes
       end if
 !     +++++++++++++++++++++++++++++++++++++++++++
-!
-      it= it +1 
-      t = t +dt
-!        +++++++++++++++++
+!        
       if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
         ldec= ldec +1  ! only at this time
         tdec(ldec)= t
@@ -766,7 +788,6 @@
         call clocki (walltime2,size,cl_first)
 !
       call emfild (np1,np2,nz1,nz2,ipar)
-!
 !
 !***********************************************************************
 !*  3.  Update particles : x(n) to x(n+1)  (ipc=0).                    *
@@ -834,11 +855,8 @@
           write(11,*) 'Write L.840 it=',it
           close(11)
         end if
-!
       end if
-!       
 !***
-!
       if(mod(it,nha).ne.0 .or. it.eq.0) go to 1000
 !               +++  ++ + 
 !
@@ -3458,6 +3476,12 @@
 !     ++++++++++
       nobx= nob3  !!<--used in /emcoef3/, /cresmd/ 
 !     ++++++++++
+        if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+        write(11,*) ' emfld0 start'
+        close(11)
+        end if
 !
 !   Outside meshes calculated by outmesh3 () is then arranged by 
 !   vmesh3 () in srimp1-srimp4 are used. So, (1,mx) are used.
@@ -4036,7 +4060,6 @@
       end do
       end do
 !
-!
 !-----------------------------------------------------------------------
 !*  The magnetic terms and magnetization current (pseudo drift current).
 !-----------------------------------------------------------------------
@@ -4137,7 +4160,7 @@
       end do
       end do
       end do
-!
+!      
 !***********************************************************************
 !* 3. The RHS of the field-particle coupled equation.                  *
 !***********************************************************************
@@ -7612,14 +7635,14 @@
       js= 1         ! a(-2) <-> e(2), a(-1) <-> e(1)
       do k= 0,mz-1  !  ex() to ax() of opposite sign
       do i= 0,mx-1
-      ax(i,-js,k)=  sym* ex(i,js,k)
+      a(i,-js,k)=  sym* q(i,js,k)
       end do
       end do
 !                       my-2 my-1 (my) my+1 my+2
       js= 1        ! a(my+2) <-> e(my-2), a(my+1) <-> e(my-1)
       do k= 0,mz-1 
       do i= 0,mx-1
-      ax(i,my+js,k)=  sym* ex(i,my-js,k)
+      a(i,my+js,k)=  sym* q(i,my-js,k)
       end do
       end do
 !***
@@ -8935,7 +8958,8 @@
       do j= 1,my  !!!<-- use inside the region
       do i= 1,mx
 !
-      do m= 1,32  !! 32 particles per cube
+      do m= 1,4   !!  4 particles per cube
+!     do m= 1,32  !! 32 particles per cube
       l= l +1
 !
 !     xout= gx(i-1) +hx/2 +hx*ranfp(0.d0)  !<-- gx(0)= -hx/2 !!
@@ -8961,7 +8985,7 @@
         write(11,*) 'init of npr= ',npr
         write(11,*) 'init of ksp= ',ksp
         write(11,*) 'The number of particles= ',l
-        write(11,*) ' qmulti=',qspec(ksp)
+        write(11,*) ' * qmulti=',qspec(ksp)
         write(11,*)
         close(11)
       end if
@@ -9034,6 +9058,14 @@
       vx(l)=  vxout + vdrift  !<-- <vx>= vdrift
       vy(l)=  vyout           !<-- <vy>= 0
       vz(l)=  vzout
+!
+!     if(io_pe.eq.1) then
+!       open (unit=11,file=praefixc//'.11'//suffix2,             & 
+!             status='unknown',position='append',form='formatted')
+!       write(11,995) l,vx(l),vy(l),vz(l)
+! 995   format('l,vx-vz=',i8,3d11.3)        
+!       close(11)
+!     end if  
       end do 
 !
 !
@@ -9920,7 +9952,6 @@
 !
       return
       end subroutine endrun
-!
 !
 !------------------------------------------------------
       subroutine clocks (walltime,size,cl_first)
