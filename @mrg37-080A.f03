@@ -97,7 +97,7 @@
 !*  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
-!* $ mpif90 -mcmodel=medium -fPIC -fallow-argument-mismatch \
+!* $ mpif90 -O2 -mcmodel=medium -fPIC -fallow-argument-mismatch \
 !*   @mrg37-080A.f03 &> log
 !* $ mpiexec -n number_of_cpu's a.out &
 !*
