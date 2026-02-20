@@ -92,8 +92,7 @@
 !*                                                                     *
 !-----------------------------------------------------------------------
 !* Fortran 2003 by F77/F90 is made by continuity and lower cases, 
-!*  :s%/^C/!/
-!*  :s%/^c/!/
+!*  :s%/^C/!/  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-080A.f03 &> log
