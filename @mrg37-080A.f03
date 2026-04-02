@@ -95,6 +95,10 @@
 !*  :s%/^C/!/  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
+!* PGFortran
+!* $ mpif90 -mcmodel=medium -O2 @mrg37-080A.f03 &> log
+!*
+!* gfortran
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-080A.f03 &> log
 !* $ mpiexec -n number_of_cpu's a.out &
 !-----------------------------------------------------------------------
