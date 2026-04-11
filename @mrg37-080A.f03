@@ -99,7 +99,7 @@
 !* >> gfortran
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-080A.f03 &> log
 !* >> PGFortran
-!* $ mpif90 -mcmodel=medium -fast -tp=px -O2 @mrg37-080A.f03 &> log
+!* $ mpif90 -mcmodel=medium -fast -O2 @mrg37-080A.f03 &> log
 !* $ mpiexec -n number_of_cpu's a.out &
 !-----------------------------------------------------------------------
 !*  Fortrtan 2003/Fortran 2008 by direct write outputs
