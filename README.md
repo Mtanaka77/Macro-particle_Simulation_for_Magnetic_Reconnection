@@ -72,6 +72,7 @@ Linux: Compilation mpif90 by gfortran (-fPIC) or PGI (-fast -tp=px)
 .bashrc may be:
 
 > export PATH=/opt/mpich/bin/:/opt/fftw3/bin/:/usr/local/bin/:/usr/bin/:.:$PATH
+
 > export LD_LIBRARY_PATH=/opt/mpich/lib/:/opt/openblas/lib/:/usr/local/lib/:/usr/lib/:$LD_LIBRARY_PATH
 
 Compilation of mpif90 needs the parameter files param_A81A.h and rec_3d81A
