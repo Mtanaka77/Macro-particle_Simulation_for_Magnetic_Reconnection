@@ -63,17 +63,17 @@ But, actually Dt*\wce > 10 is required for electron tracking.
 
 ### Execution Scripts ###
 
-Linux: Compilation by mpif90 by gfortran or PGI
+Linux: Compilation mpif90 by gfortran or PGI
 
  > mpich-4: ./configure --prefix=/opt/mpich-4 >&1 | tee conf.txt
 
  > fftw3: ./configure --disable-shared --enable-maintainer-mode --enable-threads --prefix=/opt/fftw3
 
-mpif90 @mrg37-081A.f03 needs the parameter files param_A81A.h and rec_3d23A
+Compilation of mpif90 needs the parameter files param_A81A.h and rec_3d81A
 
  > $ mpif90 -mcmodel=medium @mrg37-081A.f03 -I/opt/fftw3/include -L/opt/fftw3/lib -lfftw3
 
-Execution by mpiexec (may need some hundreds of processors)
+Execution by mpiexec (may need some tens of processors)
 
  > $ mpiexec -n (number_of_cpu) a.out &
 
