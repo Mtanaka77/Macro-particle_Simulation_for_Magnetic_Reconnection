@@ -1,6 +1,6 @@
 ## Macro-Particle Simulation for Magnetic Reconnection ## 
 
-This page is discussed on the largescale electromagnetic particle simulation 
+This page is discussed on the large-scale electromagnetic particle simulation 
 (J. Comp. Physics, Tanaka, 1993), which had a striking result of magnetic reconnection
 in earth and astrophysical physical spaces (Phys. Plasmas, Tanaka, 1995, 1996). 
 This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
@@ -88,7 +88,7 @@ Then, let us start looking at a merging of two flux bundles.
 
 In-house graphic subroutines are incorporated in @mrg37-081A.f03 in order 
 to check the current run in the simulation. 
-Figure 1 in the EMfield.pdf (PDF plot shows the electric and magnetic fields 
+Figure 1 in the EMfield.pdf (PDF plot) shows the electric and magnetic fields 
 in the YZ (left) and X (right) components at the early and final times. 
 Two flux bundles at t= 5000/\wpe are seen touched and sqeezed at the y= Ly/2 plane. 
 
