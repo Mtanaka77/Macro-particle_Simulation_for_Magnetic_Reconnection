@@ -80,8 +80,7 @@ Compilation of mpif90 needs the parameter files param_A81A.h and rec_3d81A
  > $ mpif90 -mcmodel=medium -fPIC @mrg37-081A.f03 -I/opt/fftw3/include -L/opt/fftw3/lib -lfftw3
 
 Execution by mpiexec (may need some tens of processors)
-
- > $ mpiexec -n (number_of_cpu) a.out &
+ > $ mpiexec -n (number_of_cpu) a.out &  !! (number_of_cpu)=6 as an example 
 
 
 ### Simulation of Two Flux Bundles
