@@ -100,7 +100,7 @@
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
 !* >> PGFortran
 !* $ mpif90 -mcmodel=medium -fast -tp=px -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n number_of_cpu's a.out &
+!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
 !-----------------------------------------------------------------------
 !*  Fortrtan 2003/Fortran 2008 by direct write outputs
 !*               write(11,'(" arrayx,arrayy(i),arrayz=",3i6)')... 
@@ -138,14 +138,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,     &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  & 
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,     &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -630,14 +630,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,     & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,     &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -661,15 +661,15 @@
       cl_first= 1
       call clocki (walltime1,size,cl_first)
 !
-      if(kstart.eq.0) then  !! only at it= 0
+      if(kstart.eq.0) then  !! only at it= -1
 !        +++++++++++
 !
-        it= -1  ! 0
-        t = -dt ! 0
+        it= -1  ! initial time is it=-1, and t8= -dt
+        t8= -dt ! 
 !
         iaver= 0
         ldec= 1  ! at the start time
-        tdec(ldec)= t
+        tdec(ldec)= t8
 !
         dtsav=  dt
         adtsav= adt
@@ -721,12 +721,12 @@
  1000 cl_first= 2
       call clocki (walltime1,size,cl_first)
 !
-      if(mod(it,5).eq.0 .and. t.ge.tfinal) then
+      if(mod(it,5).eq.0 .and. t8.ge.tfinal) then
 !
         if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
-        write(11,*) '# t.ge.tfinal'
+        write(11,*) '# t8.ge.tfinal'
         close(11)
         end if
 !
@@ -747,12 +747,12 @@
 !     +++++++++++++++++++++++++++++++++++++++++++
 !
       it= it +1 
-      t = t +dt
+      t8= t8 +dt
 !
 !        +++++++++++++++++
       if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
         ldec= ldec +1  ! only at this time
-        tdec(ldec)= t
+        tdec(ldec)= t8
       end if
 !
 !   Accumulate the moments and do emfild    
@@ -816,9 +816,9 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("# it,t=",i6,f10.3,"  total, this step(sec)=", &
+        write(11,'("# it,t8=",i6,f10.3,"  total, this step(sec)=", &
                    2f10.3,/,"  ful(1),em,ful(0)=",3f10.3,/)')     &
-                      it,t,walltime4,walltime4-walltime1,        &
+                      it,t8,walltime4,walltime4-walltime1,        &
                       walltime2-walltime1,walltime3-walltime2,   &
                       walltime4-walltime3
         close(11)
@@ -1092,14 +1092,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -1434,14 +1434,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -1670,14 +1670,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -1831,14 +1831,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -1906,14 +1906,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -1981,14 +1981,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2063,14 +2063,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2138,14 +2138,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2230,14 +2230,14 @@
 ! 
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2433,14 +2433,14 @@
 ! 
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2578,14 +2578,14 @@
 ! 
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2722,14 +2722,14 @@
 ! 
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2873,14 +2873,14 @@
 ! 
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -3430,14 +3430,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -3779,14 +3779,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -4360,7 +4360,7 @@
 !                  +++++
 !       if(mod(it,10).eq.1) then
 !
-        call lblbot (t)
+        call lblbot (t8)
 !
         do k= 0,mz-1
         do j= 0,my   
@@ -4676,14 +4676,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -6752,14 +6752,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -7701,14 +7701,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -7738,7 +7738,7 @@
 !            .and. iwrt(it,nplot).ne.0) return
 !     ++++++++++++++++++++++++++++++++++++++++++++++++
 !
-      call lblbot (t)
+      call lblbot (t8)
 !
 !* [1] ******************************************
       if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
@@ -7869,9 +7869,9 @@
               status='unknown',position='append',form='formatted')
 !
         if(ksp.eq.1) then
-          write(11,'("t=",f7.1," wkix,wkih=",1p2d12.3)') t,wkix,wkih
+          write(11,'("t8=",f7.1," wkix,wkih=",1p2d12.3)') t8,wkix,wkih
         else
-          write(11,'("t=",f7.1," wkex,wkeh=",1p2d12.3)') t,wkex,wkeh
+          write(11,'("t8=",f7.1," wkex,wkeh=",1p2d12.3)') t8,wkex,wkeh
         end if
 !
         close(11)
@@ -8006,14 +8006,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -8121,14 +8121,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -8304,14 +8304,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -8777,14 +8777,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -9113,14 +9113,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -9227,14 +9227,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -9338,14 +9338,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -9361,8 +9361,8 @@
       if(io_pe.ne.1) return
 !    +++++++++++++++++++++++
 !
-      call lblbot(t)
-!     tdec(ldec)= t
+      call lblbot(t8)
+!     tdec(ldec)= t8
 !
 !**
       open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -9497,14 +9497,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -9572,14 +9572,14 @@
 !
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec
       common/parm2/  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec(4),wspec(4),veth,te_by_ti,wce_by_wpe,thb, &
-                     rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      &
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx(4),vthz(4),vdr(4),vbeam(4),      &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -9683,7 +9683,7 @@
               status='unknown',position='append',form='formatted')
 !
         write(11,*)
-        write(11,*) 'it,t=',it,t
+        write(11,*) 'it,t=',it,t8
         write(11,*) 'ions...by allreduce'
 !
         do i= 1,12
@@ -9711,7 +9711,7 @@
         write(12)  xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,     &
                    (qspec(i),i=1,4),(wspec(i),i=1,4),                &
                    veth,te_by_ti,wce_by_wpe,thb,         &
-                   rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,        &
+                   rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,        &
                    q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,    &
                    qqwi,qqwe,(vthx(i),i=1,4),(vthz(i),i=1,4),        &
                    (vdr(i),i=1,4),(vbeam(i),i=1,4),&
@@ -9758,7 +9758,7 @@
       read(12) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,     &
                (qspec(i),i=1,4),(wspec(i),i=1,4),                &
                veth,te_by_ti,wce_by_wpe,thb,         &
-               rwd,pi,ait,t,dt,aimpl,adt,hdt,ahdt2,adtsq,        &
+               rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,       &
                q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,    &
                qqwi,qqwe,(vthx(i),i=1,4),(vthz(i),i=1,4),        &
                (vdr(i),i=1,4),(vbeam(i),i=1,4),&
@@ -9788,7 +9788,7 @@
               status='unknown',position='append',form='formatted')
 !
         write(11,*) '# At restart #'
-        write(11,*) 'it,t=',it,t
+        write(11,*) 'it,t=',it,t8
         write(11,*)
 !
         write(11,*) 'nspec(1),qspec(1),wspec(1)=',nspec(1),qspec(1),wspec(1)
@@ -10528,7 +10528,7 @@
                      pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
                      pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
 !
-      real(C_float)  q(mx,myA,mz),qc,qc2
+      real(C_float)  q(0:mx-1,0:my,0:mz-1),qc,qc2
       real(C_float)  a(11000),b(11000),aa(11000),ww(11000),as(11000)
 !
       real(C_float) time,zleng,xmin,ymin,zmin,hh,hs,      &
@@ -10912,8 +10912,12 @@
       implicit none
       include 'param_081A.h' 
 !
-      real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
+      real(C_float) q(0:mx-1,0:my,0:mz-1),xmax,ymax,zmax
       real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
+      integer        pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
+      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
+                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
 !
       integer(C_INT)  n1,ik,jk,i1,j1,k1,ii,i,j,k,npx,npy,npz, &
                       il,ir,jl,jr,kl,kr,nyz,nxz,npz2,ncontr
@@ -10942,20 +10946,22 @@
 !
 !* 1. Plot at constant y: subscript i first.
 !     real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
 !
       qc2 = 1./16.
       jk= 0
 !
       npy= 0
-      do j= 2,my,2  !<-- j+1= my+1
+      do j= 0,my,2  !<-- j+1= my+1
       npy= npy +1
 !
         npz= 0
-        do k= 2,mz-1,2  !<-- k+1= mz
+        do k= 0,mz-1,2  !<-- k+1= mz
         npz= npz +1
 !
-        kr= k+1 
-        kl= k-1
+        kr= pzr(k) !k+1 
+        kl= pzl(k) !k-1
 !
         jk= jk +1
         a(jk)= qc2*(    q(i1,j+1,kr) +2*q(i1,j+1,k)   +q(i1,j+1,kl)  &
@@ -10970,18 +10976,18 @@
       ik= 0
 !
       npx= 0
-      do i= 2,mx-1,2  !<-- ir= mx
+      do i= 0,mx-1,2  !<-- ir= mx
       npx= npx +1
 !
-      ir= i+1 
-      il= i-1 
+      ir= pxr(i) !i+1 
+      il= pxl(i) !i-1 
 !
         npz2= 0
-        do k= 2,mz-1,2  !<-- kr= mz
+        do k= 0,mz-1,2  !<-- kr= mz
         npz2= npz2 +1
 !
-        kr= k+1 
-        kl= k-1 
+        kr= pzr(k) !k+1 
+        kl= pzl(k) !k-1
 !
         ik= ik +1
         b(ik)= qc*(   q(ir,j1,kr) +2.*q(ir,j1,k)    +q(ir,j1,kl)  &
