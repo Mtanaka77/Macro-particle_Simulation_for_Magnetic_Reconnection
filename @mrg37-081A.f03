@@ -31,10 +31,13 @@
 !    periodic (three-points) in x and z directions.
 !
 !      The full-implicit plasma simulation code was created at 
-!    /cfpsol/ subroutines. It was successfully applied in 2D by 1995 
+!    /cfpsol/ subroutines. It was successfully applied in 2D by 1995, 
 !    and 3D in 1996. The present code is Fortran 2003/2008 rewritten 
 !    in MPICH Ver.3 and Ver.4, whose parallel version is completed 
 !    by using mpi_sendrecv with PE's mx*myA*mz/npc overlaps.
+!
+!*    x, z: Periodic 
+!*    y   : Bound  
 !
 !    Change in 2022
 !    1) The mpi routines isend and irecv are used, i.e., call isend(sendbuf),
@@ -4433,6 +4436,8 @@
 !********** << subroutines >> ******************************************
 !*                                                                     *
 !*     cfpsol ..... for the electromagnetic field.                     *
+!*       x, z: Periodic                                                *
+!*       y   : Bound                                                   *      
 !*       /cfpsol/ -> /bcgstb/ -> /wwstbi/ etc.                         *
 !*                                                                     *
 !*** Original: 4/23/1992 ******************* Fortran 2003: 12/21/2021 **
@@ -10045,13 +10050,14 @@
       integer(C_INT) ix,iy,npts,IFR,IL,n1,n2,n3
       integer(C_INT) i1,j1,isc,i,j,k,nfine,iplot
 !
+      real(C_DOUBLE) time1
       real(C_float) ymin,ymax
       real(C_float) xcm(6),ycm(6),pl(6),pr(6),ql(6),qr(6)
 !
       character(len=8) lab1,lab2,lab3
       character(len=8) label(8),date_now*10,cax*1
       common/headr1/ label,date_now
-      common/headr2/ time,xp_leng
+      common/headr2/ time1
       common/pplcom/ nfine,pl1(10),pr1(10),ql1(10),qr1(10),  &
                      xmin1(10),xmax1(10),ymin1(10),ymax1(10)
 !
@@ -10068,10 +10074,11 @@
             ql/2.3, 10.5,2.3, 12.9,7.6,2.3/
       logical  lab_skip
 !
-      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0, &
-                    pl1,pr1,ql1,qr1,scx,scy,time,xp_leng,   &
+      real(C_float) hh,hhs,xmax,xmin,dx,dy,x0,y0,  &
+                    pl1,pr1,ql1,qr1,scx,scy,time4, &
                     xmin1,xmax1,ymin1,ymax1,x1,x2,x3,x4,    &
                     y1,y2,y3,y4,xc,xd,xl,xu,yc,yl,yr
+      time4= time1
 !***
       iplot= 1
       go to 1
@@ -10110,8 +10117,8 @@
 !                                              ************************
       call symbol (0.1,18.0,hh,label(1),0.,8)
 !     call symbol (3.1,18.0,hh,date_now, 0.,10)
-      call symbol (15.9,0.1,hh,'t =',0.,3)
-      call number (999.0,999.0,hh,time,0.,5)
+      call symbol (15.9,0.1,hh,'t4=',0.,3)
+      call number (999.0,999.0,hh,time4,0.,5)
 !
    10 continue
 !
@@ -10314,7 +10321,7 @@
 !
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
 !          +++++++
-      real(C_float) xmax,ymax,zmax,x1,x2,radi,time
+      real(C_float) xmax,ymax,zmax,x1,x2,radi,time4
       integer(C_INT) nr,lskip,iptag,n1,iplot,i
 !
       character(len=8) char1
@@ -10330,7 +10337,7 @@
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
-      time= time1
+      time4= time1
 !
       if(io_pe.ne.1) return
       iplot= 6
@@ -10339,7 +10346,7 @@
                 status='unknown',position='append',form='unformatted')
 !
       write(18) iplot,ipen,iptag
-      write(18) time,xmax,ymax,zmax,x1,x2,radi,nr,lskip,n1
+      write(18) time1,xmax,ymax,zmax,x1,x2,radi,nr,lskip,n1
       write(18) (x(i),y(i),z(i),vx(i),vy(i),vz(i),i=1,nr,lskip)
 !         merge to all x-vz ?
       write(18) label,date_now,char1
@@ -10531,13 +10538,13 @@
       real(C_float)  q(0:mx-1,0:my,0:mz-1),qc,qc2
       real(C_float)  a(11000),b(11000),aa(11000),ww(11000),as(11000)
 !
-      real(C_float) time,zleng,xmin,ymin,zmin,hh,hs,      &
+      real(C_float) time4,zleng,xmin,ymin,zmin,hh,hs,      &
                     yl,yr,zl,zr,yls,yrs,zls,zrs,am1,am2,  & 
                     am12,y,z,gdy,gdz,xmax,ymax,zmax
       integer(C_INT) i1,j,k,kl,kr,jk,npy,npz,iplot,ny,nz, &
                      nyz,nzp,iperio,iptag,ncontr
 !
-      time= time1
+      time4= time1
       zleng= 8. 
 !
       xmin= 0
@@ -10577,7 +10584,7 @@
       iplot= 5
 !
 !     write(18) iplot,iperio,iptag
-!     write(18) time,xmax,ymax,zmax,npx,npy,npz,n1
+!     write(18) time1,xmax,ymax,zmax,npx,npy,npz,n1
 !     write(18) a,b
 !     write(18) label,date_now,char1
 ! 
@@ -10594,7 +10601,7 @@
       call symbol (0.1,18.2,hh,label(1),0.,8)
 !     call symbol (0.1, 0.1,hh,date_now,0.,10)
       call symbol (15.9,0.1,hh,'t=',0.,2)
-      call number (16.5,0.1,hh,time,0.,101)
+      call number (16.5,0.1,hh,time4,0.,101)
 !
       zl= 2. +zleng +1.
       zr= zl +zleng
@@ -10724,13 +10731,13 @@
       integer(C_INT) i1,iplot,npy,npz,nyz,nzp,isel,             &
                      j,jk,k,kl,kr,ncontr,ny,nz,nynz
       real(C_float)  am1,am11,am12,am2,amy,arw1,arw2,gdy,gdz,   &
-                     hh,hs, qc,rarrow,shfy,shfz,time,           &
+                     hh,hs, qc,rarrow,shfy,shfz,time4,           &
                      yl,yr,zleng,ymin,zc,zl,zr
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
-      time= time1
+      time4= time1
       zleng= 8. 
 !
 !-----------------------------------------------------------------------
@@ -10770,7 +10777,7 @@
       iplot= 4
 !
 !     write(18) iplot,iperio,iptag
-!     write(18) time,xmax,zmax,npx,npz,n1
+!     write(18) time1,xmax,zmax,npx,npz,n1
 !     write(18) ax,ay,az
 !     write(18) label,date_now,char1
 ! 
@@ -10784,7 +10791,7 @@
       call symbol (0.1,18.2,hh,label(1),0.,8)
 !     call symbol (0.1, 0.1,hh,date_now,0.,10)
       call symbol (15.9,0.1,hh,'t=',0.,2)
-      call number (16.5,0.1,hh,time,0.,101)
+      call number (16.5,0.1,hh,time4,0.,101)
 !
       nz= npz
       ny= npy
@@ -10921,7 +10928,7 @@
 !
       integer(C_INT)  n1,ik,jk,i1,j1,k1,ii,i,j,k,npx,npy,npz, &
                       il,ir,jl,jr,kl,kr,nyz,nxz,npz2,ncontr
-      real(C_float)   time,xl2,xr2,yl,yr,zl,zr,hh,qc,qc2,       &
+      real(C_float)   time4,xl2,xr2,yl,yr,zl,zr,hh,qc,qc2,       &
                       am21,am41,am22,am42,ams1,ams2,ams,          &
                       gdx,gdy,gdz,wamin,wamax,xmin,ymin,zmin,zleng
 
@@ -10933,7 +10940,7 @@
       integer(C_INT) io_pe
       common/iope66/ io_pe
 !
-      time= time1
+      time4= time1
       zleng= 8.
 !
       xmin= 0
@@ -10960,8 +10967,8 @@
         do k= 0,mz-1,2  !<-- k+1= mz
         npz= npz +1
 !
-        kr= pzr(k) !k+1 
-        kl= pzl(k) !k-1
+        kr= k+1 
+        kl= k-1
 !
         jk= jk +1
         a(jk)= qc2*(    q(i1,j+1,kr) +2*q(i1,j+1,k)   +q(i1,j+1,kl)  &
@@ -10979,15 +10986,15 @@
       do i= 0,mx-1,2  !<-- ir= mx
       npx= npx +1
 !
-      ir= pxr(i) !i+1 
-      il= pxl(i) !i-1 
+      ir= i+1 
+      il= i-1 
 !
         npz2= 0
         do k= 0,mz-1,2  !<-- kr= mz
         npz2= npz2 +1
 !
-        kr= pzr(k) !k+1 
-        kl= pzl(k) !k-1
+        kr= k+1 
+        kl= k-1
 !
         ik= ik +1
         b(ik)= qc*(   q(ir,j1,kr) +2.*q(ir,j1,k)    +q(ir,j1,kl)  &
@@ -11009,7 +11016,7 @@
       call symbol (0.1,18.2,hh,label(1),0.,8)
 !     call symbol (0.1, 0.1,hh,date_now,0.,10)
       call symbol (15.9,0.1,hh,'t=',0.,2)
-      call number (16.5,0.1,hh,time,0.,101)
+      call number (16.5,0.1,hh,time4,0.,101)
 !
 !---------------------------------------------
 !*  **maximum of the vectors**
