@@ -101,9 +101,9 @@
 !*
 !* >> gfortran
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
 !* >> PGFortran
 !* $ mpif90 -mcmodel=medium -fast -tp=px -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
 !-----------------------------------------------------------------------
 !*  Fortrtan 2003/Fortran 2008 by direct write outputs
 !*               write(11,'(" arrayx,arrayy(i),arrayz=",3i6)')... 
@@ -437,13 +437,12 @@
       call clocks (walltime1,size,cl_first)
 !
       if(io_pe.eq.1) then
-        if(iwrt(it,nplot).eq.0) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,'("**** it=",i5," *****")') it
+        write(11,*) '### Start this run at /trans/ ###'
+        write(11,*)
         close(11)
-        end if
       end if
 !
 !   +++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -607,15 +606,15 @@
                                        xe,ye,ze,vxe,vye,vze,mue,vpe,vhe
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                         ex,ey,ez,bx,by,bz,        &
-                                         ex0,ey0,ez0,bx0,by0,bz0,  &
-                                         qix,qiy,qiz,qex,qey,qez,  &
-                                         emx,emy,emz,qi,qe,amu,avhh,&
-                                         pot
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0,  &
+                     qix,qiy,qiz,qex,qey,qez,emx,emy,emz,        &
+                     qi,qe,amu,avhh,pot
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
       common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
       common/srimp8/ amu,avhh
       common/sclpot/ pot
+!
+      real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: qqi
 !---------------------------------------------------------
 !
       integer(C_INT) io_pe
@@ -1063,10 +1062,9 @@
       integer(C_INT) npr,ipc,ksp,ipar,size,MPIerror 
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                             ex,ey,ez,bx,by,bz,        &
-                                             ex0,ey0,ez0,bx0,by0,bz0,  &
-                                             qix,qiy,qiz,qex,qey,qez,  &
-                                             emx,emy,emz,qi,qe,amu,avhh
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0,  &
+                     qix,qiy,qiz,qex,qey,qez,emx,emy,emz,        &
+                     qi,qe,amu,avhh
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
       common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
       common/srimp8/ amu,avhh
@@ -1408,14 +1406,12 @@
       integer(C_INT) npr,ksp,ipar,size
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                             ex,ey,ez,bx,by,bz,       &
-                                             ex0,ey0,ez0,bx0,by0,bz0, &
-                                             qix,qiy,qiz,qex,qey,qez, &
-                                             emx,emy,emz,qi,qe
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0, &
+                     qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
       common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                             exa,eya,eza,bxa,bya,bza
+                                         exa,eya,eza,bxa,bya,bza
 !---------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
@@ -1648,9 +1644,8 @@
       integer(C_INT) npr,ipar,size
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                            ex,ey,ez,bx,by,bz,       &
-                                            ex0,ey0,ez0,bx0,by0,bz0, &
-                                            bx1,by1,bz1
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0, &
+                     bx1,by1,bz1
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
 !----------------------------------------------------------------
 !
@@ -2859,8 +2854,7 @@
       integer(C_INT) npr,ipar,size
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                                   ex,ey,ez,bx,by,bz,     &
-                                                   ex0,ey0,ez0,bx0,by0,bz0
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
 !--------------------------------------------
 !
@@ -3399,11 +3393,9 @@
 !*
       integer(C_INT) nobx
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                            ex,ey,ez,bx,by,bz,       &
-                                            ex0,ey0,ez0,bx0,by0,bz0, &
-                                            qix,qiy,qiz,qex,qey,qez, &
-                                            qi,qe,emx,emy,emz,       &
-                                            amu,avhh,pot
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0, &
+                     qix,qiy,qiz,qex,qey,qez,qi,qe,emx,emy,emz, &
+                     amu,avhh,pot
 !                              ++++++++
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
       common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
@@ -3412,6 +3404,7 @@
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                             cjx,cjy,cjz,sxi,syi,szi,qq
+      real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: qqi
 ! --------------------------------------------------------------------
 !***
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
@@ -3736,11 +3729,9 @@
       integer(C_INT) ipar
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                           ex,ey,ez,bx,by,bz,       &
-                                           ex0,ey0,ez0,bx0,by0,bz0, &
-                                           qix,qiy,qiz,qex,qey,qez, &
-                                           emx,emy,emz,qi,qe,amu,avhh, &
-                                           pot,gnu
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0, &
+                     qix,qiy,qiz,qex,qey,qez,emx,emy,emz,       &
+                     qi,qe,amu,avhh,pot,gnu
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
       common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
       common/srimp8/ amu,avhh
@@ -4453,8 +4444,8 @@
 !
 !     parameter  (nob=15,iblk=3)
 !----------------------------------------------------------------------
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) ::            &
-                                               ex,ey,ez,rhsx,rhsy,rhsz
+      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
+                                         ex,ey,ez,rhsx,rhsy,rhsz
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
       integer(C_INT) ipar,iterm,iterf,ierr
@@ -8382,10 +8373,15 @@
 !*    y-direction
 !-----------------------------------------------------------------------
 !* Bound boundary: pyc= 0 - my
+!     common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
+!                    pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
+!                    pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
 !
 !     do j= -5,-1
-      pyl(-1)= -1
-      pyc(-1)= -1
+      pyl(-1)= 0 !-1
+      pyc(-1)= 0 !-1
       pyr(-1)= 0
 !     end do
 !
@@ -8400,8 +8396,8 @@
 ! 
 !     do j= my+1,my+5
       pyl(my+1)= my
-      pyc(my+1)= my+1
-      pyr(my+1)= my+1
+      pyc(my+1)= my !+1
+      pyr(my+1)= my !+1
 !     end do
 !
 !-----------------------------------------------------------------------
@@ -10919,8 +10915,8 @@
       implicit none
       include 'param_081A.h' 
 !
-      real(C_float) q(0:mx-1,0:my,0:mz-1),xmax,ymax,zmax
-      real(C_float) a(7000),b(7000),ww(7000),cut(7000,4)
+      real(C_float)  q(0:mx-1,0:my,0:mz-1),xmax,ymax,zmax
+      real(C_float)  a(7000),b(7000),ww(7000),cut(7000,4)
       integer        pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
       common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
                      pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
@@ -10939,6 +10935,7 @@
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
+      logical iwrite/.true./
 !
       time4= time1
       zleng= 8.
@@ -10954,28 +10951,44 @@
 !* 1. Plot at constant y: subscript i first.
 !     real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
+!* $ mpiexec -n 6 a.out &  
 !
       qc2 = 1./16.
       jk= 0
 !
       npy= 0
-      do j= 0,my,2  !<-- j+1= my+1
+      do j= 0,my  !,2  !<-- j+1= my+1
       npy= npy +1
+      jr= pyc(j+1)
+      jl= pyc(j-1)
 !
         npz= 0
-        do k= 0,mz-1,2  !<-- k+1= mz
+        do k= 0,mz-1  !,2  !<-- k+1= mz
         npz= npz +1
 !
-        kr= k+1 
-        kl= k-1
+        kr= pzc(k+1) 
+        kl= pzc(k-1)
 !
         jk= jk +1
-        a(jk)= qc2*(    q(i1,j+1,kr) +2*q(i1,j+1,k)   +q(i1,j+1,kl)  &
-                    + 2*q(i1,j  ,kr) +4*q(i1,j  ,k) +2*q(i1,j  ,kl)  &
-                    +   q(i1,j-1,kr) +2*q(i1,j-1,k)   +q(i1,j-1,kl) )
+        a(jk)= qc2*(    q(i1,jr,kr) +2*q(i1,jr,k)   +q(i1,jr,kl)  &
+                    + 2*q(i1,j ,kr) +4*q(i1,j ,k) +2*q(i1,j ,kl)  &
+                    +   q(i1,jl,kr) +2*q(i1,jl,k)   +q(i1,jl,kl) )
+!
+        if(j.eq.my/2 .and. iwrite) then
+          if(io_pe.eq.1) then
+            open (unit=11,file=praefixc//'.11'//suffix2,             & 
+                  status='unknown',position='append',form='formatted')
+            write(11,990) j,k,a(jk)
+  990       format(' j,k,a(jk)=',2i5,1pd12.3)
+!
+            close(11)
+          end if
+        end if
+
         end do
       end do
+!
+      iwrite= .false.
 !
 !* 2. Plot at constant z: subscript i first.
 !
@@ -10983,18 +10996,18 @@
       ik= 0
 !
       npx= 0
-      do i= 0,mx-1,2  !<-- ir= mx
+      do i= 0,mx-1  !,2  !<-- ir= mx
       npx= npx +1
 !
-      ir= i+1 
-      il= i-1 
+      ir= pxc(i+1) 
+      il= pxc(i-1) 
 !
         npz2= 0
-        do k= 0,mz-1,2  !<-- kr= mz
+        do k= 0,mz-1  !,2  !<-- kr= mz
         npz2= npz2 +1
 !
-        kr= k+1 
-        kl= k-1
+        kr= pzc(k+1) 
+        kl= pzc(k-1)
 !
         ik= ik +1
         b(ik)= qc*(   q(ir,j1,kr) +2.*q(ir,j1,k)    +q(ir,j1,kl)  &
