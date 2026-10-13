@@ -99,10 +99,10 @@
 !*  :s%/^c/!/
 !*  tr 'A-Z' 'a-z' <@mrg3.f >@mrg37.f03
 !*
-!* >> gfortran
+!* >> gfortran (Generic)
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
 !* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
-!* >> PGFortran
+!* >> PGFortran (if installed)
 !* $ mpif90 -mcmodel=medium -fast -tp=px -O2 @mrg37-081A.f03 &> log
 !-----------------------------------------------------------------------
 !*  Fortrtan 2003/Fortran 2008 by direct write outputs
