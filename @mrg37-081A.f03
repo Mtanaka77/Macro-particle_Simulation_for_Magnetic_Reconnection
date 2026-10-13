@@ -1,4 +1,4 @@
-!*** Late Version: 2025/3/23 ******************** Fortran 2003/2008 ****
+!*** Late Version: 2026/10/13 ******************** Fortran 2003/2008 ****
 !*                                                                     *
 !*   ## Macro-particle Kinetic Simulation for Solar EM Simulation ##   *
 !*     << Fully-implicit scheme with kinetic ions and electrons >>     *
@@ -12,9 +12,9 @@
 !*           6) M.Tanaka, Bulletin of Chubu University (Mar,2022).     *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_080A.f03: simulation code, job serial number '80'      *
+!*    1. @mrg37_081A.f03: simulation code, job serial number '80'      *
 !*    2. param_081A.h   : parameter file                               *
-!*    3. rec_3d80A      : Simulation time, box size, parameters of     *
+!*    3. rec_3d81A      : Simulation time, box size, parameters of     *
 !*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
 !*  * For kinetic ions and electrons, the time step of dt=1.2/wpe      *
@@ -27,7 +27,7 @@
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
 !
-!    @mrg3-A080.f03: Non-periodic in y direction (two-points) and 
+!    @mrg3-A081.f03: Non-periodic in y direction (two-points) and 
 !    periodic (three-points) in x and z directions.
 !
 !      The full-implicit plasma simulation code was created at 
@@ -56,11 +56,11 @@
 !     in the /cfpsol/. The code starts with 0, as np1(1)-1 for particles.
 !
 !    7) /fulmov/, /cfpsol/, /emcoef/, /wwstbi/j/k/m are in parallel         
-!      execution, /poissn/, /emcof3/ are non-parallel.
+!      execution, /poissn/, /emcof3/ are single (non-parallel).
 !   
 !    8) The files is created by /fplot3/ and /cplot3/
-!       by this program. They are converted by 'pspdf fortr.77(.ps)' 
-!       on Linux, and is then output as fortr.77.pdf on Windows 10.
+!       by this program. They are converted by 'ps2pdf forta.77.ps' 
+!       on Linux, and is then output as forta.77.pdf on Windows 11.
 !                                                         May 8, 2022
 !
 !    9) They become true if iwrt(it,5).eq.0 or mod(it,5).eq.0
