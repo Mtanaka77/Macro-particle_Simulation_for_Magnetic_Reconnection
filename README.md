@@ -50,8 +50,8 @@ ii) length: c/wpe, iii) mass: electron mass, and iv) charge: electron charge.
 The program is written in Fortran 2003 and is coded for parallelization by MPI ver.3.
 The title, major references, and remarks of this simulation code are written 
 in the top of the @mrg37_081A.f03 file.
-Major subroutines are named /fulmov/, /emfild/ and /cfpsol/, which are used in 
-every time step. 
+Major subroutines are thus named including /fulmov/, /emfild/ and /cfpsol/, 
+which are used in every time step. 
 
 By the implicit scheme it is free from the Courant condition, that is, 
 Dx(length)/Dt(time step) >< c, the speed of light. 
@@ -81,7 +81,7 @@ Compilation of mpif90 needs the parameter files param_A81A.h and rec_3d81A
 
 Execution by mpiexec (may need some tens of processors)
 
- > $ mpiexec -n (number_of_cpu) a.out &
+ > $ mpiexec -n 6 a.out &      !  (number_of_cpu)= 6 
 
 
 ### Simulation of Two Flux Bundles
