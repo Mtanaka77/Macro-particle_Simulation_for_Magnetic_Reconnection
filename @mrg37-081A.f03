@@ -1,4 +1,4 @@
-!*** Late Version: 2026/10/13 ******************** Fortran 2003/2008 ****
+!*** Late Version: 2026/10/13 ******************* Fortran 2003/2008 ****
 !*                                                                     *
 !*   ## Macro-particle Kinetic Simulation for Solar EM Simulation ##   *
 !*     << Fully-implicit scheme with kinetic ions and electrons >>     *
@@ -12,7 +12,7 @@
 !*           6) M.Tanaka, Bulletin of Chubu University (Mar,2022).     *
 !*                                                                     *
 !*    Simulation files                                                 *
-!*    1. @mrg37_081A.f03: simulation code, job serial number '80'      *
+!*    1. @mrg37_081A.f03: Simulation code, job serial '81'             *
 !*    2. param_081A.h   : parameter file                               *
 !*    3. rec_3d81A      : Simulation time, box size, parameters of     *
 !*                  ions and electrons, decentering parameter, etc,    *
@@ -27,7 +27,7 @@
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
 !
-!    @mrg3-A081.f03: Non-periodic in y direction (two-points) and 
+!    @mrg3-081A.f03: Non-periodic in y direction (two-points) and 
 !    periodic (three-points) in x and z directions.
 !
 !      The full-implicit plasma simulation code was created at 
@@ -102,6 +102,7 @@
 !* >> gfortran (Generic)
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
 !* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
+!*
 !* >> PGFortran (if installed)
 !* $ mpif90 -mcmodel=medium -fast -tp=px -O2 @mrg37-081A.f03 &> log
 !-----------------------------------------------------------------------
@@ -1056,8 +1057,8 @@
       include 'mpif.h'
       include 'param_081A.h'
 !
-      real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
-      real(C_DOUBLE),dimension(np0) :: rxl,ryl,rzl,vxj,vyj,vzj
+      real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz,       &
+                                       rxl,ryl,rzl,vxj,vyj,vzj
       real(C_DOUBLE) qmult,wmult
       integer(C_INT) npr,ipc,ksp,ipar,size,MPIerror 
 !
@@ -1070,13 +1071,13 @@
       common/srimp8/ amu,avhh
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                             exa,eya,eza,bxa,bya,bza
+                                         exa,eya,eza,bxa,bya,bza
 !---------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -1162,7 +1163,7 @@
 !   is evaluated at the mid-orbit positions (also in do 300).
 !
       do l= ipar,npr,size
-      rxl(l) = x(l) +hdt*vx(l)  !! ipc= 0,1
+      rxl(l) = x(l) +hdt*vx(l)  !! for ipc= 0,1
       ryl(l) = y(l) +hdt*vy(l) 
       rzl(l) = z(l) +hdt*vz(l)
       end do
@@ -1174,7 +1175,7 @@
       wkih= 0
 !
       do l= ipar,npr,size 
-      ip= int(hxi*rxl(l) +0.500000001d0)
+      ip= int(hxi*rxl(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*ryl(l) +0.000000001d0)
       kp= int(hzi*rzl(l) +0.500000001d0)
 !
@@ -1287,7 +1288,7 @@
 !  For update
 !   ++++++++++++++++++++++++++++++++++++++++++++
       if(ipc.eq.0) then
-!         hh= dt*qmult/wmult, x and vx are at the time t^n
+!           hh= dt*qmult/wmult, x and vx are at the time t(n)
       x(l) = x(l) +dt*(vx(l) +0.5d0*hh*dvx) 
       y(l) = y(l) +dt*(vy(l) +0.5d0*hh*dvy) 
       z(l) = z(l) +dt*(vz(l) +0.5d0*hh*dvz)
@@ -1298,7 +1299,7 @@
 !
 !  For ipc=1, accumulate srimp 1-4. use vx(n+1/2)   
       else if(ipc.ge.1) then 
-!         the decentering mechanism is here         
+!            the decentering mechanism is used here         
       vxj(l)= vx(l) +aimpl*hh*dvx  
       vyj(l)= vy(l) +aimpl*hh*dvy
       vzj(l)= vz(l) +aimpl*hh*dvz
@@ -1338,19 +1339,19 @@
 !
         call partbc (x,y,z,vx,vy,vz,npr,ipar,size)
 !
-!  Drive E x B  1.d-2/wce= 5.d-2 ?
-!        Ez00=0.25d-2, wce=0.2
+!  Drive E x B: 1.d-2/wce= 5.d-2 ?
+!          Ez00= 0.25d-2, wce=0.2
 !
         do l= ipar,npr,size 
         if((abs(z(l)-zcent ).lt.0.15d0*zmax) .and.  &
           ((abs(y(l)-ycent2).lt.0.025d0*ymax) .or.  &
            (abs(y(l)-ycent1).lt.0.025d0*ymax)) ) then
 !**
-          ip= int(hxi*x(l) +0.500000001d0)
+          ip= int(hxi*x(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
           jp= int(hyi*y(l) +0.000000001d0)
           kp= int(hzi*z(l) +0.500000001d0)
 !**
-!           if(ranfp(0.d0).gt.0.99d0) then
+!         if(ranfp(0.d0).gt.0.99d0) then
 !         if(ranfp(0.d0).gt.0.995d0) then
           if(ranfp(0.d0).gt.0.999d0) then
           vy0= Ez00/bxa(ip,jp,kp)
@@ -1366,10 +1367,11 @@
         end do
       end if
 !
-!
 !---------------------------
 !  For accumulating
 !---------------------------
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  
 !
       if(ipc.ge.1) then
 !                    <-- rxl-rzl and vyj
@@ -1415,9 +1417,9 @@
 !---------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -1501,7 +1503,7 @@
 !
 !
       do l= ipar,npr,size
-      ip= int(hxi*rxl(l) +0.500000001d0)
+      ip= int(hxi*rxl(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*ryl(l) +0.000000001d0)
       kp= int(hzi*rzl(l) +0.500000001d0)
 !
@@ -1650,9 +1652,9 @@
 !----------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -1706,7 +1708,7 @@
       wkeh= 0
 !***
       do l= ipar,npr,size
-      ip= int(hxi*x(l) +0.500000001d0)
+      ip= int(hxi*x(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*y(l) +0.000000001d0)
       kp= int(hzi*z(l) +0.500000001d0)
 !
@@ -1856,9 +1858,9 @@
       dz= hz/2
 !
       do l= ipar,npr,size
-      if(x(l).ge.xmax-dx) then
+      if(x(l).ge.xmax) then
         x(l)= x(l) -xmaxe       ! a bit smaller than xmax
-      else if(x(l).le.-dx) then
+      else if(x(l).le.0.d0) then
         x(l)= x(l) +xmaxe
       end if
 !*
@@ -1870,9 +1872,9 @@
         vy(l)= -vy(l)
       end if
 !*
-      if(z(l).ge.zmax-dz) then
+      if(z(l).ge.zmax) then
         z(l)= z(l) -zmaxe
-      else if(z(l).le.-dz) then
+      else if(z(l).le.0.d0) then
         z(l)= z(l) +zmaxe
       end if
       end do
@@ -1928,9 +1930,9 @@
       dz= hz/2
 !
       do l= ipar,npr,size
-      if(x(l).ge.xmax-dx) then
+      if(x(l).ge.xmax) then
         x(l)= x(l) -xmaxe  
-      else if(x(l).le.-dx) then
+      else if(x(l).le.0.d0) then
         x(l)= x(l) +xmaxe
       end if
 !*
@@ -1940,9 +1942,9 @@
         y(l)= -y(l) 
       end if
 !*
-      if(z(l).ge.zmax-dz) then
+      if(z(l).ge.zmax) then
         z(l)= z(l) -zmaxe
-      else if(z(l).le.-dz) then
+      else if(z(l).le.0.d0) then
         z(l)= z(l) +zmaxe
       end if
       end do
@@ -2004,10 +2006,10 @@
 !
 !* ksp= 2
       do l= ipar,npr,size
-      if(x(l).ge.xmax-dx) then
+      if(x(l).ge.xmax) then
         x(l)= x(l) -xmaxe
 !
-      else if(x(l).le.-dx) then
+      else if(x(l).le.0.d0) then
         x(l)= x(l) +xmaxe
       end if
 !*
@@ -2026,10 +2028,10 @@
         vhe(l)= -vhe(l)
       end if
 !*
-      if(z(l).ge.zmax-dz) then
+      if(z(l).ge.zmax) then
         z(l)= z(l) -zmaxe
 !
-      else if(z(l).le.-dz) then
+      else if(z(l).le.0.d0) then
         z(l)= z(l) +zmaxe
       end if
       end do
@@ -2085,10 +2087,10 @@
       dz= hz/2
 !
       do l= 1,npr
-      if(x(l).ge.xmax-dx) then
+      if(x(l).ge.xmax) then
         x(l)= x(l) -xmaxe
 !
-      else if(x(l).le.-dx) then
+      else if(x(l).le.0.d0) then
         x(l)= x(l) +xmaxe
       end if
 !*
@@ -2101,10 +2103,10 @@
         vy(l)= -vy(l)
       end if
 !*
-      if(z(l).ge.zmax-dz) then
+      if(z(l).ge.zmax) then
         z(l)= z(l) -zmaxe
 !
-      else if(z(l).le.-dz) then
+      else if(z(l).le.0.d0) then
         z(l)= z(l) +zmaxe
       end if
       end do
@@ -2160,10 +2162,10 @@
       dz= hz/2
 !
       do l= 1,npr
-      if(x(l).ge.xmax-dx) then
+      if(x(l).ge.xmax) then
         x(l)= x(l) -xmaxe
 !
-      else if(x(l).le.-dx) then
+      else if(x(l).le.0.d0) then
         x(l)= x(l) +xmaxe
       end if
 !*
@@ -2176,10 +2178,10 @@
         vhe(l)= -vhe(l)
       end if
 !*
-      if(z(l).ge.zmax-dz) then
+      if(z(l).ge.zmax) then
         z(l)= z(l) -zmaxe
 !
-      else if(z(l).le.-dz) then
+      else if(z(l).le.0.d0) then
         z(l)= z(l) +zmaxe
       end if
 !*
@@ -2217,9 +2219,9 @@
       common/iope66/ io_pe
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -2270,7 +2272,7 @@
 !$OMP DO SCHEDULE(STATIC,1)
 !
       do l= ipar,npr,size
-      ip= int(hxi*rxm(l) +0.500000001d0)
+      ip= int(hxi*rxm(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*rym(l) +0.000000001d0)
       kp= int(hzi*rzm(l) +0.500000001d0)
 !
@@ -2413,16 +2415,18 @@
       real(C_DOUBLE),dimension(np0) :: rxm,rym,rzm
       real(C_DOUBLE) qmult
 !                              ++++++++++++++++++++
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: q
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: qq
+      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: q,qq
 !
       integer(C_INT) npr,ipar,size
 !---------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+!     common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
+!                    pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
+!                    pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -2431,7 +2435,7 @@
 ! 
       real(C_DOUBLE) xmax,ymax,zmax,hxi,hyi,hzi,xmaxe,ymaxe,zmaxe,   &
                      qspec,wspec,veth,te_by_ti,wce_by_wpe,thb,       &
-                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,      & 
+                     rwd,pi,ait,t8,dt,aimpl,adt,hdt,ahdt2,adtsq,     & 
                      q0,qi0,qe0,aqi0,aqe0,epsln1,qwi,qwe,aqwi,aqwe,  &
                      qqwi,qqwe,vthx,vthz,vdr,vbeam,                  &
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
@@ -2468,7 +2472,7 @@
 !$OMP DO SCHEDULE(STATIC,1)
 !
       do l= ipar,npr,size
-      ip= int(hxi*rxm(l) +0.500000001d0)
+      ip= int(hxi*rxm(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*rym(l) +0.000000001d0)
       kp= int(hzi*rzm(l) +0.500000001d0)
 !
@@ -2565,9 +2569,9 @@
 !--------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -2612,7 +2616,7 @@
 !$OMP DO SCHEDULE(STATIC,1)
 !
       do l= ipar,npr,size
-      ip= int(hxi*rxm(l) +0.500000001d0)
+      ip= int(hxi*rxm(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*rym(l) +0.000000001d0)
       kp= int(hzi*rzm(l) +0.500000001d0)
 !
@@ -2709,9 +2713,9 @@
 !--------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -2756,7 +2760,7 @@
 !$OMP DO SCHEDULE(STATIC,1)
 !
       do l= ipar,npr,size
-      ip= int(hxi*rxm(l) +0.500000001d0)
+      ip= int(hxi*rxm(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*rym(l) +0.000000001d0)
       kp= int(hzi*rzm(l) +0.500000001d0)
 !
@@ -2859,9 +2863,9 @@
 !--------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -2914,7 +2918,7 @@
 !$OMP DO SCHEDULE(STATIC,1)
 !
       do l= ipar,npr,size
-      ip= int(hxi*rxm(l) +0.500000001d0)
+      ip= int(hxi*rxm(l) +0.500000001d0)  ! ip= 0, x= (0.0,1.0)
       jp= int(hyi*rym(l) +0.000000001d0)
       kp= int(hzi*rzm(l) +0.500000001d0)
 !
@@ -3408,9 +3412,9 @@
 ! --------------------------------------------------------------------
 !***
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,   &
                      dx,dy,dz
@@ -3755,9 +3759,9 @@
       common/ehist/  tdec
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq,   &
                      dx,dy,dz
@@ -4651,9 +4655,9 @@
 !------------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -6730,9 +6734,9 @@
 !*---------------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -7334,9 +7338,9 @@
 !-----------------------------------------------------------------------     
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -7530,9 +7534,9 @@
 !----------------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -7679,9 +7683,9 @@
 !---------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -8099,9 +8103,9 @@
 !-------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -8157,7 +8161,7 @@
         jp= int(hyi*y(l) +0.000000001d0)  !  jp, jp+1
         kp= int(hzi*z(l) +0.500000001d0)  ! kl, kp, kr
 !
-        i = pxc(ip)  !<--???
+        i = pxc(ip)  !<--
         j = jp
         k = pzc(kp)
 !
@@ -8282,9 +8286,9 @@
       common/iope66/ io_pe
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -8351,23 +8355,21 @@
       pxl(0)= mx-1     !<-- pxl(0)= -1 or mx-1
       pxr(mx-1)= 0     !<-- pxr(mx-1)= mx or 0
 !
-      do i= -mx,-1
+      do i= -2,-1
       pxl(i)= i-1 +mx
       pxc(i)= i   +mx  !<-- pxc(-1)= 0 or mx-1
       pxr(i)= i+1 +mx
       end do
 !
-      pxl(-mx)= mx-1
       pxr(-1) = 0
 !
-      do i= mx,mx+mx-1
+      do i= mx,mx+1
       pxl(i)= i-1 -mx
       pxc(i)= i   -mx
       pxr(i)= i+1 -mx
       end do
 !
-      pxl(mx)=      mx-1
-      pxr(mx+mx-1)= 0
+      pxl(mx)= mx-1
 !
 !-----------------------------------------------------------------------
 !*    y-direction
@@ -8414,23 +8416,21 @@
       pzl(0)= mz-1
       pzr(mz-1)= 0
 !
-      do k= -mz,-1
+      do k= -2,-1
       pzl(k)= k-1 +mz
       pzc(k)= k   +mz
       pzr(k)= k+1 +mz
       end do
 !
-      pzl(-mz)= mz-1
       pzr(-1) = 0
 !
-      do k= mz,mz+mz-1
+      do k= mz,mz+1
       pzl(k)= k-1 -mz
       pzc(k)= k   -mz
       pzr(k)= k+1 -mz
       end do
 !
       pzl(mz)=      mz-1
-      pzr(mz+mz-1)= 0
 !
       if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -8760,9 +8760,9 @@
       common/iope66/ io_pe
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_DOUBLE) gx,gy,gz,hx,hx2,hxsq,hy,hy2,hysq,hz,hz2,hzsq, &
                      dx,dy,dz
@@ -8803,7 +8803,8 @@
                      ycnt1,ycnt2,rry,rrz,vdrift,        &
                      rwd2,anbar,                        &
                      ranfp,funr,fun2,ranf,vx1,vy1,vz1
-      integer(C_INT) ns,i,j,k,l,m,k2,nn,npr1,npr2
+      integer(C_INT) ns,i,j,k,l,m,k2,nn,npr1,npr2,      &
+                     kk,kss(0:mz)
 !
 !-----------------------------------------------------------------------
 !   Loading particle positions and velosities:
@@ -8943,6 +8944,10 @@
 !***
       l= 0
 !     ++++
+      do kk= 0,mz
+      kss(kk)= 0
+      end do
+!
       do k= 1,mz 
       do j= 1,my  !!!<-- use inside the region
       do i= 1,mx
@@ -8953,9 +8958,18 @@
 !     xout= gx(i-1) +hx/2 +hx*ranfp(0.d0)  !<-- gx(0)= -hx/2 !!
 !     yout= gy(j-1)       +hy*ranfp(0.d0)  !    gx(mx-1)= hx*mx -hx/2 
 !     zout= gz(k-1) +hz/2 +hz*ranfp(0.d0)  !     the rightside border
-      x(l)= xmax*ranfp(0.d0) -hx/2
+      x(l)= xmax*ranfp(0.d0)   !-hx/2  /partbc/
       y(l)= ymax*ranfp(0.d0)
-      z(l)= zmax*ranfp(0.d0) -hz/2
+      z(l)= zmax*ranfp(0.d0)   !-hz/2
+!
+      if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+!
+        kk= mz*z(l)/zmax +1.d0
+        kss(kk)= kss(kk) +1
+        close(11)
+      end if
       end do
 !
       end do
@@ -8966,9 +8980,17 @@
       npr= l
 !     ++++++
 !
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
       if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
+!
+        write(11,*) 'Particles in the z-direction. /init/ '
+        do kk= 1,mz 
+        write(11,993) kk,kss(kk)
+  993   format(' kk,kss(kk)=',i6,i10)
+        end do
 !
         write(11,*) 'init of npr= ',npr
         write(11,*) 'init of ksp= ',ksp
@@ -10527,9 +10549,9 @@
       common/headr2/ time1
 !
       integer        pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       real(C_float)  q(0:mx-1,0:my,0:mz-1),qc,qc2
       real(C_float)  a(11000),b(11000),aa(11000),ww(11000),as(11000)
@@ -10918,9 +10940,9 @@
       real(C_float)  q(0:mx-1,0:my,0:mz-1),xmax,ymax,zmax
       real(C_float)  a(7000),b(7000),ww(7000),cut(7000,4)
       integer        pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
-      common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
-                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
-                     pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
+      common/table/  pxl(-2:mx+1),pxc(-2:mx+1),pxr(-2:mx+1), &
+                     pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1), &
+                     pzl(-2:mz+1),pzc(-2:mz+1),pzr(-2:mz+1)
 !
       integer(C_INT)  n1,ik,jk,i1,j1,k1,ii,i,j,k,npx,npy,npz, &
                       il,ir,jl,jr,kl,kr,nyz,nxz,npz2,ncontr
