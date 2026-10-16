@@ -69,7 +69,7 @@ Linux: Compilation mpif90 by gfortran (-fPIC) or PGI (-fast -tp=px)
 
  > fftw3: ./configure --disable-shared --enable-maintainer-mode --enable-threads --prefix=/opt/fftw3
 
-.bashrc may be:
+.bashrc in my settings:
 
 > export PATH=/opt/mpich/bin/:/opt/fftw3/bin/:/usr/local/bin/:/usr/bin/:.:$PATH
 
