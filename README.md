@@ -1,4 +1,4 @@
-## Macro-Particle Simulation for Magnetic Reconnection ## 
+## Macro-Particle Simulation for Collisionless Magnetic Reconnection ## 
 
 This page is discussed on the large-scale electromagnetic particle simulation 
 (J. Comp. Physics, Tanaka, 1993), which had a striking result of magnetic reconnection
